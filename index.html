@@ -64,11 +64,59 @@
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
   }
   #contacts-btn.open { background:#D98A1F; color:white; border-color:#D98A1F; }
-  #export-btn, #import-btn {
+  #export-btn, #import-btn, #photo-btn {
     background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.8); color: #274257;
     width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px;
   }
+  #image-preview { display:none; align-items:center; gap:8px; margin-top:8px; }
+  #image-preview img { max-height:64px; max-width:96px; object-fit:cover; border-radius:8px; border:1px solid rgba(0,0,0,0.15); }
+  #image-preview-remove {
+    background: rgba(255,255,255,0.7); border:none; color:#B5493D; width:22px; height:22px;
+    border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px;
+  }
+  .note-thumb { display:block; max-width:120px; max-height:90px; object-fit:cover; border-radius:8px; margin-top:6px; cursor:pointer; border:1px solid rgba(0,0,0,0.1); }
+  #image-lightbox {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:1000;
+    align-items:center; justify-content:center; padding:24px; cursor:zoom-out;
+  }
+  #image-lightbox img { max-width:100%; max-height:100%; border-radius:8px; }
+
+  #scan-modal {
+    display:none; position:fixed; inset:0; background:rgba(20,40,55,0.55); z-index:1000;
+    align-items:center; justify-content:center; padding:16px;
+  }
+  .scan-modal-inner {
+    background: linear-gradient(180deg, #DDEEFB, #AFD8F5); border-radius:14px; padding:16px;
+    width:100%; max-width:420px; max-height:92vh; overflow-y:auto; box-shadow:0 12px 32px rgba(0,0,0,0.3);
+  }
+  .scan-modal-header { display:flex; align-items:center; justify-content:space-between; font-size:15px; font-weight:600; color:#274257; margin-bottom:10px; }
+  .scan-setup-row { display:flex; gap:8px; margin-bottom:10px; }
+  .scan-setup-row select {
+    flex:1; font-size:13px; padding:7px 8px; border-radius:6px; border:1px solid rgba(0,0,0,0.15); background:white; color:#274257;
+  }
+  #scan-canvas-wrap { position:relative; width:100%; border-radius:8px; overflow:hidden; background:#0002; touch-action:none; }
+  #scan-canvas-wrap img { display:block; width:100%; height:auto; user-select:none; -webkit-user-drag:none; }
+  #scan-overlay-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .scan-handle {
+    position:absolute; width:26px; height:26px; margin-left:-13px; margin-top:-13px;
+    background: rgba(217,138,31,0.9); border:2px solid white; border-radius:50%; cursor:grab; touch-action:none;
+  }
+  .scan-hint { font-size:11px; color:#3E5E75; margin:8px 0; text-align:center; }
+  #scan-review-grid { display:grid; grid-template-columns: repeat(7, 1fr); gap:4px; margin-bottom:12px; }
+  .scan-day-cell {
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:12px; color:#274257;
+    border-radius:6px; border:1px solid rgba(255,255,255,0.7); background:rgba(255,255,255,0.35); cursor:pointer;
+  }
+  .scan-day-cell.empty { visibility:hidden; cursor:default; }
+  .scan-day-cell.checked { background:#D98A1F; color:white; font-weight:600; }
+  #scan-wizard-date { font-size:14px; font-weight:600; color:#274257; margin-bottom:8px; }
+  #scan-wizard-input {
+    width:100%; box-sizing:border-box; font-family:inherit; font-size:14px; color:#274257; padding:8px;
+    border-radius:8px; border:1px solid rgba(0,0,0,0.15); resize:none; margin-bottom:10px;
+  }
+  .scan-wizard-actions { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  #scan-wizard-skip { background:none; border:none; color:#5B7B94; font-size:12px; cursor:pointer; }
   .contact-row { display:flex; align-items:center; justify-content:space-between; font-size:12px; color:#274257; background:rgba(255,255,255,0.5); padding:5px 8px; border-radius:6px; }
   .contact-row button { background:none; border:none; color:#B5493D; cursor:pointer; font-size:13px; }
   .contact-call-link { color:#185FA5; text-decoration:underline; text-underline-offset:2px; cursor:pointer; }
@@ -184,7 +232,11 @@
           <button id="import-btn" title="Importar notas" aria-label="Importar"><i class="ti ti-upload" aria-hidden="true"></i></button>
           <input type="file" id="import-file-input" accept="application/json" style="display:none">
           <button id="contacts-btn" title="Contactos" aria-label="Contactos"><i class="ti ti-address-book" aria-hidden="true"></i></button>
+          <button id="photo-btn" aria-label="Adjuntar foto" title="Adjuntar foto"><i class="ti ti-camera" aria-hidden="true"></i></button>
+          <input type="file" id="photo-file-input" accept="image/*" style="display:none">
           <button id="mic-btn" aria-label="Hablar nota" title="Hablar nota"><i class="ti ti-microphone" aria-hidden="true"></i></button>
+          <button id="scan-btn" aria-label="Escanear calendario" title="Escanear calendario"><i class="ti ti-scan" aria-hidden="true"></i></button>
+          <input type="file" id="scan-file-input" accept="image/*" style="display:none">
         </div>
       </div>
 
@@ -198,6 +250,10 @@
       </div>
 
       <textarea id="note-input" rows="5" autofocus></textarea>
+      <div id="image-preview" style="display:none;">
+        <img id="image-preview-img" alt="">
+        <button id="image-preview-remove" aria-label="Quitar foto" title="Quitar foto"><i class="ti ti-x" aria-hidden="true"></i></button>
+      </div>
       <div id="parse-preview" style="display:none;"><i class="ti ti-bell" aria-hidden="true"></i> <span id="parse-preview-text"></span></div>
 
       <div class="action-row">
@@ -248,6 +304,58 @@
   <div class="footer-note" id="footer-note">Tus notas se guardan en este navegador y este dispositivo.</div>
 </div>
 
+<div id="image-lightbox"><img id="image-lightbox-img" src="" alt=""></div>
+
+<div id="scan-modal">
+  <div class="scan-modal-inner">
+
+    <div id="scan-step-setup" class="scan-step">
+      <div class="scan-modal-header">
+        <span id="scan-title-1">Escanear calendario</span>
+        <button id="scan-close-btn-1" class="icon-btn" aria-label="Cerrar"><i class="ti ti-x" aria-hidden="true"></i></button>
+      </div>
+      <div class="scan-setup-row">
+        <select id="scan-month-select"></select>
+        <select id="scan-year-select"></select>
+      </div>
+      <div id="scan-canvas-wrap">
+        <img id="scan-photo-img" alt="">
+        <svg id="scan-overlay-svg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+        <div class="scan-handle" id="scan-handle-tl"></div>
+        <div class="scan-handle" id="scan-handle-tr"></div>
+        <div class="scan-handle" id="scan-handle-br"></div>
+        <div class="scan-handle" id="scan-handle-bl"></div>
+      </div>
+      <div id="scan-hint" class="scan-hint">Arrastra las 4 esquinas para que coincidan con el borde de la cuadricula del calendario.</div>
+      <button id="scan-detect-btn" class="sky-btn primary">Detectar marcas</button>
+    </div>
+
+    <div id="scan-step-review" class="scan-step" style="display:none;">
+      <div class="scan-modal-header">
+        <span id="scan-title-2">Dias detectados</span>
+        <button id="scan-close-btn-2" class="icon-btn" aria-label="Cerrar"><i class="ti ti-x" aria-hidden="true"></i></button>
+      </div>
+      <div id="scan-review-hint" class="scan-hint">Marca los dias que tienen algo escrito. Puedes corregir lo que la app detecto.</div>
+      <div id="scan-review-grid"></div>
+      <button id="scan-create-btn" class="sky-btn primary">Crear notas</button>
+    </div>
+
+    <div id="scan-step-wizard" class="scan-step" style="display:none;">
+      <div class="scan-modal-header">
+        <span id="scan-wizard-progress"></span>
+        <button id="scan-close-btn-3" class="icon-btn" aria-label="Cerrar"><i class="ti ti-x" aria-hidden="true"></i></button>
+      </div>
+      <div id="scan-wizard-date"></div>
+      <textarea id="scan-wizard-input" rows="3" placeholder="Que anotaste ese dia?"></textarea>
+      <div class="scan-wizard-actions">
+        <button id="scan-wizard-skip">Omitir</button>
+        <button id="scan-wizard-next" class="sky-btn primary">Guardar y siguiente</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <script>
 (function(){
   var STORAGE_KEY = 'mi_alarma_notes_v1';
@@ -288,6 +396,16 @@
       previewWeekly: 'Se repite',
       previewDaily: 'Se repite todos los dias',
       exportIcsTitle: 'Agregar al calendario (.ics)',
+      scanBtnTitle: 'Escanear calendario',
+      scanTitleSetup: 'Escanear calendario',
+      scanTitleReview: 'Dias detectados',
+      scanHint: 'Arrastra las 4 esquinas para que coincidan con el borde de la cuadricula del calendario.',
+      scanDetectBtn: 'Detectar marcas',
+      scanReviewHint: 'Marca los dias que tienen algo escrito. Puedes corregir lo que la app detecto.',
+      scanCreateBtn: 'Crear notas',
+      scanWizardPlaceholder: 'Que anotaste ese dia?',
+      scanWizardSkip: 'Omitir',
+      scanWizardNext: 'Guardar y siguiente',
       searchPlaceholder: 'Buscar en tus notas...',
       noMatches: 'Sin coincidencias.',
       alarmTag: '\u23F0 Alarma',
@@ -329,6 +447,16 @@
       previewWeekly: 'Repeats',
       previewDaily: 'Repeats every day',
       exportIcsTitle: 'Add to calendar (.ics)',
+      scanBtnTitle: 'Scan calendar',
+      scanTitleSetup: 'Scan calendar',
+      scanTitleReview: 'Detected days',
+      scanHint: 'Drag the 4 corners to match the edges of the calendar grid.',
+      scanDetectBtn: 'Detect marks',
+      scanReviewHint: 'Check the days that have something written. You can correct what the app detected.',
+      scanCreateBtn: 'Create notes',
+      scanWizardPlaceholder: 'What did you write that day?',
+      scanWizardSkip: 'Skip',
+      scanWizardNext: 'Save and next',
       searchPlaceholder: 'Search your notes...',
       noMatches: 'No matches.',
       alarmTag: '\u23F0 Alarm',
@@ -375,6 +503,52 @@
   var noteInput = document.getElementById('note-input');
   var parsePreview = document.getElementById('parse-preview');
   var parsePreviewText = document.getElementById('parse-preview-text');
+  var photoBtn = document.getElementById('photo-btn');
+  var photoFileInput = document.getElementById('photo-file-input');
+  var imagePreview = document.getElementById('image-preview');
+  var imagePreviewImg = document.getElementById('image-preview-img');
+  var imagePreviewRemoveBtn = document.getElementById('image-preview-remove');
+  var imageLightbox = document.getElementById('image-lightbox');
+  var imageLightboxImg = document.getElementById('image-lightbox-img');
+  var pendingImage = null;
+  var scanBtn = document.getElementById('scan-btn');
+  var scanFileInput = document.getElementById('scan-file-input');
+  var scanModal = document.getElementById('scan-modal');
+  var scanStepSetup = document.getElementById('scan-step-setup');
+  var scanStepReview = document.getElementById('scan-step-review');
+  var scanStepWizard = document.getElementById('scan-step-wizard');
+  var scanMonthSelect = document.getElementById('scan-month-select');
+  var scanYearSelect = document.getElementById('scan-year-select');
+  var scanCanvasWrap = document.getElementById('scan-canvas-wrap');
+  var scanPhotoImg = document.getElementById('scan-photo-img');
+  var scanOverlaySvg = document.getElementById('scan-overlay-svg');
+  var scanHandles = {
+    tl: document.getElementById('scan-handle-tl'), tr: document.getElementById('scan-handle-tr'),
+    br: document.getElementById('scan-handle-br'), bl: document.getElementById('scan-handle-bl')
+  };
+  var scanHint = document.getElementById('scan-hint');
+  var scanDetectBtn = document.getElementById('scan-detect-btn');
+  var scanReviewHintEl = document.getElementById('scan-review-hint');
+  var scanReviewGrid = document.getElementById('scan-review-grid');
+  var scanCreateBtn = document.getElementById('scan-create-btn');
+  var scanWizardProgress = document.getElementById('scan-wizard-progress');
+  var scanWizardDate = document.getElementById('scan-wizard-date');
+  var scanWizardInput = document.getElementById('scan-wizard-input');
+  var scanWizardSkipBtn = document.getElementById('scan-wizard-skip');
+  var scanWizardNextBtn = document.getElementById('scan-wizard-next');
+  var scanTitle1 = document.getElementById('scan-title-1');
+  var scanTitle2 = document.getElementById('scan-title-2');
+  var scanCloseBtn1 = document.getElementById('scan-close-btn-1');
+  var scanCloseBtn2 = document.getElementById('scan-close-btn-2');
+  var scanCloseBtn3 = document.getElementById('scan-close-btn-3');
+  var scanImageNaturalW = 0, scanImageNaturalH = 0;
+  var scanCorners = null;
+  var scanDraggingHandle = null;
+  var scanReviewDays = [];
+  var scanDetectedInfo = null;
+  var scanWizardQueue = [];
+  var scanWizardIndex = 0;
+  var scanWizardCurrentDate = null;
   var addBtn = document.getElementById('add-btn');
   var cancelEditBtn = document.getElementById('cancel-edit-btn');
   var savedFlash = document.getElementById('saved-flash');
@@ -577,7 +751,7 @@
         target: n.target ? n.target.toISOString() : null,
         dateOnly: n.dateOnly ? n.dateOnly.toISOString() : null,
         recurring: n.recurring, createdAt: n.createdAt.toISOString(),
-        enabled: n.enabled, firedKey: n.firedKey
+        enabled: n.enabled, firedKey: n.firedKey, image: n.image || null
       };
     });
   }
@@ -595,7 +769,7 @@
           target: n.target ? new Date(n.target) : null,
           dateOnly: n.dateOnly ? new Date(n.dateOnly) : null,
           recurring: n.recurring, createdAt: new Date(n.createdAt),
-          enabled: n.enabled, firedKey: n.firedKey
+          enabled: n.enabled, firedKey: n.firedKey, image: n.image || null
         };
       });
       idCounter = notes.reduce(function(max, n){ return Math.max(max, n.id + 1); }, 0);
@@ -1105,6 +1279,319 @@
     else parsePreview.style.display = 'none';
   }
 
+  // ---------- Photo attachment ----------
+  function processImageFile(file, cb){
+    if (!file || !/^image\//.test(file.type)) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var maxDim = 900;
+        var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        cb(canvas.toDataURL('image/jpeg', 0.72));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  function setPendingImage(dataUrl){
+    pendingImage = dataUrl;
+    imagePreviewImg.src = dataUrl;
+    imagePreview.style.display = 'flex';
+  }
+  function clearPendingImage(){
+    pendingImage = null;
+    imagePreviewImg.src = '';
+    imagePreview.style.display = 'none';
+  }
+  function openImageLightbox(src){
+    imageLightboxImg.src = src;
+    imageLightbox.style.display = 'flex';
+  }
+  photoBtn.addEventListener('mousedown', function(e){ e.preventDefault(); });
+  photoBtn.addEventListener('click', function(){ photoFileInput.click(); });
+  photoFileInput.addEventListener('change', function(e){
+    var file = e.target.files[0];
+    photoFileInput.value = '';
+    if (!file) return;
+    processImageFile(file, function(dataUrl){ setPendingImage(dataUrl); vibrate(10); });
+  });
+  imagePreviewRemoveBtn.addEventListener('mousedown', function(e){ e.preventDefault(); });
+  imagePreviewRemoveBtn.addEventListener('click', function(){ clearPendingImage(); vibrate(6); });
+  imageLightbox.addEventListener('click', function(){ imageLightbox.style.display = 'none'; imageLightboxImg.src = ''; });
+  noteInput.addEventListener('paste', function(e){
+    var cd = e.clipboardData || window.clipboardData;
+    if (!cd || !cd.items) return;
+    for (var i = 0; i < cd.items.length; i++){
+      if (cd.items[i].type.indexOf('image') !== -1){
+        var file = cd.items[i].getAsFile();
+        processImageFile(file, function(dataUrl){ setPendingImage(dataUrl); vibrate(10); });
+        e.preventDefault();
+        break;
+      }
+    }
+  });
+
+  // ---------- Scan physical calendar ----------
+  function scanBilinear(corners, u, v){
+    var top = { x: corners.tl.x + (corners.tr.x - corners.tl.x) * u, y: corners.tl.y + (corners.tr.y - corners.tl.y) * u };
+    var bottom = { x: corners.bl.x + (corners.br.x - corners.bl.x) * u, y: corners.bl.y + (corners.br.y - corners.bl.y) * u };
+    return { x: top.x + (bottom.x - top.x) * v, y: top.y + (bottom.y - top.y) * v };
+  }
+  function scanResetCorners(){
+    scanCorners = {
+      tl: { x: 0.08, y: 0.10 }, tr: { x: 0.92, y: 0.10 },
+      br: { x: 0.92, y: 0.92 }, bl: { x: 0.08, y: 0.92 }
+    };
+  }
+  function scanGridInfo(){
+    var year = parseInt(scanYearSelect.value, 10);
+    var month = parseInt(scanMonthSelect.value, 10);
+    var startOffset = new Date(year, month, 1).getDay();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var rows = Math.ceil((daysInMonth + startOffset) / 7);
+    return { year: year, month: month, startOffset: startOffset, daysInMonth: daysInMonth, rows: rows };
+  }
+  function scanPositionHandles(){
+    ['tl','tr','br','bl'].forEach(function(key){
+      scanHandles[key].style.left = (scanCorners[key].x * 100) + '%';
+      scanHandles[key].style.top = (scanCorners[key].y * 100) + '%';
+    });
+  }
+  function scanDrawGridLines(){
+    var info = scanGridInfo();
+    var svgns = 'http://www.w3.org/2000/svg';
+    scanOverlaySvg.innerHTML = '';
+    function addLine(p0, p1){
+      var line = document.createElementNS(svgns, 'line');
+      line.setAttribute('x1', p0.x * 100); line.setAttribute('y1', p0.y * 100);
+      line.setAttribute('x2', p1.x * 100); line.setAttribute('y2', p1.y * 100);
+      line.setAttribute('stroke', '#D98A1F'); line.setAttribute('stroke-width', '0.4');
+      line.setAttribute('vector-effect', 'non-scaling-stroke');
+      scanOverlaySvg.appendChild(line);
+    }
+    for (var r = 0; r <= info.rows; r++){
+      var v = r / info.rows;
+      addLine(scanBilinear(scanCorners, 0, v), scanBilinear(scanCorners, 1, v));
+    }
+    for (var c = 0; c <= 7; c++){
+      var u = c / 7;
+      addLine(scanBilinear(scanCorners, u, 0), scanBilinear(scanCorners, u, 1));
+    }
+  }
+  function scanRedrawOverlay(){
+    scanPositionHandles();
+    scanDrawGridLines();
+  }
+  function scanSetupHandleDrag(key){
+    var el = scanHandles[key];
+    el.addEventListener('pointerdown', function(e){
+      e.preventDefault();
+      scanDraggingHandle = key;
+      try { el.setPointerCapture(e.pointerId); } catch(err){}
+    });
+    el.addEventListener('pointermove', function(e){
+      if (scanDraggingHandle !== key) return;
+      var rect = scanCanvasWrap.getBoundingClientRect();
+      var x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      var y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+      scanCorners[key] = { x: x, y: y };
+      scanRedrawOverlay();
+    });
+    el.addEventListener('pointerup', function(){ scanDraggingHandle = null; });
+    el.addEventListener('pointercancel', function(){ scanDraggingHandle = null; });
+  }
+  scanSetupHandleDrag('tl'); scanSetupHandleDrag('tr'); scanSetupHandleDrag('br'); scanSetupHandleDrag('bl');
+
+  function scanPopulateMonthYear(){
+    scanMonthSelect.innerHTML = '';
+    t('months').forEach(function(m, i){
+      var o = document.createElement('option'); o.value = i; o.textContent = m;
+      scanMonthSelect.appendChild(o);
+    });
+    var now = new Date();
+    scanMonthSelect.value = now.getMonth();
+    scanYearSelect.innerHTML = '';
+    for (var yy = now.getFullYear() - 1; yy <= now.getFullYear() + 1; yy++){
+      var o2 = document.createElement('option'); o2.value = yy; o2.textContent = yy;
+      scanYearSelect.appendChild(o2);
+    }
+    scanYearSelect.value = now.getFullYear();
+  }
+  function scanShowStep(n){
+    scanStepSetup.style.display = n === 1 ? 'block' : 'none';
+    scanStepReview.style.display = n === 2 ? 'block' : 'none';
+    scanStepWizard.style.display = n === 3 ? 'block' : 'none';
+  }
+  function scanApplyLanguage(){
+    scanTitle1.textContent = t('scanTitleSetup');
+    scanTitle2.textContent = t('scanTitleReview');
+    scanHint.textContent = t('scanHint');
+    scanDetectBtn.textContent = t('scanDetectBtn');
+    scanReviewHintEl.textContent = t('scanReviewHint');
+    scanCreateBtn.textContent = t('scanCreateBtn');
+    scanWizardInput.placeholder = t('scanWizardPlaceholder');
+    scanWizardSkipBtn.textContent = t('scanWizardSkip');
+    scanWizardNextBtn.textContent = t('scanWizardNext');
+    scanBtn.title = t('scanBtnTitle'); scanBtn.setAttribute('aria-label', t('scanBtnTitle'));
+  }
+  function scanCloseModal(){
+    scanModal.style.display = 'none';
+    renderAll();
+  }
+  function scanOpenModal(){
+    scanApplyLanguage();
+    scanResetCorners();
+    scanPopulateMonthYear();
+    scanShowStep(1);
+    scanModal.style.display = 'flex';
+    requestAnimationFrame(scanRedrawOverlay);
+  }
+  scanBtn.addEventListener('mousedown', function(e){ e.preventDefault(); });
+  scanBtn.addEventListener('click', function(){ scanFileInput.click(); });
+  scanFileInput.addEventListener('change', function(e){
+    var file = e.target.files[0];
+    scanFileInput.value = '';
+    if (!file || !/^image\//.test(file.type)) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var img = new Image();
+      img.onload = function(){
+        scanImageNaturalW = img.naturalWidth;
+        scanImageNaturalH = img.naturalHeight;
+        scanPhotoImg.src = ev.target.result;
+        scanOpenModal();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  scanMonthSelect.addEventListener('change', scanRedrawOverlay);
+  scanYearSelect.addEventListener('change', scanRedrawOverlay);
+  scanCloseBtn1.addEventListener('click', scanCloseModal);
+  scanCloseBtn2.addEventListener('click', scanCloseModal);
+  scanCloseBtn3.addEventListener('click', scanCloseModal);
+
+  function scanGetGray(imgData, x, y){
+    x = Math.max(0, Math.min(imgData.width - 1, Math.round(x)));
+    y = Math.max(0, Math.min(imgData.height - 1, Math.round(y)));
+    var idx = (y * imgData.width + x) * 4;
+    return 0.299 * imgData.data[idx] + 0.587 * imgData.data[idx + 1] + 0.114 * imgData.data[idx + 2];
+  }
+  function scanRunDetection(){
+    var info = scanGridInfo();
+    scanDetectedInfo = info;
+    var canvas = document.createElement('canvas');
+    var maxDim = 1200;
+    var scale = Math.min(1, maxDim / Math.max(scanImageNaturalW, scanImageNaturalH));
+    canvas.width = Math.round(scanImageNaturalW * scale);
+    canvas.height = Math.round(scanImageNaturalH * scale);
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(scanPhotoImg, 0, 0, canvas.width, canvas.height);
+    var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    var cellReadings = [];
+    for (var r = 0; r < info.rows; r++){
+      for (var c = 0; c < 7; c++){
+        var day = r * 7 + c - info.startOffset + 1;
+        if (day < 1 || day > info.daysInMonth) continue;
+        var sum = 0, count = 0;
+        for (var si = 0; si < 5; si++){
+          for (var sj = 0; sj < 5; sj++){
+            var u = (c + 0.15 + (si / 4) * 0.7) / 7;
+            var v = (r + 0.15 + (sj / 4) * 0.7) / info.rows;
+            var frac = scanBilinear(scanCorners, u, v);
+            sum += scanGetGray(imgData, frac.x * canvas.width, frac.y * canvas.height);
+            count++;
+          }
+        }
+        cellReadings.push({ day: day, gray: sum / count });
+      }
+    }
+    var sortedGray = cellReadings.map(function(c){ return c.gray; }).sort(function(a,b){ return a-b; });
+    var median = sortedGray.length ? sortedGray[Math.floor(sortedGray.length / 2)] : 255;
+    var threshold = median - 20;
+    scanReviewDays = cellReadings.map(function(c){ return { day: c.day, checked: c.gray < threshold }; })
+      .sort(function(a,b){ return a.day - b.day; });
+  }
+  function scanRenderReviewGrid(){
+    scanReviewGrid.innerHTML = '';
+    var info = scanDetectedInfo;
+    for (var i = 0; i < info.startOffset; i++){
+      var blank = document.createElement('div'); blank.className = 'scan-day-cell empty';
+      scanReviewGrid.appendChild(blank);
+    }
+    scanReviewDays.forEach(function(d){
+      var cell = document.createElement('div');
+      cell.className = 'scan-day-cell' + (d.checked ? ' checked' : '');
+      cell.textContent = d.day;
+      cell.addEventListener('click', function(){
+        d.checked = !d.checked;
+        cell.classList.toggle('checked', d.checked);
+      });
+      scanReviewGrid.appendChild(cell);
+    });
+  }
+  scanDetectBtn.addEventListener('click', function(){
+    scanRunDetection();
+    scanRenderReviewGrid();
+    scanShowStep(2);
+  });
+
+  function addNoteForDetectedDate(raw, dateObj){
+    raw = capitalizeFirst(raw);
+    var hasExplicitDate = !!(extractRelativeTime(raw) || extractSpecificDate(raw) || extractBareDayOfMonth(raw) || extractRecurring(raw) || extractDay(raw));
+    var parsed = parseNoteInput(raw);
+    var target = parsed.target, dateOnly = parsed.dateOnly, recurring = parsed.recurring;
+    if (!hasExplicitDate){
+      if (parsed.hour != null){
+        target = new Date(dateObj);
+        target.setHours(parsed.hour, parsed.minute, 0, 0);
+        dateOnly = null;
+      } else {
+        target = null;
+        dateOnly = new Date(dateObj);
+      }
+    }
+    notes.push({
+      id: idCounter++, raw: raw, hour: parsed.hour, minute: parsed.minute, target: target,
+      recurring: recurring, dateOnly: dateOnly, createdAt: new Date(), enabled: true, firedKey: null,
+      image: null
+    });
+  }
+  function scanAdvanceWizard(){
+    if (scanWizardIndex >= scanWizardQueue.length){ scanCloseModal(); return; }
+    var day = scanWizardQueue[scanWizardIndex];
+    var info = scanDetectedInfo;
+    scanWizardCurrentDate = new Date(info.year, info.month, day);
+    scanWizardDate.textContent = t('months')[info.month] + ' ' + day + ', ' + info.year;
+    scanWizardProgress.textContent = (scanWizardIndex + 1) + ' / ' + scanWizardQueue.length;
+    scanWizardInput.value = '';
+    scanWizardInput.focus();
+  }
+  scanCreateBtn.addEventListener('click', function(){
+    scanWizardQueue = scanReviewDays.filter(function(d){ return d.checked; }).map(function(d){ return d.day; });
+    scanWizardIndex = 0;
+    if (!scanWizardQueue.length){ scanCloseModal(); return; }
+    scanShowStep(3);
+    scanAdvanceWizard();
+  });
+  scanWizardNextBtn.addEventListener('click', function(){
+    var text = scanWizardInput.value.trim();
+    if (text) addNoteForDetectedDate(text, scanWizardCurrentDate);
+    scanWizardIndex++;
+    vibrate(10);
+    scanAdvanceWizard();
+  });
+  scanWizardSkipBtn.addEventListener('click', function(){
+    scanWizardIndex++;
+    scanAdvanceWizard();
+  });
+
   function flashSaved(){
     savedFlash.style.opacity = '1';
     setTimeout(function(){ savedFlash.style.opacity = '0'; }, 1200);
@@ -1118,10 +1605,12 @@
     cancelEditBtn.style.display = 'inline';
     vibrate(10);
     updateParsePreview();
+    if (note.image) setPendingImage(note.image); else clearPendingImage();
   }
   function exitEditMode(){
     editingId = null; noteInput.value = ''; addBtn.style.display = 'none'; cancelEditBtn.style.display = 'none';
     updateParsePreview();
+    clearPendingImage();
   }
   cancelEditBtn.addEventListener('click', exitEditMode);
 
@@ -1146,6 +1635,17 @@
       var textEl = document.createElement('span');
       renderNoteText(textEl, note.raw);
       block.appendChild(textEl);
+
+      if (note.image){
+        var thumb = document.createElement('img');
+        thumb.className = 'note-thumb';
+        thumb.src = note.image;
+        thumb.alt = '';
+        thumb.addEventListener('click', function(src){
+          return function(e){ e.stopPropagation(); openImageLightbox(src); };
+        }(note.image));
+        block.appendChild(thumb);
+      }
 
       var actions = document.createElement('div');
       actions.className = 'note-block-actions';
@@ -1281,7 +1781,7 @@
   calPrev.addEventListener('click', function(){ vibrate(6); calState.month--; if (calState.month < 0){ calState.month = 11; calState.year--; } renderCalendar(); });
   calNext.addEventListener('click', function(){ vibrate(6); calState.month++; if (calState.month > 11){ calState.month = 0; calState.year++; } renderCalendar(); });
 
-  function addNewNoteFromRaw(raw){
+  function addNewNoteFromRaw(raw, image){
     raw = capitalizeFirst(raw);
     var parsed = parseNoteInput(raw);
     var createdAt = new Date();
@@ -1290,7 +1790,8 @@
     if (!hasDateInfo) recurring = { type: 'yearly', month: createdAt.getMonth(), day: createdAt.getDate() };
     notes.push({
       id: idCounter++, raw: raw, hour: parsed.hour, minute: parsed.minute, target: parsed.target,
-      recurring: recurring, dateOnly: parsed.dateOnly, createdAt: createdAt, enabled: true, firedKey: null
+      recurring: recurring, dateOnly: parsed.dateOnly, createdAt: createdAt, enabled: true, firedKey: null,
+      image: image || null
     });
     var focusDate = parsed.target || parsed.dateOnly;
     if (focusDate){ calState.year = focusDate.getFullYear(); calState.month = focusDate.getMonth(); selectedDateKey = dateKey(focusDate); }
@@ -1305,6 +1806,7 @@
       var hasDateInfo = parsed.hour != null || parsed.dateOnly || parsed.recurring;
       notes[idx].raw = raw; notes[idx].hour = parsed.hour; notes[idx].minute = parsed.minute;
       notes[idx].target = parsed.target; notes[idx].dateOnly = parsed.dateOnly; notes[idx].firedKey = null;
+      notes[idx].image = pendingImage;
       if (hasDateInfo) notes[idx].recurring = parsed.recurring;
       else if (!notes[idx].recurring || notes[idx].recurring.type !== 'yearly')
         notes[idx].recurring = { type: 'yearly', month: notes[idx].createdAt.getMonth(), day: notes[idx].createdAt.getDate() };
@@ -1331,8 +1833,10 @@
     if (!value) return;
     if (editingId != null){ saveEditedNote(value); exitEditMode(); }
     else {
-      value.split(/\n\s*\n+/).map(function(p){ return p.trim(); }).filter(Boolean).forEach(function(p){ addNewNoteFromRaw(p); });
+      var partsToSave = value.split(/\n\s*\n+/).map(function(p){ return p.trim(); }).filter(Boolean);
+      partsToSave.forEach(function(p, i){ addNewNoteFromRaw(p, i === partsToSave.length - 1 ? pendingImage : null); });
       noteInput.value = '';
+      clearPendingImage();
       updateParsePreview();
     }
     vibrate(20); flashSaved(); renderAll();
@@ -1493,7 +1997,8 @@
             recurring: n.recurring,
             createdAt: n.createdAt ? new Date(n.createdAt) : new Date(),
             enabled: n.enabled !== false,
-            firedKey: null
+            firedKey: null,
+            image: n.image || null
           });
         });
         renderAll();

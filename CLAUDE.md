@@ -28,6 +28,10 @@ Repositorio en GitHub (`Sergioleon47/nudgy`), conectado a Netlify (proyecto "nud
 - Exportar/Importar notas como respaldo (JSON)
 - Persistencia con localStorage (las notas sobreviven a cerrar el navegador)
 - Vibracion de bienvenida en el primer toque, primera vez que se abre la app
+- Vista previa en vivo bajo el textarea: mientras escribes, muestra lo que el parser entendio (fecha, hora, recurrencia) antes de guardar
+- Exportar cualquier nota como evento de calendario (.ics), compatible con el calendario nativo del telefono
+- Adjuntar una foto a una nota (camara o galeria/capturas de pantalla) o pegarla directo con Ctrl+V; se comprime a JPEG antes de guardarse en localStorage, se muestra como miniatura en la nota y se puede ver en grande al tocarla
+- Escanear un calendario fisico: se toma una foto de un calendario de papel escrito a mano, se ajustan las 4 esquinas de la cuadricula sobre la foto, y la app detecta automaticamente (por contraste de tinta, sin IA ni backend) que dias tienen algo escrito. Despues, un asistente rapido pregunta dia por dia que se escribio ahi y crea las notas/alarmas correspondientes
 
 ## Limitaciones conocidas
 
