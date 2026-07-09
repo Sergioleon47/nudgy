@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<!-- saved from url=(0046)file:///C:/Users/sergi/Downloads/index_15.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Alarma</title>
+<link rel="manifest" href="file:///C:/Users/sergi/Downloads/manifest.json">
+<meta name="theme-color" content="#6FBCEE">
+<link rel="stylesheet" href="./index_files/tabler-icons.min.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(180deg, #6FBCEE 0%, #A9DBF5 45%, #EAF6FF 100%);
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .wrap { position: relative; max-width: 760px; margin: 0 auto; }
+  .decor1 { position:absolute; top:-40px; right:-30px; width:160px; height:160px; border-radius:50%; background: radial-gradient(circle, rgba(255,224,150,0.9), rgba(255,224,150,0) 70%); filter:blur(2px); }
+  .header { position:relative; text-align:center; margin-bottom:16px; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .header i { font-size:20px; color:#D98A1F; }
+  .header span { font-size:16px; font-weight:600; color:#274257; }
+  #lang-toggle {
+    position:absolute; right:0; top:-4px; display:flex; gap:2px;
+    background: rgba(255,255,255,0.5); border-radius:8px; padding:2px;
+  }
+  #lang-toggle button {
+    background:none; border:none; color:#5B7B94; font-size:11px; font-weight:600;
+    padding:5px 9px; border-radius:6px; cursor:pointer;
+  }
+  #lang-toggle button.active { background:#D98A1F; color:white; }
+  .cols { position:relative; display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+  .sky-panel {
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(255,255,255,0.7);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 8px 24px rgba(60,110,140,0.15);
+    box-sizing: border-box;
+  }
+  .col-left { flex:1; min-width:300px; max-width:400px; min-height:480px; display:flex; flex-direction:column; }
+  .col-right { flex:1; min-width:280px; max-width:360px; }
+
+  #note-input, #note-input:focus {
+    width:100%; box-sizing:border-box; resize:none; font-family:inherit; font-size:15px; color:#274257;
+    padding:0; border:none; outline:none; box-shadow:none; background:transparent; caret-color:#D98A1F;
+  }
+  .top-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; min-height:14px; gap:8px; }
+  #notif-btn {
+    background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.8); color: #274257;
+    font-size: 11px; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+  }
+  #notif-btn.granted { color: #3E8E5B; border-color: #3E8E5B; }
+  #mic-btn {
+    background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.8); color: #274257;
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
+  }
+  #mic-btn.recording { background: #E2604B; color: white; border-color: #E2604B; animation: mic-pulse 1.2s ease-in-out infinite; }
+  #contacts-btn {
+    background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.8); color: #274257;
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
+  }
+  #contacts-btn.open { background:#D98A1F; color:white; border-color:#D98A1F; }
+  #export-btn, #import-btn {
+    background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.8); color: #274257;
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px;
+  }
+  .contact-row { display:flex; align-items:center; justify-content:space-between; font-size:12px; color:#274257; background:rgba(255,255,255,0.5); padding:5px 8px; border-radius:6px; }
+  .contact-row button { background:none; border:none; color:#B5493D; cursor:pointer; font-size:13px; }
+  .contact-call-link { color:#185FA5; text-decoration:underline; text-underline-offset:2px; cursor:pointer; }
+  .contact-call-link i { font-size:11px; margin-right:2px; }
+  @keyframes mic-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(226,96,75,0.5);} 50%{box-shadow:0 0 0 6px rgba(226,96,75,0);} }
+
+  .sky-btn { background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.8); color: #274257; font-size: 12px; padding: 7px 12px; border-radius: 6px; cursor: pointer; }
+  .sky-btn:hover { background: rgba(255,255,255,0.85); }
+  .sky-btn.primary { background:none; border:none; color:#D98A1F; font-weight:700; text-decoration:underline; text-underline-offset:3px; padding:4px 0; }
+  .sky-btn.danger { border-color:#E2604B; color:#B5493D; font-weight:600; }
+
+  #ringing-banner {
+    display:none; background:rgba(226,96,75,0.15); border:1px solid #E2604B; color:#B5493D;
+    border-radius:10px; padding:14px; margin-bottom:16px; text-align:center;
+  }
+  #ringing-banner.active { animation: pulse-ring 1s ease-in-out infinite; }
+  @keyframes pulse-ring { 0%,100%{box-shadow:0 0 0 0 rgba(226,96,75,0.35);} 50%{box-shadow:0 0 0 8px rgba(226,96,75,0);} }
+  #ringing-label { font-size:15px; font-weight:600; }
+  #ringing-sub { font-size:11px; margin-top:2px; }
+  .ringing-actions { display:flex; gap:6px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
+
+  .action-row { display:flex; align-items:center; gap:12px; margin-top:8px; min-height:22px; }
+  #saved-flash { font-size:12px; color:#3E8E5B; opacity:0; transition:opacity .3s ease; }
+  #mic-status { font-size:12px; color:#B5493D; opacity:0; transition:opacity .2s ease; }
+  #cancel-edit-btn { display:none; background:none; border:none; color:#5B7B94; font-size:12px; cursor:pointer; }
+  #add-btn { display:none; }
+
+  #notes-list { display:flex; flex-direction:column; gap:2px; margin-top:14px; overflow-y:auto; flex:1; max-height:420px; }
+  #search-input {
+    width:100%; margin-top:12px; font-size:13px; color:#274257; background:rgba(255,255,255,0.5);
+    border:1px solid rgba(255,255,255,0.8); border-radius:8px; padding:8px 10px; font-family:inherit;
+  }
+  #search-input::placeholder { color:#7A93A6; }
+  #empty-msg { text-align:center; color:#5B7B94; font-size:13px; padding:10px 0 0; }
+
+  @keyframes note-in { 0%{opacity:0; transform:translateY(-6px);} 100%{opacity:1; transform:translateY(0);} }
+  .note-block { position:relative; padding:10px 92px 10px 4px; font-size:14px; color:#274257; line-height:1.5; white-space:pre-wrap; border-bottom:1px solid rgba(255,255,255,0.5); animation:note-in .25s ease; }
+  .note-block:last-child { border-bottom:none; }
+  .note-block.disabled { opacity:.4; }
+  .note-number { font-size:12px; font-weight:700; color:#D98A1F; margin-right:6px; }
+  .note-block-actions { position:absolute; top:8px; right:0; display:flex; gap:2px; opacity:1; }
+  .icon-btn { background:none; border:none; color:#7A93A6; cursor:pointer; font-size:14px; padding:3px; min-width:26px; min-height:26px; display:inline-flex; align-items:center; justify-content:center; }
+  .icon-btn:hover { color:#D98A1F; }
+  .icon-btn.danger:hover { color:#B5493D; }
+  .icon-btn.bell-off { color:#B9CBD8; }
+  .icon-btn.bell-on { color:#D98A1F; }
+
+  .cal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .cal-head button { background:none; border:none; cursor:pointer; padding:4px; color:#D98A1F; }
+  #cal-title { font-size:13px; font-weight:600; color:#274257; }
+  #cal-weekdays, #cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  #cal-weekdays { margin-bottom:3px; }
+  #cal-grid { grid-auto-rows:36px; }
+  .cal-wd { font-size:9px; text-align:center; color:#7A93A6; font-weight:600; }
+  .cal-cell { position:relative; border-radius:5px; padding:2px 3px; font-size:10px; cursor:pointer; border:1px solid transparent; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .cal-cell:hover { background: rgba(255,255,255,0.6); }
+  .cal-cell.empty { cursor:default; }
+  .cal-cell.today { border-color:#F2C572; box-shadow:0 0 0 1px #F2C572 inset; }
+  .cal-cell.selected { border-color:#D98A1F; }
+  .cal-cell.has-activity { background: rgba(37,211,102,0.22); }
+  .cal-daynum { font-weight:600; color:#274257; font-size:11px; }
+  .cal-activity-icon { font-size:17px; color:#128C4A; }
+  .cal-count { font-size:8px; font-weight:700; color:#128C4A; margin-top:1px; }
+  .cal-mini-note { font-size:11px; padding:5px 7px; border-radius:6px; background:rgba(255,255,255,0.6); color:#274257; white-space:pre-wrap; }
+  .legend { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; font-size:9px; color:#5B7B94; align-items:center; }
+  .legend-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:3px; background:#25D366; }
+  #cal-selected-panel { margin-top:10px; display:none; }
+  #cal-selected-title { font-size:11px; font-weight:600; color:#D98A1F; margin-bottom:5px; }
+  .next-alarm-box { margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.6); }
+  .next-alarm-label { font-size:11px; font-weight:600; color:#7A93A6; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
+  #next-alarm { font-size:13px; color:#274257; line-height:1.4; }
+
+  .footer-note { text-align:center; font-size:11px; color:#274257; opacity:.6; margin-top:16px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="decor1"></div>
+  <div class="header">
+    <i class="ti ti-alarm" aria-hidden="true"></i>
+    <span id="header-title">My Alarm</span>
+    <div id="lang-toggle">
+      <button id="lang-es-btn">ES</button>
+      <button id="lang-en-btn" class="active">EN</button>
+    </div>
+  </div>
+
+  <div class="cols">
+
+    <div class="sky-panel col-left">
+
+      <div id="ringing-banner">
+        <div id="ringing-label">Alarma</div>
+        <div id="ringing-sub"></div>
+        <div class="ringing-actions">
+          <button id="snooze-btn" class="sky-btn">+5 min</button>
+          <button id="remind-later-btn" class="sky-btn">+15 min</button>
+          <button id="dismiss-btn" class="sky-btn danger">Turn off completely</button>
+        </div>
+      </div>
+
+      <div class="top-row">
+        <button id="notif-btn"><i class="ti ti-bell-ringing" aria-hidden="true"></i> <span id="notif-btn-text">Enable notifications</span></button>
+        <div style="display:flex; gap:6px;">
+          <button id="export-btn" title="Exportar notas" aria-label="Exportar"><i class="ti ti-download" aria-hidden="true"></i></button>
+          <button id="import-btn" title="Importar notas" aria-label="Importar"><i class="ti ti-upload" aria-hidden="true"></i></button>
+          <input type="file" id="import-file-input" accept="application/json" style="display:none">
+          <button id="contacts-btn" title="Contactos" aria-label="Contactos"><i class="ti ti-address-book" aria-hidden="true"></i></button>
+          <button id="mic-btn" aria-label="Speak note" title="Speak note"><i class="ti ti-microphone" aria-hidden="true"></i></button>
+        </div>
+      </div>
+
+      <div id="contacts-panel" style="display:none; background:rgba(255,255,255,0.5); border-radius:10px; padding:12px; margin-bottom:10px;">
+        <div id="contacts-list" style="display:flex; flex-direction:column; gap:6px; margin-bottom:8px;"></div>
+        <div style="display:flex; gap:6px;">
+          <input id="contact-name-input" type="text" placeholder="Nombre (ej. Mama)" style="flex:1; font-size:12px; padding:6px 8px; border-radius:6px; border:1px solid rgba(0,0,0,0.15);">
+          <input id="contact-phone-input" type="tel" placeholder="Numero" style="flex:1; font-size:12px; padding:6px 8px; border-radius:6px; border:1px solid rgba(0,0,0,0.15);">
+          <button id="contact-add-btn" class="sky-btn">Agregar</button>
+        </div>
+      </div>
+
+      <textarea id="note-input" rows="5" autofocus=""></textarea>
+
+      <div class="action-row">
+        <button id="add-btn" class="sky-btn primary">Guardar cambios</button>
+        <button id="cancel-edit-btn">Cancel</button>
+        <span id="saved-flash">Saved ✓</span>
+        <span id="mic-status">● Escuchando...</span>
+      </div>
+
+      <input id="search-input" type="text" placeholder="Search your notes...">
+
+      <div id="notes-list"></div>
+      <div id="empty-msg" style="display: block;">You don't have any notes yet.</div>
+
+    </div>
+
+    <div class="sky-panel col-right">
+      <div class="cal-head">
+        <button id="cal-prev"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
+        <div id="cal-title">July 2026</div>
+        <button id="cal-next"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <div id="cal-weekdays"><div class="cal-wd">S</div><div class="cal-wd">M</div><div class="cal-wd">T</div><div class="cal-wd">W</div><div class="cal-wd">T</div><div class="cal-wd">F</div><div class="cal-wd">S</div></div>
+      <div id="cal-grid"><div class="cal-cell empty"></div><div class="cal-cell empty"></div><div class="cal-cell empty"></div><div class="cal-cell"><div class="cal-daynum">1</div></div><div class="cal-cell"><div class="cal-daynum">2</div></div><div class="cal-cell"><div class="cal-daynum">3</div></div><div class="cal-cell"><div class="cal-daynum">4</div></div><div class="cal-cell"><div class="cal-daynum">5</div></div><div class="cal-cell"><div class="cal-daynum">6</div></div><div class="cal-cell today"><div class="cal-daynum">7</div></div><div class="cal-cell"><div class="cal-daynum">8</div></div><div class="cal-cell"><div class="cal-daynum">9</div></div><div class="cal-cell"><div class="cal-daynum">10</div></div><div class="cal-cell"><div class="cal-daynum">11</div></div><div class="cal-cell"><div class="cal-daynum">12</div></div><div class="cal-cell"><div class="cal-daynum">13</div></div><div class="cal-cell"><div class="cal-daynum">14</div></div><div class="cal-cell"><div class="cal-daynum">15</div></div><div class="cal-cell"><div class="cal-daynum">16</div></div><div class="cal-cell"><div class="cal-daynum">17</div></div><div class="cal-cell"><div class="cal-daynum">18</div></div><div class="cal-cell"><div class="cal-daynum">19</div></div><div class="cal-cell"><div class="cal-daynum">20</div></div><div class="cal-cell"><div class="cal-daynum">21</div></div><div class="cal-cell"><div class="cal-daynum">22</div></div><div class="cal-cell"><div class="cal-daynum">23</div></div><div class="cal-cell"><div class="cal-daynum">24</div></div><div class="cal-cell"><div class="cal-daynum">25</div></div><div class="cal-cell"><div class="cal-daynum">26</div></div><div class="cal-cell"><div class="cal-daynum">27</div></div><div class="cal-cell"><div class="cal-daynum">28</div></div><div class="cal-cell"><div class="cal-daynum">29</div></div><div class="cal-cell"><div class="cal-daynum">30</div></div><div class="cal-cell"><div class="cal-daynum">31</div></div></div>
+      <div class="legend">
+        <span><i class="ti ti-cake" style="color:#128C4A;"></i> <span id="legend-birthday">Birthday</span></span>
+        <span><i class="ti ti-users" style="color:#128C4A;"></i> <span id="legend-meeting">Meeting</span></span>
+        <span><i class="ti ti-phone" style="color:#128C4A;"></i> <span id="legend-call">Call</span></span>
+        <span><span class="legend-dot"></span><span id="legend-other">Other</span></span>
+      </div>
+      <div id="cal-selected-panel" style="display: none;">
+        <div id="cal-selected-title"></div>
+        <div id="cal-selected-notes" style="display:flex; flex-direction:column; gap:5px;"></div>
+      </div>
+      <div class="next-alarm-box">
+        <div class="next-alarm-label" id="next-alarm-label">Next alarm</div>
+        <div id="next-alarm">You have no active alarms.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-note" id="footer-note">Your notes are saved in this browser and device.</div>
+</div>
+
+<script>
+(function(){
+  var STORAGE_KEY = 'mi_alarma_notes_v1';
+  var LANG_KEY = 'mi_alarma_lang';
+  var REMIND_AGAIN_MINUTES = 15;
+
+  // ---------- Translations ----------
+  var T = {
+    es: {
+      headerTitle: 'Mi Alarma',
+      langBtn: 'EN',
+      notifDefault: 'Activar notificaciones',
+      notifGranted: 'Notificaciones activas',
+      notifBlocked: 'Notificaciones bloqueadas',
+      micTitle: 'Hablar nota',
+      micUnsupported: 'Tu navegador no soporta dictado por voz.',
+      micListening: '● Escuchando...',
+      saved: 'Guardado ✓',
+      saveChanges: 'Guardar cambios',
+      cancel: 'Cancelar',
+      empty: 'No tienes notas todavia.',
+      ringingSub: 'Si no la apagas del todo, te la recordare cada ' + REMIND_AGAIN_MINUTES + ' min',
+      snooze5: '+5 min',
+      remind15: '+15 min',
+      dismissAll: 'Apagar del todo',
+      legendBirthday: 'Cumpleanos',
+      legendMeeting: 'Reunion',
+      legendCall: 'Llamada',
+      legendOther: 'Otro',
+      nextAlarmLabel: 'Proxima alarma',
+      nextAlarmNone: 'No tienes alarmas activas.',
+      footerNote: 'Tus notas se guardan en este navegador y este dispositivo.',
+      noNotesDay: 'Sin notas este dia.',
+      searchPlaceholder: 'Buscar en tus notas...',
+      noMatches: 'Sin coincidencias.',
+      alarmTag: '\u23F0 Alarma',
+      today: 'Hoy',
+      tomorrow: 'Manana',
+      days: ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'],
+      daysShort: ['D','L','M','M','J','V','S'],
+      months: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    },
+    en: {
+      headerTitle: 'My Alarm',
+      langBtn: 'ES',
+      notifDefault: 'Enable notifications',
+      notifGranted: 'Notifications on',
+      notifBlocked: 'Notifications blocked',
+      micTitle: 'Speak note',
+      micUnsupported: "Your browser doesn't support voice dictation.",
+      micListening: '● Listening...',
+      saved: 'Saved ✓',
+      saveChanges: 'Save changes',
+      cancel: 'Cancel',
+      empty: "You don't have any notes yet.",
+      ringingSub: "If you don't turn it off, I'll remind you every " + REMIND_AGAIN_MINUTES + ' min',
+      snooze5: '+5 min',
+      remind15: '+15 min',
+      dismissAll: 'Turn off completely',
+      legendBirthday: 'Birthday',
+      legendMeeting: 'Meeting',
+      legendCall: 'Call',
+      legendOther: 'Other',
+      nextAlarmLabel: 'Next alarm',
+      nextAlarmNone: 'You have no active alarms.',
+      footerNote: 'Your notes are saved in this browser and device.',
+      noNotesDay: 'No notes this day.',
+      searchPlaceholder: 'Search your notes...',
+      noMatches: 'No matches.',
+      alarmTag: '\u23F0 Alarm',
+      today: 'Today',
+      tomorrow: 'Tomorrow',
+      days: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+      daysShort: ['S','M','T','W','T','F','S'],
+      months: ['January','February','March','April','May','June','July','August','September','October','November','December']
+    }
+  };
+
+  var currentLang = 'es';
+  try { currentLang = localStorage.getItem(LANG_KEY) || 'es'; } catch(e){}
+  function t(key){ return T[currentLang][key]; }
+
+  function vibrate(ms){ try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e){} }
+
+  function capitalizeFirst(s){
+    if (!s) return s;
+    var i = 0;
+    while (i < s.length && /\s/.test(s[i])) i++;
+    if (i >= s.length) return s;
+    return s.slice(0, i) + s.charAt(i).toUpperCase() + s.slice(i + 1);
+  }
+
+  function levenshtein(a, b){
+    a = a.toLowerCase(); b = b.toLowerCase();
+    var m = a.length, n = b.length;
+    var dp = [];
+    for (var i = 0; i <= m; i++){ dp.push([i]); }
+    for (var j = 0; j <= n; j++){ dp[0][j] = j; }
+    for (i = 1; i <= m; i++){
+      for (j = 1; j <= n; j++){
+        if (a[i-1] === b[j-1]) dp[i][j] = dp[i-1][j-1];
+        else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+      }
+    }
+    return dp[m][n];
+  }
+
+  var headerTitle = document.getElementById('header-title');
+  var langEsBtn = document.getElementById('lang-es-btn');
+  var langEnBtn = document.getElementById('lang-en-btn');
+  var noteInput = document.getElementById('note-input');
+  var addBtn = document.getElementById('add-btn');
+  var cancelEditBtn = document.getElementById('cancel-edit-btn');
+  var savedFlash = document.getElementById('saved-flash');
+  var micBtn = document.getElementById('mic-btn');
+  var micStatus = document.getElementById('mic-status');
+  var notifBtn = document.getElementById('notif-btn');
+  var notifBtnText = document.getElementById('notif-btn-text');
+  var listEl = document.getElementById('notes-list');
+  var emptyMsg = document.getElementById('empty-msg');
+  var ringingBanner = document.getElementById('ringing-banner');
+  var ringingLabel = document.getElementById('ringing-label');
+  var ringingSub = document.getElementById('ringing-sub');
+  var snoozeBtn = document.getElementById('snooze-btn');
+  var remindLaterBtn = document.getElementById('remind-later-btn');
+  var dismissBtn = document.getElementById('dismiss-btn');
+  var nextAlarmEl = document.getElementById('next-alarm');
+  var nextAlarmLabelEl = document.getElementById('next-alarm-label');
+  var footerNoteEl = document.getElementById('footer-note');
+  var searchInput = document.getElementById('search-input');
+  var legendBirthdayEl = document.getElementById('legend-birthday');
+  var legendMeetingEl = document.getElementById('legend-meeting');
+  var legendCallEl = document.getElementById('legend-call');
+  var legendOtherEl = document.getElementById('legend-other');
+
+  var calTitle = document.getElementById('cal-title');
+  var calWeekdays = document.getElementById('cal-weekdays');
+  var calGrid = document.getElementById('cal-grid');
+  var calPrev = document.getElementById('cal-prev');
+  var calNext = document.getElementById('cal-next');
+  var calSelectedPanel = document.getElementById('cal-selected-panel');
+  var calSelectedTitle = document.getElementById('cal-selected-title');
+  var calSelectedNotes = document.getElementById('cal-selected-notes');
+
+  var CONTACTS_KEY = 'mi_alarma_contacts_v1';
+  var contacts = [];
+  var contactIdCounter = 0;
+
+  var notes = [];
+  var idCounter = 0;
+  var editingId = null;
+  var audioCtx = null;
+  var ringLoop = null;
+  var currentRinging = null;
+  var ringQueue = [];
+
+  // parsing always understands both languages regardless of UI language
+  var monthNamesEs = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var monthNamesEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var dayWords = {
+    'domingo':0,'lunes':1,'martes':2,'miercoles':3,'miércoles':3,'jueves':4,'viernes':5,'sabado':6,'sábado':6,
+    'sunday':0,'monday':1,'tuesday':2,'wednesday':3,'thursday':4,'friday':5,'saturday':6
+  };
+
+  var today = new Date();
+  var calState = { year: today.getFullYear(), month: today.getMonth() };
+  var selectedDateKey = null;
+
+  // ---------- Apply language to static UI ----------
+  function applyLanguage(){
+    headerTitle.textContent = t('headerTitle');
+    langEsBtn.classList.toggle('active', currentLang === 'es');
+    langEnBtn.classList.toggle('active', currentLang === 'en');
+    micBtn.title = t('micTitle');
+    micBtn.setAttribute('aria-label', t('micTitle'));
+    savedFlash.textContent = t('saved');
+    cancelEditBtn.textContent = t('cancel');
+    emptyMsg.textContent = t('empty');
+    snoozeBtn.textContent = t('snooze5');
+    remindLaterBtn.textContent = t('remind15');
+    dismissBtn.textContent = t('dismissAll');
+    legendBirthdayEl.textContent = t('legendBirthday');
+    legendMeetingEl.textContent = t('legendMeeting');
+    legendCallEl.textContent = t('legendCall');
+    legendOtherEl.textContent = t('legendOther');
+    nextAlarmLabelEl.textContent = t('nextAlarmLabel');
+    footerNoteEl.textContent = t('footerNote');
+    searchInput.placeholder = t('searchPlaceholder');
+    if (editingId != null) addBtn.textContent = t('saveChanges');
+    updateNotifBtn();
+    document.documentElement.lang = currentLang;
+  }
+  function setLanguage(lang){
+    if (lang === currentLang) return;
+    currentLang = lang;
+    try { localStorage.setItem(LANG_KEY, currentLang); } catch(e){}
+    applyLanguage();
+    renderAll();
+  }
+  langEsBtn.addEventListener('click', function(){ setLanguage('es'); });
+  langEnBtn.addEventListener('click', function(){ setLanguage('en'); });
+
+  // ---------- Contacts ----------
+  var contactsBtn = document.getElementById('contacts-btn');
+  var contactsPanel = document.getElementById('contacts-panel');
+  var contactsList = document.getElementById('contacts-list');
+  var contactNameInput = document.getElementById('contact-name-input');
+  var contactPhoneInput = document.getElementById('contact-phone-input');
+  var contactAddBtn = document.getElementById('contact-add-btn');
+
+  function saveContacts(){
+    try { localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts)); } catch(e){}
+  }
+  function loadContacts(){
+    try {
+      var raw = localStorage.getItem(CONTACTS_KEY);
+      if (!raw) return;
+      contacts = JSON.parse(raw);
+      contactIdCounter = contacts.reduce(function(max, c){ return Math.max(max, c.id + 1); }, 0);
+    } catch(e){}
+  }
+  function renderContacts(){
+    contactsList.innerHTML = '';
+    if (!contacts.length){
+      var none = document.createElement('div');
+      none.style.cssText = 'font-size:12px; color:#5B7B94;';
+      none.textContent = currentLang === 'en' ? 'No contacts yet.' : 'No tienes contactos todavia.';
+      contactsList.appendChild(none);
+      return;
+    }
+    contacts.forEach(function(c){
+      var row = document.createElement('div');
+      row.className = 'contact-row';
+      var label = document.createElement('span');
+      label.textContent = c.name + ' — ' + c.phone;
+      row.appendChild(label);
+      var delBtn = document.createElement('button');
+      delBtn.innerHTML = '<i class="ti ti-trash" aria-hidden="true"></i>';
+      delBtn.setAttribute('aria-label', 'Delete contact');
+      delBtn.addEventListener('click', function(){
+        contacts = contacts.filter(function(x){ return x.id !== c.id; });
+        saveContacts(); renderContacts(); renderAll();
+      });
+      row.appendChild(delBtn);
+      contactsList.appendChild(row);
+    });
+  }
+  contactsBtn.addEventListener('click', function(){
+    var open = contactsPanel.style.display === 'block';
+    contactsPanel.style.display = open ? 'none' : 'block';
+    contactsBtn.classList.toggle('open', !open);
+    if (!open) renderContacts();
+  });
+  contactAddBtn.addEventListener('click', function(){
+    var name = contactNameInput.value.trim();
+    var phone = contactPhoneInput.value.trim();
+    if (!name || !phone) return;
+    contacts.push({ id: contactIdCounter++, name: name, phone: phone });
+    saveContacts();
+    contactNameInput.value = '';
+    contactPhoneInput.value = '';
+    renderContacts();
+    renderAll();
+    vibrate(10);
+  });
+
+  function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  function renderNoteText(container, rawText){
+    container.innerHTML = '';
+    if (!contacts.length){ container.appendChild(document.createTextNode(rawText)); return; }
+    var names = contacts.slice().sort(function(a,b){ return b.name.length - a.name.length; }).map(function(c){ return c.name; });
+    var pattern = names.map(escapeRegExp).join('|');
+    if (!pattern){ container.appendChild(document.createTextNode(rawText)); return; }
+    var re = new RegExp('\\b(' + pattern + ')\\b', 'gi');
+    var lastIndex = 0;
+    var match;
+    while ((match = re.exec(rawText))){
+      if (match.index > lastIndex) container.appendChild(document.createTextNode(rawText.slice(lastIndex, match.index)));
+      var matchedName = match[0];
+      var contact = contacts.find(function(c){ return c.name.toLowerCase() === matchedName.toLowerCase(); });
+      var a = document.createElement('a');
+      a.href = 'tel:' + contact.phone;
+      a.className = 'contact-call-link';
+      a.title = currentLang === 'en' ? 'Call' : 'Llamar';
+      var icon = document.createElement('i');
+      icon.className = 'ti ti-phone';
+      icon.setAttribute('aria-hidden', 'true');
+      a.appendChild(icon);
+      a.appendChild(document.createTextNode(matchedName));
+      a.addEventListener('click', function(e){ e.stopPropagation(); });
+      container.appendChild(a);
+      lastIndex = re.lastIndex;
+    }
+    if (lastIndex < rawText.length) container.appendChild(document.createTextNode(rawText.slice(lastIndex)));
+  }
+
+  // ---------- Persistence ----------
+  function serializeNotes(){
+    return notes.map(function(n){
+      return {
+        id: n.id, raw: n.raw, hour: n.hour, minute: n.minute,
+        target: n.target ? n.target.toISOString() : null,
+        dateOnly: n.dateOnly ? n.dateOnly.toISOString() : null,
+        recurring: n.recurring, createdAt: n.createdAt.toISOString(),
+        enabled: n.enabled, firedKey: n.firedKey
+      };
+    });
+  }
+  function saveToStorage(){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeNotes())); } catch(e){}
+  }
+  function loadFromStorage(){
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      var arr = JSON.parse(raw);
+      notes = arr.map(function(n){
+        return {
+          id: n.id, raw: n.raw, hour: n.hour, minute: n.minute,
+          target: n.target ? new Date(n.target) : null,
+          dateOnly: n.dateOnly ? new Date(n.dateOnly) : null,
+          recurring: n.recurring, createdAt: new Date(n.createdAt),
+          enabled: n.enabled, firedKey: n.firedKey
+        };
+      });
+      idCounter = notes.reduce(function(max, n){ return Math.max(max, n.id + 1); }, 0);
+    } catch(e){}
+  }
+
+  // ---------- Notifications ----------
+  function updateNotifBtn(){
+    if (!('Notification' in window)){ notifBtn.style.display = 'none'; return; }
+    if (Notification.permission === 'granted'){
+      notifBtn.classList.add('granted');
+      notifBtnText.textContent = t('notifGranted');
+    } else if (Notification.permission === 'denied'){
+      notifBtnText.textContent = t('notifBlocked');
+      notifBtn.disabled = true;
+    } else {
+      notifBtnText.textContent = t('notifDefault');
+    }
+  }
+  notifBtn.addEventListener('click', function(){
+    if (!('Notification' in window)) return;
+    Notification.requestPermission().then(function(){ updateNotifBtn(); });
+  });
+
+  function sendSystemNotification(note){
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if (!navigator.serviceWorker) return;
+    navigator.serviceWorker.ready.then(function(reg){
+      reg.showNotification(t('alarmTag'), {
+        body: note.raw,
+        tag: 'alarm-' + note.id,
+        actions: [
+          { action: 'snooze5', title: t('snooze5') },
+          { action: 'remind15', title: t('remind15') },
+          { action: 'dismiss', title: t('dismissAll') }
+        ]
+      });
+    }).catch(function(){});
+  }
+
+  // ---------- Activity icons ----------
+  function pickActivityIcon(text){
+    var tt = text.toLowerCase();
+    if (/cumple|cumpleañ|cumpleanos|birthday/.test(tt)) return 'ti-cake';
+    if (/reuni[oó]n|junta|meeting/.test(tt)) return 'ti-users';
+    if (/llamar|llamada|\bcall\b/.test(tt)) return 'ti-phone';
+    if (/pagar|pago|payment|factura|bill\b/.test(tt)) return 'ti-credit-card';
+    if (/doctor|m[eé]dico|cita|appointment|endocrin/.test(tt)) return 'ti-stethoscope';
+    if (/viaje|vuelo|flight|trip\b/.test(tt)) return 'ti-plane';
+    return null;
+  }
+  function dayActivityIcon(dayNotes){
+    for (var i = 0; i < dayNotes.length; i++){
+      var icon = pickActivityIcon(dayNotes[i].raw);
+      if (icon) return icon;
+    }
+    return null;
+  }
+
+  // ---------- Voice ----------
+  var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var recognition = null;
+  var recording = false;
+  function buildRecognition(){
+    var r = new SpeechRecognition();
+    r.lang = currentLang === 'en' ? 'en-US' : 'es-ES';
+    r.continuous = true; r.interimResults = false;
+    r.onresult = function(e){
+      var transcript = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) transcript += e.results[i][0].transcript;
+      transcript = transcript.trim();
+      if (transcript){
+        var needsSpace = noteInput.value && !/[\n\s]$/.test(noteInput.value);
+        noteInput.value += (needsSpace ? ' ' : '') + transcript;
+        noteInput.dispatchEvent(new Event('input'));
+      }
+    };
+    r.onerror = function(){ stopRecording(); };
+    r.onend = function(){ if (recording){ try { r.start(); } catch(e){ stopRecording(); } } };
+    return r;
+  }
+  function startRecording(){
+    if (!SpeechRecognition){
+      micStatus.textContent = t('micUnsupported');
+      micStatus.style.opacity = '1';
+      setTimeout(function(){ micStatus.style.opacity = '0'; }, 2500);
+      return;
+    }
+    recognition = buildRecognition();
+    recording = true;
+    micBtn.classList.add('recording');
+    micStatus.textContent = t('micListening');
+    micStatus.style.opacity = '1';
+    try { recognition.start(); } catch(e){}
+    vibrate(10);
+  }
+  function stopRecording(){
+    recording = false;
+    micBtn.classList.remove('recording');
+    micStatus.style.opacity = '0';
+    if (recognition){ try { recognition.stop(); } catch(e){} }
+  }
+  micBtn.addEventListener('click', function(){ if (recording) stopRecording(); else startRecording(); });
+
+  // ---------- Parsing (bilingual, independent of UI language) ----------
+  function extractRelativeTime(text){
+    var m = text.match(/\b(?:en|in)\s+(\d{1,3})\s*(minutos?|mins?|horas?|hrs?|hours?|minutes?|dias?|d[ií]as?|days?|semanas?|weeks?)\b/i);
+    if (!m) return null;
+    var qty = parseInt(m[1], 10);
+    var unit = m[2].toLowerCase();
+    var target = new Date();
+    if (unit.indexOf('h') === 0){
+      target.setHours(target.getHours() + qty);
+    } else if (unit.indexOf('semana') === 0 || unit.indexOf('week') === 0){
+      target.setDate(target.getDate() + qty * 7);
+    } else if (unit.indexOf('dia') === 0 || unit.indexOf('día') === 0 || unit.indexOf('day') === 0){
+      target.setDate(target.getDate() + qty);
+    } else {
+      target.setMinutes(target.getMinutes() + qty);
+    }
+    return { match: m[0], target: target };
+  }
+  function extractSpecificDate(text){
+    var reThisMonth = /\b(\d{1,2})\s*de\s*este\s*mes\b/i;
+    var m0 = reThisMonth.exec(text);
+    if (m0){
+      var day0 = parseInt(m0[1], 10);
+      if (day0 >= 1 && day0 <= 31) return { match: m0[0], day: day0, month: new Date().getMonth(), year: null };
+    }
+    var re = /\b(\d{1,2})\s*(?:de|of)?\s*([a-záéíóúñA-Z]+)(?:\s*(?:de|,)?\s*(\d{4}))?\b/gi;
+    var m;
+    while ((m = re.exec(text))){
+      var day = parseInt(m[1], 10);
+      if (day < 1 || day > 31) continue;
+      var word = m[2].toLowerCase();
+      var monthIdx = -1;
+      for (var mi = 0; mi < 12; mi++){
+        var baseEs = monthNamesEs[mi].toLowerCase();
+        var baseEn = monthNamesEn[mi].toLowerCase();
+        if (word[0] === baseEs[0] && levenshtein(word, baseEs) <= 1){ monthIdx = mi; break; }
+        if (word[0] === baseEn[0] && levenshtein(word, baseEn) <= 1){ monthIdx = mi; break; }
+      }
+      if (monthIdx === -1) continue;
+      var year = m[3] ? parseInt(m[3], 10) : null;
+      return { match: m[0], day: day, month: monthIdx, year: year };
+    }
+    return null;
+  }
+  function extractBareDayOfMonth(text){
+    var m = text.match(/\bon\s+the\s+(\d{1,2})(?:st|nd|rd|th)?\b/i);
+    if (m){ var d1 = parseInt(m[1], 10); if (d1 >= 1 && d1 <= 31) return { match: m[0], day: d1 }; }
+    m = text.match(/\bel\s+(\d{1,2})\b(?!\s*de)/i);
+    if (m){ var d2 = parseInt(m[1], 10); if (d2 >= 1 && d2 <= 31) return { match: m[0], day: d2 }; }
+    m = text.match(/\b(\d{1,2})(?:st|nd|rd|th)\b/i);
+    if (m){ var d3 = parseInt(m[1], 10); if (d3 >= 1 && d3 <= 31) return { match: m[0], day: d3 }; }
+    return null;
+  }
+  function resolveBareDay(day){
+    var now = new Date();
+    var candidate = new Date(now.getFullYear(), now.getMonth(), day);
+    var todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (candidate < todayOnly) candidate.setMonth(candidate.getMonth() + 1);
+    return candidate;
+  }
+  function extractWeekdayRange(text){
+    var names = Object.keys(dayWords).join('|');
+    var m = text.match(new RegExp('\\bde\\s+(' + names + ')\\s+a\\s+(' + names + ')\\b', 'i'));
+    if (!m) m = text.match(new RegExp('\\b(' + names + ')\\s+to\\s+(' + names + ')\\b', 'i'));
+    if (!m) return null;
+    var start = dayWords[m[1].toLowerCase()];
+    var end = dayWords[m[2].toLowerCase()];
+    if (start == null || end == null) return null;
+    var days = [];
+    var i = start;
+    for (var c = 0; c < 7; c++){
+      days.push(i);
+      if (i === end) break;
+      i = (i + 1) % 7;
+    }
+    return { match: m[0], days: days };
+  }
+
+  function extractRecurringExact(text){
+    var range = extractWeekdayRange(text);
+    if (range) return { type: 'weekly', weekdays: range.days, match: range.match };
+    var m = text.match(/todos\s+los\s+d[ií]as/i) || text.match(/\bevery\s*day\b/i);
+    if (m) return { type: 'daily', match: m[0] };
+    for (var name in dayWords){
+      var re = new RegExp('todos\\s+los\\s+' + name + 's?\\b', 'i');
+      var found = text.match(re);
+      if (found) return { type: 'weekly', weekdays: [dayWords[name]], match: found[0] };
+      var re2 = new RegExp('\\bevery\\s+' + name + 's?\\b', 'i');
+      var found2 = text.match(re2);
+      if (found2) return { type: 'weekly', weekdays: [dayWords[name]], match: found2[0] };
+    }
+    return null;
+  }
+  function fuzzyRecurringMatch(text){
+    var tokens = [];
+    var re = /[a-záéíóúñA-Z]+/gi, m;
+    while ((m = re.exec(text))) tokens.push({ w: m[0], i: m.index });
+    for (var i = 0; i < tokens.length - 2; i++){
+      var w0 = tokens[i].w.toLowerCase();
+      var w1 = tokens[i+1].w.toLowerCase();
+      var w2raw = tokens[i+2].w;
+      var w2 = w2raw.toLowerCase().replace(/s$/, '');
+      if (w0[0] === 't' && w1[0] === 'l' && levenshtein(w0, 'todos') <= 1 && levenshtein(w1, 'los') <= 1){
+        if (levenshtein(w2, 'dia') <= 1) return { type: 'daily', match: text.slice(tokens[i].i, tokens[i+2].i + w2raw.length) };
+        for (var name in dayWords){
+          var base = name.replace(/s$/, '');
+          if (base.length >= 4 && w2[0] === base[0] && levenshtein(w2, base) <= 1){
+            return { type: 'weekly', weekdays: [dayWords[name]], match: text.slice(tokens[i].i, tokens[i+2].i + w2raw.length) };
+          }
+        }
+      }
+    }
+    return null;
+  }
+  function extractRecurring(text){ return extractRecurringExact(text) || fuzzyRecurringMatch(text); }
+  function extractTime(text){
+    var m = text.match(/(\d{1,2}):(\d{2})\s*(a\.?\s?m\.?|p\.?\s?m\.?)?/i);
+    if (m) return { match: m[0], h: parseInt(m[1],10), mnt: parseInt(m[2],10), mer: m[3] ? m[3].replace(/[.\s]/g,'').toLowerCase() : null };
+    m = text.match(/\b(\d{1,2})\s*(a\.?\s?m\.?|p\.?\s?m\.?)\b/i);
+    if (m) return { match: m[0], h: parseInt(m[1],10), mnt: 0, mer: m[2].replace(/[.\s]/g,'').toLowerCase() };
+    m = text.match(/a\s*las\s*(\d{3,4})\b/i);
+    if (m){
+      var d = m[1];
+      var h = d.length === 3 ? parseInt(d.slice(0,1),10) : parseInt(d.slice(0,2),10);
+      var mnt = d.length === 3 ? parseInt(d.slice(1),10) : parseInt(d.slice(2),10);
+      return { match: m[0], h: h, mnt: mnt, mer: null };
+    }
+    m = text.match(/(?:a\s*las|\bat)\s*(\d{1,2})\b/i);
+    if (m) return { match: m[0], h: parseInt(m[1],10), mnt: 0, mer: null };
+    return null;
+  }
+  function extractDayExact(text){
+    var low = text.toLowerCase();
+    if (/\bhoy\b|\btoday\b/.test(low)) return { type: 'today', match: low.match(/\bhoy\b|\btoday\b/)[0] };
+    var mm = low.match(/\bma[nñ]ana\b|\btomorrow\b/);
+    if (mm) return { type: 'tomorrow', match: mm[0] };
+    for (var name in dayWords){
+      var re = new RegExp('\\b' + name + '\\b', 'i');
+      var found = text.match(re);
+      if (found) return { type: 'weekday', weekday: dayWords[name], match: found[0] };
+    }
+    return null;
+  }
+  function fuzzyDayMatch(text){
+    var tokens = text.match(/[a-záéíóúñA-Z]+/gi) || [];
+    for (var i = 0; i < tokens.length; i++){
+      var raw = tokens[i];
+      var wNorm = raw.toLowerCase().replace('ñ', 'n');
+      if (wNorm[0] === 'm' && levenshtein(wNorm, 'manana') <= 1) return { type: 'tomorrow', match: raw };
+      if (wNorm[0] === 't' && levenshtein(wNorm, 'tomorrow') <= 1) return { type: 'tomorrow', match: raw };
+      var w = raw.toLowerCase().replace(/s$/, '');
+      for (var name in dayWords){
+        var base = name.replace(/s$/, '');
+        if (base.length >= 4 && w[0] === base[0] && levenshtein(w, base) <= 1) return { type: 'weekday', weekday: dayWords[name], match: raw };
+      }
+    }
+    return null;
+  }
+  function extractDay(text){ return extractDayExact(text) || fuzzyDayMatch(text); }
+  function normalizeHour(h, mnt, mer){
+    if (mer === 'pm' && h < 12) h += 12;
+    if (mer === 'am' && h === 12) h = 0;
+    if (h === 24) h = 0;
+    if (h < 0 || h > 23 || mnt < 0 || mnt > 59) return null;
+    return { h: h, mnt: mnt };
+  }
+  function resolveTarget(h, mnt, dayInfo){
+    var now = new Date();
+    var target = new Date(now);
+    target.setHours(h, mnt, 0, 0);
+    if (dayInfo){
+      if (dayInfo.type === 'tomorrow') target.setDate(target.getDate() + 1);
+      else if (dayInfo.type === 'weekday'){
+        var diff = (dayInfo.weekday - now.getDay() + 7) % 7;
+        if (diff === 0 && target <= now) diff = 7;
+        target.setDate(now.getDate() + diff);
+      }
+    } else {
+      if (target <= now) target.setDate(target.getDate() + 1);
+    }
+    return target;
+  }
+  function resolveDayOnly(dayInfo){
+    var now = new Date();
+    var todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (dayInfo.type === 'tomorrow'){ var d = new Date(todayOnly); d.setDate(d.getDate() + 1); return d; }
+    if (dayInfo.type === 'today') return todayOnly;
+    if (dayInfo.type === 'weekday'){
+      var diff = (dayInfo.weekday - now.getDay() + 7) % 7;
+      if (diff === 0) diff = 7;
+      var d2 = new Date(todayOnly); d2.setDate(d2.getDate() + diff); return d2;
+    }
+    return todayOnly;
+  }
+  function relativeDayLabel(target){
+    var now = new Date();
+    var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var t1 = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+    var diffDays = Math.round((t1 - t0) / 86400000);
+    if (diffDays === 0) return t('today');
+    if (diffDays === 1) return t('tomorrow');
+    return t('days')[target.getDay()];
+  }
+  function formatHM2(h, m){
+    var suffix = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12; if (h12 === 0) h12 = 12;
+    return h12 + ':' + m.toString().padStart(2, '0') + ' ' + suffix;
+  }
+  function formatHM(target){ return formatHM2(target.getHours(), target.getMinutes()); }
+  function dateKey(d){ return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); }
+
+  function playBeep(freq){
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = freq || 880;
+      gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.35);
+    } catch(e){}
+  }
+  var typeFreq = { once: 880, daily: 660, weekly: 740, yearly: 990 };
+  function noteTypeKey(n){ return n.recurring ? n.recurring.type : 'once'; }
+
+  function nextOccurrence(note){
+    if (note.hour == null || !note.enabled) return null;
+    var now = new Date();
+    if (!note.recurring) return note.target;
+    if (note.recurring.type === 'daily'){
+      var t = new Date(now); t.setHours(note.hour, note.minute, 0, 0);
+      if (t <= now) t.setDate(t.getDate() + 1);
+      return t;
+    }
+    if (note.recurring.type === 'weekly'){
+      var wds = note.recurring.weekdays;
+      var best = null;
+      for (var wi = 0; wi < wds.length; wi++){
+        var t2 = new Date(now); t2.setHours(note.hour, note.minute, 0, 0);
+        var diff = (wds[wi] - now.getDay() + 7) % 7;
+        if (diff === 0 && t2 <= now) diff = 7;
+        t2.setDate(now.getDate() + diff);
+        if (!best || t2 < best) best = t2;
+      }
+      return best;
+    }
+    if (note.recurring.type === 'yearly'){
+      var t3 = new Date(now.getFullYear(), note.recurring.month, note.recurring.day, note.hour, note.minute, 0, 0);
+      if (t3 <= now) t3 = new Date(now.getFullYear() + 1, note.recurring.month, note.recurring.day, note.hour, note.minute, 0, 0);
+      return t3;
+    }
+    return null;
+  }
+  function renderNextAlarm(){
+    var upcoming = notes.map(function(n){ return { n: n, t: nextOccurrence(n) }; }).filter(function(x){ return x.t; });
+    upcoming.sort(function(a, b){ return a.t - b.t; });
+    if (!upcoming.length){ nextAlarmEl.textContent = t('nextAlarmNone'); return; }
+    var top = upcoming[0];
+    nextAlarmEl.innerHTML = '<strong>' + relativeDayLabel(top.t) + ' ' + formatHM(top.t) + '</strong><br>' + top.n.raw;
+  }
+
+  function parseNoteInput(raw){
+    var relInfo = extractRelativeTime(raw);
+    var specificDateInfo = relInfo ? null : extractSpecificDate(raw);
+    var bareDayInfo = (relInfo || specificDateInfo) ? null : extractBareDayOfMonth(raw);
+    var recurInfo = (relInfo || specificDateInfo || bareDayInfo) ? null : extractRecurring(raw);
+    var dayInfo = (relInfo || specificDateInfo || bareDayInfo || recurInfo) ? null : extractDay(raw);
+    var timeInfoRaw = extractTime(raw);
+    var hour = null, minute = null, target = null, recurring = null, dateOnly = null;
+
+    if (relInfo){
+      target = relInfo.target;
+      if (timeInfoRaw){
+        var relNorm = normalizeHour(timeInfoRaw.h, timeInfoRaw.mnt, timeInfoRaw.mer);
+        if (relNorm) target.setHours(relNorm.h, relNorm.mnt, 0, 0);
+      }
+      hour = target.getHours(); minute = target.getMinutes();
+      return { text: raw, hour: hour, minute: minute, target: target, recurring: null, dateOnly: null };
+    }
+    if (timeInfoRaw){
+      var norm = normalizeHour(timeInfoRaw.h, timeInfoRaw.mnt, timeInfoRaw.mer);
+      if (norm){ hour = norm.h; minute = norm.mnt; }
+    }
+    if (specificDateInfo){
+      if (specificDateInfo.year != null){
+        var dateObj = new Date(specificDateInfo.year, specificDateInfo.month, specificDateInfo.day);
+        if (hour != null){ target = new Date(dateObj); target.setHours(hour, minute, 0, 0); }
+        else dateOnly = dateObj;
+      } else {
+        recurring = { type: 'yearly', month: specificDateInfo.month, day: specificDateInfo.day };
+      }
+    } else if (bareDayInfo){
+      var bareDate = resolveBareDay(bareDayInfo.day);
+      if (hour != null){ target = new Date(bareDate); target.setHours(hour, minute, 0, 0); }
+      else dateOnly = bareDate;
+    } else if (hour != null){
+      if (recurInfo){
+        recurring = recurInfo.type === 'daily' ? { type: 'daily' } : { type: 'weekly', weekdays: recurInfo.weekdays };
+      } else if (dayInfo){
+        var resolved = resolveDayOnly(dayInfo);
+        target = new Date(resolved); target.setHours(hour, minute, 0, 0);
+      } else {
+        target = resolveTarget(hour, minute, null);
+      }
+    } else if (recurInfo){
+      recurring = recurInfo.type === 'daily' ? { type: 'daily' } : { type: 'weekly', weekdays: recurInfo.weekdays };
+    } else if (dayInfo){
+      dateOnly = resolveDayOnly(dayInfo);
+    }
+    return { text: raw, hour: hour, minute: minute, target: target, recurring: recurring, dateOnly: dateOnly };
+  }
+
+  function flashSaved(){
+    savedFlash.style.opacity = '1';
+    setTimeout(function(){ savedFlash.style.opacity = '0'; }, 1200);
+  }
+  function loadForEdit(note){
+    editingId = note.id;
+    noteInput.value = note.raw;
+    noteInput.focus();
+    addBtn.style.display = 'inline-block';
+    addBtn.textContent = t('saveChanges');
+    cancelEditBtn.style.display = 'inline';
+    vibrate(10);
+  }
+  function exitEditMode(){
+    editingId = null; noteInput.value = ''; addBtn.style.display = 'none'; cancelEditBtn.style.display = 'none';
+  }
+  cancelEditBtn.addEventListener('click', exitEditMode);
+
+  function renderNotes(){
+    listEl.innerHTML = '';
+    var ordered = notes.slice().reverse();
+    if (searchTerm){
+      ordered = ordered.filter(function(n){ return n.raw.toLowerCase().indexOf(searchTerm) !== -1; });
+    }
+    emptyMsg.style.display = ordered.length ? 'none' : 'block';
+    emptyMsg.textContent = searchTerm ? t('noMatches') : t('empty');
+    ordered.forEach(function(note, idx){
+      var block = document.createElement('div');
+      block.className = 'note-block' + (note.hour != null && !note.enabled ? ' disabled' : '');
+
+      var numSpan = document.createElement('span');
+      numSpan.className = 'note-number';
+      numSpan.textContent = (idx + 1) + '.';
+      block.appendChild(numSpan);
+
+      var textEl = document.createElement('span');
+      renderNoteText(textEl, note.raw);
+      block.appendChild(textEl);
+
+      var actions = document.createElement('div');
+      actions.className = 'note-block-actions';
+
+      var hasAlarmCapability = note.hour != null || (note.recurring && note.recurring.type === 'yearly');
+      if (hasAlarmCapability){
+        var bellBtn = document.createElement('button');
+        bellBtn.className = 'icon-btn ' + (note.enabled ? 'bell-on' : 'bell-off');
+        bellBtn.innerHTML = '<i class="ti ' + (note.enabled ? 'ti-bell' : 'ti-bell-off') + '" aria-hidden="true"></i>';
+        bellBtn.setAttribute('aria-label', note.enabled ? 'Alarm off' : 'Alarm on');
+        bellBtn.addEventListener('click', function(){
+          note.enabled = !note.enabled; note.firedKey = null; vibrate(8); renderAll();
+        });
+        actions.appendChild(bellBtn);
+      }
+
+      var editBtn = document.createElement('button');
+      editBtn.className = 'icon-btn';
+      editBtn.innerHTML = '<i class="ti ti-pencil" aria-hidden="true"></i>';
+      editBtn.setAttribute('aria-label', 'Edit');
+      editBtn.addEventListener('click', function(){ loadForEdit(note); });
+      actions.appendChild(editBtn);
+
+      var delBtn = document.createElement('button');
+      delBtn.className = 'icon-btn danger';
+      delBtn.innerHTML = '<i class="ti ti-trash" aria-hidden="true"></i>';
+      delBtn.setAttribute('aria-label', 'Delete');
+      delBtn.addEventListener('click', function(){
+        vibrate([8,30,8]);
+        notes = notes.filter(function(n){ return n.id !== note.id; });
+        if (editingId === note.id) exitEditMode();
+        renderAll();
+      });
+      actions.appendChild(delBtn);
+
+      block.appendChild(actions);
+      listEl.appendChild(block);
+    });
+  }
+
+  function renderCalendar(){
+    calTitle.textContent = t('months')[calState.month] + ' ' + calState.year;
+    calWeekdays.innerHTML = '';
+    t('daysShort').forEach(function(w){
+      var el = document.createElement('div'); el.className = 'cal-wd'; el.textContent = w;
+      calWeekdays.appendChild(el);
+    });
+    calGrid.innerHTML = '';
+    var firstDay = new Date(calState.year, calState.month, 1);
+    var startOffset = firstDay.getDay();
+    var daysInMonth = new Date(calState.year, calState.month + 1, 0).getDate();
+    for (var i = 0; i < startOffset; i++){
+      var blank = document.createElement('div'); blank.className = 'cal-cell empty'; calGrid.appendChild(blank);
+    }
+    for (var day = 1; day <= daysInMonth; day++){
+      var cellDate = new Date(calState.year, calState.month, day);
+      var key = dateKey(cellDate);
+      var cell = document.createElement('div');
+      cell.className = 'cal-cell';
+      if (key === dateKey(today)) cell.classList.add('today');
+      if (key === selectedDateKey) cell.classList.add('selected');
+      var dayNotes = notesForDate(cellDate);
+      var icon = dayNotes.length ? dayActivityIcon(dayNotes) : null;
+      if (dayNotes.length) cell.classList.add('has-activity');
+      if (icon){
+        var iconEl = document.createElement('i');
+        iconEl.className = 'ti ' + icon + ' cal-activity-icon';
+        iconEl.setAttribute('aria-hidden', 'true');
+        cell.appendChild(iconEl);
+      } else {
+        var num = document.createElement('div'); num.className = 'cal-daynum'; num.textContent = day;
+        cell.appendChild(num);
+      }
+      if (dayNotes.length > 1){
+        var countEl = document.createElement('div'); countEl.className = 'cal-count'; countEl.textContent = dayNotes.length;
+        cell.appendChild(countEl);
+      }
+      cell.addEventListener('click', function(k){
+        return function(){
+          vibrate(6);
+          selectedDateKey = (selectedDateKey === k) ? null : k;
+          renderCalendar(); renderSelectedPanel();
+        };
+      }(key));
+      calGrid.appendChild(cell);
+    }
+  }
+
+  function notesForDate(d){
+    return notes.filter(function(n){
+      if (n.dateOnly && dateKey(n.dateOnly) === dateKey(d)) return true;
+      if (n.recurring){
+        if (n.recurring.type === 'daily') return true;
+        if (n.recurring.type === 'weekly') return n.recurring.weekdays.indexOf(d.getDay()) !== -1;
+        if (n.recurring.type === 'yearly') return n.recurring.month === d.getMonth() && n.recurring.day === d.getDate();
+      }
+      if (n.hour == null) return false;
+      return dateKey(n.target) === dateKey(d);
+    });
+  }
+
+  function renderSelectedPanel(){
+    if (!selectedDateKey){ calSelectedPanel.style.display = 'none'; return; }
+    var parts = selectedDateKey.split('-');
+    var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    var dayNotes = notesForDate(d);
+    calSelectedPanel.style.display = 'block';
+    calSelectedTitle.textContent = t('days')[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth()+1);
+    calSelectedNotes.innerHTML = '';
+    if (!dayNotes.length){
+      var none = document.createElement('div'); none.className = 'cal-mini-note'; none.textContent = t('noNotesDay');
+      calSelectedNotes.appendChild(none); return;
+    }
+    dayNotes.forEach(function(n){
+      var el = document.createElement('div'); el.className = 'cal-mini-note';
+      renderNoteText(el, n.raw);
+      calSelectedNotes.appendChild(el);
+    });
+  }
+
+  function renderAll(){
+    renderNotes(); renderCalendar(); renderSelectedPanel(); renderNextAlarm(); saveToStorage();
+  }
+
+  calPrev.addEventListener('click', function(){ vibrate(6); calState.month--; if (calState.month < 0){ calState.month = 11; calState.year--; } renderCalendar(); });
+  calNext.addEventListener('click', function(){ vibrate(6); calState.month++; if (calState.month > 11){ calState.month = 0; calState.year++; } renderCalendar(); });
+
+  function addNewNoteFromRaw(raw){
+    raw = capitalizeFirst(raw);
+    var parsed = parseNoteInput(raw);
+    var createdAt = new Date();
+    var hasDateInfo = parsed.hour != null || parsed.dateOnly || parsed.recurring;
+    var recurring = parsed.recurring;
+    if (!hasDateInfo) recurring = { type: 'yearly', month: createdAt.getMonth(), day: createdAt.getDate() };
+    notes.push({
+      id: idCounter++, raw: raw, hour: parsed.hour, minute: parsed.minute, target: parsed.target,
+      recurring: recurring, dateOnly: parsed.dateOnly, createdAt: createdAt, enabled: true, firedKey: null
+    });
+    var focusDate = parsed.target || parsed.dateOnly;
+    if (focusDate){ calState.year = focusDate.getFullYear(); calState.month = focusDate.getMonth(); selectedDateKey = dateKey(focusDate); }
+    else if (recurring && recurring.type === 'yearly'){ calState.month = recurring.month; selectedDateKey = calState.year + '-' + (recurring.month+1) + '-' + recurring.day; }
+  }
+
+  function saveEditedNote(raw){
+    raw = capitalizeFirst(raw);
+    var idx = notes.findIndex(function(n){ return n.id === editingId; });
+    if (idx !== -1){
+      var parsed = parseNoteInput(raw);
+      var hasDateInfo = parsed.hour != null || parsed.dateOnly || parsed.recurring;
+      notes[idx].raw = raw; notes[idx].hour = parsed.hour; notes[idx].minute = parsed.minute;
+      notes[idx].target = parsed.target; notes[idx].dateOnly = parsed.dateOnly; notes[idx].firedKey = null;
+      if (hasDateInfo) notes[idx].recurring = parsed.recurring;
+      else if (!notes[idx].recurring || notes[idx].recurring.type !== 'yearly')
+        notes[idx].recurring = { type: 'yearly', month: notes[idx].createdAt.getMonth(), day: notes[idx].createdAt.getDate() };
+    }
+  }
+
+  noteInput.addEventListener('input', function(){
+    if (editingId != null) return;
+    var value = noteInput.value;
+    if (!/\n\s*\n/.test(value)) return;
+    var parts = value.split(/\n\s*\n+/);
+    var remaining = parts.pop();
+    var completed = parts.map(function(p){ return p.trim(); }).filter(Boolean);
+    if (!completed.length) return;
+    completed.forEach(function(p){ addNewNoteFromRaw(p); });
+    noteInput.value = remaining;
+    vibrate(20); flashSaved(); renderAll();
+  });
+  noteInput.addEventListener('blur', function(){
+    if (recording) return;
+    var value = noteInput.value.trim();
+    if (!value) return;
+    if (editingId != null){ saveEditedNote(value); exitEditMode(); }
+    else {
+      value.split(/\n\s*\n+/).map(function(p){ return p.trim(); }).filter(Boolean).forEach(function(p){ addNewNoteFromRaw(p); });
+      noteInput.value = '';
+    }
+    vibrate(20); flashSaved(); renderAll();
+  });
+  addBtn.addEventListener('click', function(){
+    var raw = noteInput.value.trim();
+    if (!raw || editingId == null) return;
+    saveEditedNote(raw); exitEditMode(); vibrate(20); flashSaved(); renderAll();
+  });
+
+  function startRinging(note){
+    currentRinging = note;
+    var typeKey = noteTypeKey(note);
+    ringingLabel.textContent = '\u23F0 ' + note.raw;
+    ringingSub.textContent = note.recurring ? '' : t('ringingSub');
+    ringingBanner.style.display = 'block';
+    ringingBanner.classList.add('active');
+    playBeep(typeFreq[typeKey]);
+    vibrate([200,100,200,100,200]);
+    sendSystemNotification(note);
+    ringLoop = setInterval(function(){ playBeep(typeFreq[typeKey]); }, 700);
+  }
+  function stopRinging(){
+    ringingBanner.style.display = 'none';
+    ringingBanner.classList.remove('active');
+    if (ringLoop) clearInterval(ringLoop);
+    currentRinging = null;
+    if (ringQueue.length){ var next = ringQueue.shift(); setTimeout(function(){ startRinging(next); }, 400); }
+  }
+  dismissBtn.addEventListener('click', function(){
+    vibrate(10);
+    if (currentRinging) currentRinging.enabled = false;
+    stopRinging(); renderAll();
+  });
+  remindLaterBtn.addEventListener('click', function(){
+    vibrate(10);
+    if (currentRinging && !currentRinging.recurring && currentRinging.hour != null){
+      var t2 = new Date(); t2.setMinutes(t2.getMinutes() + REMIND_AGAIN_MINUTES);
+      currentRinging.target = t2; currentRinging.hour = t2.getHours(); currentRinging.minute = t2.getMinutes(); currentRinging.firedKey = null;
+    }
+    stopRinging(); renderAll();
+  });
+  snoozeBtn.addEventListener('click', function(){
+    vibrate(10);
+    if (currentRinging && !currentRinging.recurring){
+      var t3 = new Date(); t3.setMinutes(t3.getMinutes() + 5);
+      currentRinging.target = t3; currentRinging.hour = t3.getHours(); currentRinging.minute = t3.getMinutes(); currentRinging.firedKey = null;
+    }
+    stopRinging(); renderAll();
+  });
+
+  setInterval(function(){
+    var now = new Date();
+    var todayKey = dateKey(now);
+    notes.forEach(function(note){
+      if (note.hour == null || !note.enabled) return;
+      if (note === currentRinging) return;
+      if (ringQueue.indexOf(note) !== -1) return;
+      var minuteMatches = now.getHours() === note.hour && now.getMinutes() === note.minute;
+      var dayMatches = false;
+      if (note.recurring){
+        if (note.recurring.type === 'daily') dayMatches = true;
+        else if (note.recurring.type === 'weekly') dayMatches = note.recurring.weekdays.indexOf(now.getDay()) !== -1;
+        else if (note.recurring.type === 'yearly') dayMatches = note.recurring.month === now.getMonth() && note.recurring.day === now.getDate();
+      } else {
+        dayMatches = dateKey(note.target) === todayKey;
+      }
+      if (minuteMatches && dayMatches && note.firedKey !== todayKey){
+        note.firedKey = todayKey;
+        if (currentRinging) ringQueue.push(note); else startRinging(note);
+      }
+    });
+    renderNextAlarm();
+  }, 1000);
+
+  // ---------- Init ----------
+  loadFromStorage();
+  loadContacts();
+  applyLanguage();
+  renderAll();
+
+  if ('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+    navigator.serviceWorker.addEventListener('message', function(event){
+      var data = event.data;
+      if (!data || data.type !== 'notif-action') return;
+      var idMatch = /alarm-(\d+)/.exec(data.tag || '');
+      if (!idMatch) return;
+      var id = parseInt(idMatch[1], 10);
+      var note = notes.find(function(n){ return n.id === id; });
+      if (!note) return;
+      if (data.action === 'snooze5'){
+        if (!note.recurring){
+          var ts = new Date(); ts.setMinutes(ts.getMinutes() + 5);
+          note.target = ts; note.hour = ts.getHours(); note.minute = ts.getMinutes(); note.firedKey = null;
+        }
+      } else if (data.action === 'remind15'){
+        if (!note.recurring && note.hour != null){
+          var tr = new Date(); tr.setMinutes(tr.getMinutes() + REMIND_AGAIN_MINUTES);
+          note.target = tr; note.hour = tr.getHours(); note.minute = tr.getMinutes(); note.firedKey = null;
+        }
+      } else {
+        note.enabled = false;
+      }
+      if (currentRinging === note) stopRinging();
+      renderAll();
+    });
+  }
+
+  // ---------- Export / Import ----------
+  var exportBtn = document.getElementById('export-btn');
+  var importBtn = document.getElementById('import-btn');
+  var importFileInput = document.getElementById('import-file-input');
+
+  exportBtn.addEventListener('click', function(){
+    var data = JSON.stringify(serializeNotes(), null, 2);
+    var blob = new Blob([data], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'mi-alarma-backup-' + dateKey(new Date()) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    vibrate(10);
+  });
+
+  importBtn.addEventListener('click', function(){ importFileInput.click(); });
+  importFileInput.addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try {
+        var arr = JSON.parse(ev.target.result);
+        arr.forEach(function(n){
+          notes.push({
+            id: idCounter++,
+            raw: n.raw,
+            hour: n.hour,
+            minute: n.minute,
+            target: n.target ? new Date(n.target) : null,
+            dateOnly: n.dateOnly ? new Date(n.dateOnly) : null,
+            recurring: n.recurring,
+            createdAt: n.createdAt ? new Date(n.createdAt) : new Date(),
+            enabled: n.enabled !== false,
+            firedKey: null
+          });
+        });
+        renderAll();
+        flashSaved();
+        vibrate(20);
+      } catch(err){
+        alert(currentLang === 'en' ? 'Invalid backup file.' : 'Archivo de respaldo invalido.');
+      }
+    };
+    reader.readAsText(file);
+    importFileInput.value = '';
+  });
+
+  // ---------- Search ----------
+  var searchTerm = '';
+  searchInput.addEventListener('input', function(){
+    searchTerm = searchInput.value.trim().toLowerCase();
+    renderNotes();
+  });
+})();
+</script>
+
+
+</body></html>

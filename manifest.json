@@ -1,0 +1,15 @@
+{
+  "name": "Mi Alarma",
+  "short_name": "Mi Alarma",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#6FBCEE",
+  "theme_color": "#6FBCEE",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
