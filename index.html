@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<!-- saved from url=(0046)file:///C:/Users/sergi/Downloads/index_15.html -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="es">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mi Alarma</title>
-<link rel="manifest" href="file:///C:/Users/sergi/Downloads/manifest.json">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#6FBCEE">
-<link rel="stylesheet" href="./index_files/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
 <style>
   * { box-sizing: border-box; }
   body {
@@ -103,6 +103,10 @@
   }
   #search-input::placeholder { color:#7A93A6; }
   #empty-msg { text-align:center; color:#5B7B94; font-size:13px; padding:10px 0 0; }
+  #onboarding-hint { display:none; text-align:center; margin-top:14px; }
+  #onboarding-hint .hint-line {
+    font-size:12px; color:#7A93A6; font-style:italic; margin-bottom:8px;
+  }
 
   @keyframes note-in { 0%{opacity:0; transform:translateY(-6px);} 100%{opacity:1; transform:translateY(0);} }
   .note-block { position:relative; padding:10px 92px 10px 4px; font-size:14px; color:#274257; line-height:1.5; white-space:pre-wrap; border-bottom:1px solid rgba(255,255,255,0.5); animation:note-in .25s ease; }
@@ -150,10 +154,10 @@
   <div class="decor1"></div>
   <div class="header">
     <i class="ti ti-alarm" aria-hidden="true"></i>
-    <span id="header-title">My Alarm</span>
+    <span id="header-title">Mi Alarma</span>
     <div id="lang-toggle">
       <button id="lang-es-btn">ES</button>
-      <button id="lang-en-btn" class="active">EN</button>
+      <button id="lang-en-btn">EN</button>
     </div>
   </div>
 
@@ -167,18 +171,18 @@
         <div class="ringing-actions">
           <button id="snooze-btn" class="sky-btn">+5 min</button>
           <button id="remind-later-btn" class="sky-btn">+15 min</button>
-          <button id="dismiss-btn" class="sky-btn danger">Turn off completely</button>
+          <button id="dismiss-btn" class="sky-btn danger">Apagar del todo</button>
         </div>
       </div>
 
       <div class="top-row">
-        <button id="notif-btn"><i class="ti ti-bell-ringing" aria-hidden="true"></i> <span id="notif-btn-text">Enable notifications</span></button>
+        <button id="notif-btn"><i class="ti ti-bell-ringing" aria-hidden="true"></i> <span id="notif-btn-text">Activar notificaciones</span></button>
         <div style="display:flex; gap:6px;">
           <button id="export-btn" title="Exportar notas" aria-label="Exportar"><i class="ti ti-download" aria-hidden="true"></i></button>
           <button id="import-btn" title="Importar notas" aria-label="Importar"><i class="ti ti-upload" aria-hidden="true"></i></button>
           <input type="file" id="import-file-input" accept="application/json" style="display:none">
           <button id="contacts-btn" title="Contactos" aria-label="Contactos"><i class="ti ti-address-book" aria-hidden="true"></i></button>
-          <button id="mic-btn" aria-label="Speak note" title="Speak note"><i class="ti ti-microphone" aria-hidden="true"></i></button>
+          <button id="mic-btn" aria-label="Hablar nota" title="Hablar nota"><i class="ti ti-microphone" aria-hidden="true"></i></button>
         </div>
       </div>
 
@@ -191,49 +195,54 @@
         </div>
       </div>
 
-      <textarea id="note-input" rows="5" autofocus=""></textarea>
+      <textarea id="note-input" rows="5" autofocus></textarea>
 
       <div class="action-row">
         <button id="add-btn" class="sky-btn primary">Guardar cambios</button>
-        <button id="cancel-edit-btn">Cancel</button>
-        <span id="saved-flash">Saved ✓</span>
+        <button id="cancel-edit-btn">Cancelar</button>
+        <span id="saved-flash">Guardado ✓</span>
         <span id="mic-status">● Escuchando...</span>
       </div>
 
-      <input id="search-input" type="text" placeholder="Search your notes...">
+      <input id="search-input" type="text" placeholder="Buscar en tus notas...">
 
       <div id="notes-list"></div>
-      <div id="empty-msg" style="display: block;">You don't have any notes yet.</div>
+      <div id="empty-msg">No tienes notas todavia.</div>
+      <div id="onboarding-hint">
+        <div class="hint-line" id="hint-line-1">"Llamar al doctor el lunes a las 3pm"</div>
+        <div class="hint-line" id="hint-line-2">"Cumpleanos de Ana el 15 de agosto"</div>
+        <div class="hint-line" id="hint-line-3">"Pagar la luz en 3 dias"</div>
+      </div>
 
     </div>
 
     <div class="sky-panel col-right">
       <div class="cal-head">
         <button id="cal-prev"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
-        <div id="cal-title">July 2026</div>
+        <div id="cal-title">Mes</div>
         <button id="cal-next"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
       </div>
-      <div id="cal-weekdays"><div class="cal-wd">S</div><div class="cal-wd">M</div><div class="cal-wd">T</div><div class="cal-wd">W</div><div class="cal-wd">T</div><div class="cal-wd">F</div><div class="cal-wd">S</div></div>
-      <div id="cal-grid"><div class="cal-cell empty"></div><div class="cal-cell empty"></div><div class="cal-cell empty"></div><div class="cal-cell"><div class="cal-daynum">1</div></div><div class="cal-cell"><div class="cal-daynum">2</div></div><div class="cal-cell"><div class="cal-daynum">3</div></div><div class="cal-cell"><div class="cal-daynum">4</div></div><div class="cal-cell"><div class="cal-daynum">5</div></div><div class="cal-cell"><div class="cal-daynum">6</div></div><div class="cal-cell today"><div class="cal-daynum">7</div></div><div class="cal-cell"><div class="cal-daynum">8</div></div><div class="cal-cell"><div class="cal-daynum">9</div></div><div class="cal-cell"><div class="cal-daynum">10</div></div><div class="cal-cell"><div class="cal-daynum">11</div></div><div class="cal-cell"><div class="cal-daynum">12</div></div><div class="cal-cell"><div class="cal-daynum">13</div></div><div class="cal-cell"><div class="cal-daynum">14</div></div><div class="cal-cell"><div class="cal-daynum">15</div></div><div class="cal-cell"><div class="cal-daynum">16</div></div><div class="cal-cell"><div class="cal-daynum">17</div></div><div class="cal-cell"><div class="cal-daynum">18</div></div><div class="cal-cell"><div class="cal-daynum">19</div></div><div class="cal-cell"><div class="cal-daynum">20</div></div><div class="cal-cell"><div class="cal-daynum">21</div></div><div class="cal-cell"><div class="cal-daynum">22</div></div><div class="cal-cell"><div class="cal-daynum">23</div></div><div class="cal-cell"><div class="cal-daynum">24</div></div><div class="cal-cell"><div class="cal-daynum">25</div></div><div class="cal-cell"><div class="cal-daynum">26</div></div><div class="cal-cell"><div class="cal-daynum">27</div></div><div class="cal-cell"><div class="cal-daynum">28</div></div><div class="cal-cell"><div class="cal-daynum">29</div></div><div class="cal-cell"><div class="cal-daynum">30</div></div><div class="cal-cell"><div class="cal-daynum">31</div></div></div>
+      <div id="cal-weekdays"></div>
+      <div id="cal-grid"></div>
       <div class="legend">
-        <span><i class="ti ti-cake" style="color:#128C4A;"></i> <span id="legend-birthday">Birthday</span></span>
-        <span><i class="ti ti-users" style="color:#128C4A;"></i> <span id="legend-meeting">Meeting</span></span>
-        <span><i class="ti ti-phone" style="color:#128C4A;"></i> <span id="legend-call">Call</span></span>
-        <span><span class="legend-dot"></span><span id="legend-other">Other</span></span>
+        <span><i class="ti ti-cake" style="color:#128C4A;"></i> <span id="legend-birthday">Cumpleanos</span></span>
+        <span><i class="ti ti-users" style="color:#128C4A;"></i> <span id="legend-meeting">Reunion</span></span>
+        <span><i class="ti ti-phone" style="color:#128C4A;"></i> <span id="legend-call">Llamada</span></span>
+        <span><span class="legend-dot"></span><span id="legend-other">Otro</span></span>
       </div>
-      <div id="cal-selected-panel" style="display: none;">
+      <div id="cal-selected-panel">
         <div id="cal-selected-title"></div>
         <div id="cal-selected-notes" style="display:flex; flex-direction:column; gap:5px;"></div>
       </div>
       <div class="next-alarm-box">
-        <div class="next-alarm-label" id="next-alarm-label">Next alarm</div>
-        <div id="next-alarm">You have no active alarms.</div>
+        <div class="next-alarm-label" id="next-alarm-label">Proxima alarma</div>
+        <div id="next-alarm"></div>
       </div>
     </div>
 
   </div>
 
-  <div class="footer-note" id="footer-note">Your notes are saved in this browser and device.</div>
+  <div class="footer-note" id="footer-note">Tus notas se guardan en este navegador y este dispositivo.</div>
 </div>
 
 <script>
@@ -269,6 +278,9 @@
       nextAlarmNone: 'No tienes alarmas activas.',
       footerNote: 'Tus notas se guardan en este navegador y este dispositivo.',
       noNotesDay: 'Sin notas este dia.',
+      hint1: '"Llamar al doctor el lunes a las 3pm"',
+      hint2: '"Cumpleanos de Ana el 15 de agosto"',
+      hint3: '"Pagar la luz en 3 dias"',
       searchPlaceholder: 'Buscar en tus notas...',
       noMatches: 'Sin coincidencias.',
       alarmTag: '\u23F0 Alarma',
@@ -303,6 +315,9 @@
       nextAlarmNone: 'You have no active alarms.',
       footerNote: 'Your notes are saved in this browser and device.',
       noNotesDay: 'No notes this day.',
+      hint1: '"Call the doctor Monday at 3pm"',
+      hint2: '"Ana\u2019s birthday on August 15"',
+      hint3: '"Pay the electric bill in 3 days"',
       searchPlaceholder: 'Search your notes...',
       noMatches: 'No matches.',
       alarmTag: '\u23F0 Alarm',
@@ -356,6 +371,10 @@
   var notifBtnText = document.getElementById('notif-btn-text');
   var listEl = document.getElementById('notes-list');
   var emptyMsg = document.getElementById('empty-msg');
+  var onboardingHint = document.getElementById('onboarding-hint');
+  var hintLine1 = document.getElementById('hint-line-1');
+  var hintLine2 = document.getElementById('hint-line-2');
+  var hintLine3 = document.getElementById('hint-line-3');
   var ringingBanner = document.getElementById('ringing-banner');
   var ringingLabel = document.getElementById('ringing-label');
   var ringingSub = document.getElementById('ringing-sub');
@@ -424,6 +443,9 @@
     nextAlarmLabelEl.textContent = t('nextAlarmLabel');
     footerNoteEl.textContent = t('footerNote');
     searchInput.placeholder = t('searchPlaceholder');
+    hintLine1.textContent = t('hint1');
+    hintLine2.textContent = t('hint2');
+    hintLine3.textContent = t('hint3');
     if (editingId != null) addBtn.textContent = t('saveChanges');
     updateNotifBtn();
     document.documentElement.lang = currentLang;
@@ -1004,6 +1026,7 @@
     }
     emptyMsg.style.display = ordered.length ? 'none' : 'block';
     emptyMsg.textContent = searchTerm ? t('noMatches') : t('empty');
+    onboardingHint.style.display = (!notes.length && !searchTerm) ? 'block' : 'none';
     ordered.forEach(function(note, idx){
       var block = document.createElement('div');
       block.className = 'note-block' + (note.hour != null && !note.enabled ? ' disabled' : '');
@@ -1273,6 +1296,19 @@
   applyLanguage();
   renderAll();
 
+  // Welcome vibration on the very first tap, first time ever opening the app
+  var FIRST_OPEN_KEY = 'mi_alarma_opened_before';
+  try {
+    if (!localStorage.getItem(FIRST_OPEN_KEY)) {
+      var firstTapHandler = function(){
+        vibrate([15, 40, 25]);
+        try { localStorage.setItem(FIRST_OPEN_KEY, '1'); } catch(e){}
+        document.removeEventListener('pointerdown', firstTapHandler);
+      };
+      document.addEventListener('pointerdown', firstTapHandler, { once: true });
+    }
+  } catch(e){}
+
   if ('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(function(){});
     navigator.serviceWorker.addEventListener('message', function(event){
@@ -1361,6 +1397,5 @@
   });
 })();
 </script>
-
-
-</body></html>
+</body>
+</html>
