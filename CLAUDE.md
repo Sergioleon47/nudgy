@@ -42,4 +42,4 @@ Repositorio en GitHub (`Sergioleon47/nudgy`), conectado a Netlify (proyecto "nud
 
 ## Estilo de diseno
 
-Tema "cielo soleado": degradado celeste de fondo, paneles blancos semi-transparentes, acento color naranja/ambar (`#D98A1F`), texto en azul oscuro (`#274257`). Iconos de Tabler Icons via CDN.
+Tema "cielo soleado" con toques tipo iOS: degradado celeste de fondo (`#6FBCEE` a `#EAF6FF`) con la campana radiante decorativa en la esquina superior derecha, pero las tarjetas ahora son blancas solidas (no semi-transparentes) con sombra suave y bordes bien redondeados (20px), botones circulares grises para iconos y botones tipo pildora solida para la accion principal (en vez de texto subrayado). Acento color naranja/ambar (`#D98A1F`), texto principal casi negro (`#1C1C1E`), texto secundario gris (`#8E8E93`). El dia de hoy en el calendario se resalta con un relleno ambar solido en vez de un borde. Iconos de Tabler Icons via CDN.
