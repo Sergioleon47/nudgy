@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mi Alarma</title>
+<title>Nudgy</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#6FBCEE">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
@@ -19,7 +19,8 @@
   .wrap { position: relative; max-width: 760px; margin: 0 auto; }
   .decor1 { position:absolute; top:-40px; right:-30px; width:160px; height:160px; pointer-events:none; }
   .header { position:relative; text-align:center; margin-bottom:20px; display:flex; align-items:center; justify-content:center; gap:8px; }
-  .header i { font-size:22px; color:#D98A1F; }
+  .header i { font-size:22px; color:#A9600F; }
+  .header-bell { width:26px; height:26px; flex-shrink:0; }
   .header span { font-size:20px; font-weight:700; color:#1C1C1E; letter-spacing:-0.2px; }
   #lang-toggle {
     position:absolute; right:0; top:-2px; display:flex; gap:2px;
@@ -291,8 +292,12 @@
     </g>
   </svg>
   <div class="header">
-    <i class="ti ti-alarm" aria-hidden="true"></i>
-    <span id="header-title">Mi Alarma</span>
+    <svg class="header-bell" viewBox="110 55 290 290" aria-hidden="true">
+      <path d="M256 96 c-64 0 -104 48 -104 128 v54 c0 22 -10 40 -30 56 h268 c-20 -16 -30 -34 -30 -56 v-54 c0 -80 -40 -128 -104 -128 z"
+            fill="url(#decorBell)" stroke="#A9600F" stroke-width="6" stroke-linejoin="round"/>
+      <circle cx="256" cy="88" r="20" fill="#D98A1F" stroke="#A9600F" stroke-width="6"/>
+    </svg>
+    <span id="header-title">Nudgy</span>
     <div id="lang-toggle">
       <button id="lang-es-btn">ES</button>
       <button id="lang-en-btn">EN</button>
@@ -522,7 +527,7 @@
   // ---------- Translations ----------
   var T = {
     es: {
-      headerTitle: 'Mi Alarma',
+      headerTitle: 'Nudgy',
       langBtn: 'EN',
       notifDefault: 'Activar notificaciones',
       notifGranted: 'Notificaciones activas',
@@ -553,6 +558,14 @@
       previewWeekly: 'Se repite',
       previewDaily: 'Se repite todos los dias',
       exportIcsTitle: 'Agregar al calendario (.ics)',
+      editLabel: 'Editar',
+      deleteLabel: 'Eliminar',
+      alarmOffLabel: 'Apagar alarma',
+      alarmOnLabel: 'Prender alarma',
+      exportBtnTitle: 'Exportar notas',
+      importBtnTitle: 'Importar notas',
+      contactsBtnTitle: 'Contactos',
+      photoBtnTitle: 'Adjuntar foto',
       scanBtnTitle: 'Escanear calendario',
       scanTitleSetup: 'Escanear calendario',
       scanTitleReview: 'Dias detectados',
@@ -594,7 +607,7 @@
       months: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
     },
     en: {
-      headerTitle: 'My Alarm',
+      headerTitle: 'Nudgy',
       langBtn: 'ES',
       notifDefault: 'Enable notifications',
       notifGranted: 'Notifications on',
@@ -625,6 +638,14 @@
       previewWeekly: 'Repeats',
       previewDaily: 'Repeats every day',
       exportIcsTitle: 'Add to calendar (.ics)',
+      editLabel: 'Edit',
+      deleteLabel: 'Delete',
+      alarmOffLabel: 'Turn alarm off',
+      alarmOnLabel: 'Turn alarm on',
+      exportBtnTitle: 'Export notes',
+      importBtnTitle: 'Import notes',
+      contactsBtnTitle: 'Contacts',
+      photoBtnTitle: 'Attach photo',
       scanBtnTitle: 'Scan calendar',
       scanTitleSetup: 'Scan calendar',
       scanTitleReview: 'Detected days',
@@ -702,6 +723,8 @@
   var noteInput = document.getElementById('note-input');
   var parsePreview = document.getElementById('parse-preview');
   var parsePreviewText = document.getElementById('parse-preview-text');
+  var exportBtn = document.getElementById('export-btn');
+  var importBtn = document.getElementById('import-btn');
   var photoBtn = document.getElementById('photo-btn');
   var photoFileInput = document.getElementById('photo-file-input');
   var imagePreview = document.getElementById('image-preview');
@@ -833,6 +856,13 @@
     hintLine2.textContent = t('hint2');
     hintLine3.textContent = t('hint3');
     if (editingId != null) addBtn.textContent = t('saveChanges');
+    exportBtn.title = t('exportBtnTitle'); exportBtn.setAttribute('aria-label', t('exportBtnTitle'));
+    importBtn.title = t('importBtnTitle'); importBtn.setAttribute('aria-label', t('importBtnTitle'));
+    contactsBtn.title = t('contactsBtnTitle'); contactsBtn.setAttribute('aria-label', t('contactsBtnTitle'));
+    photoBtn.title = t('photoBtnTitle'); photoBtn.setAttribute('aria-label', t('photoBtnTitle'));
+    scanBtn.title = t('scanBtnTitle'); scanBtn.setAttribute('aria-label', t('scanBtnTitle'));
+    datecalcBtn.title = t('datecalcBtnTitle'); datecalcBtn.setAttribute('aria-label', t('datecalcBtnTitle'));
+    receiptBtn.title = t('receiptBtnTitle'); receiptBtn.setAttribute('aria-label', t('receiptBtnTitle'));
     updateNotifBtn();
     document.documentElement.lang = currentLang;
     updateParsePreview();
@@ -2122,7 +2152,7 @@
         var bellBtn = document.createElement('button');
         bellBtn.className = 'icon-btn ' + (note.enabled ? 'bell-on' : 'bell-off');
         bellBtn.innerHTML = '<i class="ti ' + (note.enabled ? 'ti-bell' : 'ti-bell-off') + '" aria-hidden="true"></i>';
-        bellBtn.setAttribute('aria-label', note.enabled ? 'Alarm off' : 'Alarm on');
+        bellBtn.setAttribute('aria-label', note.enabled ? t('alarmOffLabel') : t('alarmOnLabel'));
         bellBtn.addEventListener('click', function(){
           note.enabled = !note.enabled; note.firedKey = null; vibrate(8); renderAll();
         });
@@ -2140,14 +2170,14 @@
       var editBtn = document.createElement('button');
       editBtn.className = 'icon-btn';
       editBtn.innerHTML = '<i class="ti ti-pencil" aria-hidden="true"></i>';
-      editBtn.setAttribute('aria-label', 'Edit');
+      editBtn.setAttribute('aria-label', t('editLabel'));
       editBtn.addEventListener('click', function(){ loadForEdit(note); });
       actions.appendChild(editBtn);
 
       var delBtn = document.createElement('button');
       delBtn.className = 'icon-btn danger';
       delBtn.innerHTML = '<i class="ti ti-trash" aria-hidden="true"></i>';
-      delBtn.setAttribute('aria-label', 'Delete');
+      delBtn.setAttribute('aria-label', t('deleteLabel'));
       delBtn.addEventListener('click', function(){
         vibrate([8,30,8]);
         notes = notes.filter(function(n){ return n.id !== note.id; });
@@ -2427,8 +2457,6 @@
   }
 
   // ---------- Export / Import ----------
-  var exportBtn = document.getElementById('export-btn');
-  var importBtn = document.getElementById('import-btn');
   var importFileInput = document.getElementById('import-file-input');
 
   exportBtn.addEventListener('click', function(){

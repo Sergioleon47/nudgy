@@ -1,6 +1,6 @@
 {
-  "name": "Mi Alarma",
-  "short_name": "Mi Alarma",
+  "name": "Nudgy",
+  "short_name": "Nudgy",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#6FBCEE",
