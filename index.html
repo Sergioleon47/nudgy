@@ -1587,29 +1587,61 @@
     ctx.drawImage(scanPhotoImg, 0, 0, canvas.width, canvas.height);
     var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-    var cellReadings = [];
+    // Sample every grid cell, even ones outside the valid day range, so cells near the
+    // edges of the grid still have neighbors to compare against.
+    var grid = [];
     for (var r = 0; r < info.rows; r++){
+      grid[r] = [];
       for (var c = 0; c < 7; c++){
-        var day = r * 7 + c - info.startOffset + 1;
-        if (day < 1 || day > info.daysInMonth) continue;
-        var sum = 0, count = 0;
-        for (var si = 0; si < 5; si++){
-          for (var sj = 0; sj < 5; sj++){
-            var u = (c + 0.15 + (si / 4) * 0.7) / 7;
-            var v = (r + 0.15 + (sj / 4) * 0.7) / info.rows;
+        var samples = [];
+        for (var si = 0; si < 6; si++){
+          for (var sj = 0; sj < 6; sj++){
+            var u = (c + 0.12 + (si / 5) * 0.76) / 7;
+            var v = (r + 0.12 + (sj / 5) * 0.76) / info.rows;
             var frac = scanBilinear(scanCorners, u, v);
-            sum += scanGetGray(imgData, frac.x * canvas.width, frac.y * canvas.height);
-            count++;
+            samples.push(scanGetGray(imgData, frac.x * canvas.width, frac.y * canvas.height));
           }
         }
-        cellReadings.push({ day: day, gray: sum / count });
+        var mean = samples.reduce(function(a,b){ return a+b; }, 0) / samples.length;
+        var variance = samples.reduce(function(a,b){ return a + (b-mean)*(b-mean); }, 0) / samples.length;
+        grid[r][c] = { gray: mean, contrast: Math.sqrt(variance) };
       }
     }
-    var sortedGray = cellReadings.map(function(c){ return c.gray; }).sort(function(a,b){ return a-b; });
-    var median = sortedGray.length ? sortedGray[Math.floor(sortedGray.length / 2)] : 255;
-    var threshold = median - 20;
-    scanReviewDays = cellReadings.map(function(c){ return { day: c.day, checked: c.gray < threshold }; })
+    // A blank cell is uniform paper: low contrast, and about the same brightness as its
+    // neighbors. A cell with something written is either textured (thin handwriting strokes
+    // against paper) or darker than its immediate neighbors (a solid mark/highlight).
+    // Comparing against immediate neighbors instead of the whole photo keeps this robust to
+    // smooth lighting gradients/shadows across the page, since those affect a cell and its
+    // neighbors about equally.
+    var cellReadings = [];
+    for (var r2 = 0; r2 < info.rows; r2++){
+      for (var c2 = 0; c2 < 7; c2++){
+        var day = r2 * 7 + c2 - info.startOffset + 1;
+        if (day < 1 || day > info.daysInMonth) continue;
+        var neighborGrays = [];
+        if (r2 > 0) neighborGrays.push(grid[r2 - 1][c2].gray);
+        if (r2 < info.rows - 1) neighborGrays.push(grid[r2 + 1][c2].gray);
+        if (c2 > 0) neighborGrays.push(grid[r2][c2 - 1].gray);
+        if (c2 < 6) neighborGrays.push(grid[r2][c2 + 1].gray);
+        var neighborAvg = neighborGrays.length
+          ? neighborGrays.reduce(function(a,b){ return a+b; }, 0) / neighborGrays.length
+          : grid[r2][c2].gray;
+        var localDarkScore = Math.max(0, neighborAvg - grid[r2][c2].gray);
+        cellReadings.push({ day: day, score: grid[r2][c2].contrast + localDarkScore });
+      }
+    }
+    var scores = cellReadings.map(function(c){ return c.score; });
+    var medianScore = median(scores);
+    var deviations = scores.map(function(v){ return Math.abs(v - medianScore); });
+    var mad = Math.max(median(deviations), 0.5);
+    var threshold = Math.max(8, medianScore + 6 * mad);
+    scanReviewDays = cellReadings.map(function(c){ return { day: c.day, checked: c.score > threshold }; })
       .sort(function(a,b){ return a.day - b.day; });
+  }
+  function median(arr){
+    if (!arr.length) return 0;
+    var sorted = arr.slice().sort(function(a,b){ return a-b; });
+    return sorted[Math.floor(sorted.length / 2)];
   }
   function scanRenderReviewGrid(){
     scanReviewGrid.innerHTML = '';
