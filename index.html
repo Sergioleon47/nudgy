@@ -90,6 +90,8 @@
   #ringing-sub { font-size:11px; margin-top:2px; }
   .ringing-actions { display:flex; gap:6px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
 
+  #parse-preview { display:flex; align-items:center; gap:6px; font-size:12px; color:#3E8E5B; margin-top:6px; }
+  #parse-preview i { font-size:13px; }
   .action-row { display:flex; align-items:center; gap:12px; margin-top:8px; min-height:22px; }
   #saved-flash { font-size:12px; color:#3E8E5B; opacity:0; transition:opacity .3s ease; }
   #mic-status { font-size:12px; color:#B5493D; opacity:0; transition:opacity .2s ease; }
@@ -196,6 +198,7 @@
       </div>
 
       <textarea id="note-input" rows="5" autofocus></textarea>
+      <div id="parse-preview" style="display:none;"><i class="ti ti-bell" aria-hidden="true"></i> <span id="parse-preview-text"></span></div>
 
       <div class="action-row">
         <button id="add-btn" class="sky-btn primary">Guardar cambios</button>
@@ -281,6 +284,10 @@
       hint1: '"Llamar al doctor el lunes a las 3pm"',
       hint2: '"Cumpleanos de Ana el 15 de agosto"',
       hint3: '"Pagar la luz en 3 dias"',
+      previewYearly: 'Se repite cada',
+      previewWeekly: 'Se repite',
+      previewDaily: 'Se repite todos los dias',
+      exportIcsTitle: 'Agregar al calendario (.ics)',
       searchPlaceholder: 'Buscar en tus notas...',
       noMatches: 'Sin coincidencias.',
       alarmTag: '\u23F0 Alarma',
@@ -318,6 +325,10 @@
       hint1: '"Call the doctor Monday at 3pm"',
       hint2: '"Ana\u2019s birthday on August 15"',
       hint3: '"Pay the electric bill in 3 days"',
+      previewYearly: 'Repeats every',
+      previewWeekly: 'Repeats',
+      previewDaily: 'Repeats every day',
+      exportIcsTitle: 'Add to calendar (.ics)',
       searchPlaceholder: 'Search your notes...',
       noMatches: 'No matches.',
       alarmTag: '\u23F0 Alarm',
@@ -362,6 +373,8 @@
   var langEsBtn = document.getElementById('lang-es-btn');
   var langEnBtn = document.getElementById('lang-en-btn');
   var noteInput = document.getElementById('note-input');
+  var parsePreview = document.getElementById('parse-preview');
+  var parsePreviewText = document.getElementById('parse-preview-text');
   var addBtn = document.getElementById('add-btn');
   var cancelEditBtn = document.getElementById('cancel-edit-btn');
   var savedFlash = document.getElementById('saved-flash');
@@ -449,6 +462,7 @@
     if (editingId != null) addBtn.textContent = t('saveChanges');
     updateNotifBtn();
     document.documentElement.lang = currentLang;
+    updateParsePreview();
   }
   function setLanguage(lang){
     if (lang === currentLang) return;
@@ -941,6 +955,66 @@
     }
     return null;
   }
+  function icsPad2(n){ return n < 10 ? '0' + n : '' + n; }
+  function icsLocalStamp(d){
+    return d.getFullYear() + icsPad2(d.getMonth()+1) + icsPad2(d.getDate()) + 'T' + icsPad2(d.getHours()) + icsPad2(d.getMinutes()) + '00';
+  }
+  function icsDateOnlyStamp(d){
+    return d.getFullYear() + icsPad2(d.getMonth()+1) + icsPad2(d.getDate());
+  }
+  function icsUTCStamp(d){
+    return d.getUTCFullYear() + icsPad2(d.getUTCMonth()+1) + icsPad2(d.getUTCDate()) + 'T' + icsPad2(d.getUTCHours()) + icsPad2(d.getUTCMinutes()) + icsPad2(d.getUTCSeconds()) + 'Z';
+  }
+  function icsEscape(s){
+    return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+  }
+  function buildICSForNote(note){
+    var uid = 'nudgy-' + note.id + '-' + Date.now() + '@nudgy.app';
+    var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Nudgy//ES', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT', 'UID:' + uid, 'DTSTAMP:' + icsUTCStamp(new Date())];
+    var firstLine = note.raw.split('\n')[0].slice(0, 120);
+    lines.push('SUMMARY:' + icsEscape(firstLine));
+    if (note.raw.length > firstLine.length) lines.push('DESCRIPTION:' + icsEscape(note.raw));
+
+    if (note.hour == null){
+      var dOnly = note.dateOnly || note.createdAt;
+      var endOnly = new Date(dOnly); endOnly.setDate(endOnly.getDate() + 1);
+      lines.push('DTSTART;VALUE=DATE:' + icsDateOnlyStamp(dOnly));
+      lines.push('DTEND;VALUE=DATE:' + icsDateOnlyStamp(endOnly));
+    } else {
+      var start = note.target || nextOccurrence(note);
+      if (!start){
+        start = new Date(note.dateOnly || note.createdAt);
+        start.setHours(note.hour, note.minute, 0, 0);
+      }
+      var end = new Date(start); end.setMinutes(end.getMinutes() + 30);
+      lines.push('DTSTART:' + icsLocalStamp(start));
+      lines.push('DTEND:' + icsLocalStamp(end));
+    }
+
+    if (note.recurring){
+      if (note.recurring.type === 'daily') lines.push('RRULE:FREQ=DAILY');
+      else if (note.recurring.type === 'weekly'){
+        var byday = note.recurring.weekdays.map(function(w){ return ['SU','MO','TU','WE','TH','FR','SA'][w]; }).join(',');
+        lines.push('RRULE:FREQ=WEEKLY;BYDAY=' + byday);
+      } else if (note.recurring.type === 'yearly'){
+        lines.push('RRULE:FREQ=YEARLY');
+      }
+    }
+    lines.push('END:VEVENT', 'END:VCALENDAR');
+    return lines.join('\r\n');
+  }
+  function downloadICSForNote(note){
+    var ics = buildICSForNote(note);
+    var blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'nudgy-' + note.id + '.ics';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
   function renderNextAlarm(){
     var upcoming = notes.map(function(n){ return { n: n, t: nextOccurrence(n) }; }).filter(function(x){ return x.t; });
     upcoming.sort(function(a, b){ return a.t - b.t; });
@@ -1000,6 +1074,37 @@
     return { text: raw, hour: hour, minute: minute, target: target, recurring: recurring, dateOnly: dateOnly };
   }
 
+  function buildParsePreviewText(raw){
+    if (!raw || !raw.trim()) return null;
+    var parsed;
+    try { parsed = parseNoteInput(raw); } catch(e){ return null; }
+    var timeStr = (parsed.hour != null) ? formatHM2(parsed.hour, parsed.minute) : null;
+    if (parsed.target) return relativeDayLabel(parsed.target) + ' ' + formatHM(parsed.target);
+    if (parsed.dateOnly){
+      var s = t('months')[parsed.dateOnly.getMonth()] + ' ' + parsed.dateOnly.getDate();
+      return timeStr ? s + ', ' + timeStr : s;
+    }
+    if (parsed.recurring){
+      var r = parsed.recurring;
+      if (r.type === 'yearly'){
+        var sy = t('previewYearly') + ' ' + t('months')[r.month] + ' ' + r.day;
+        return timeStr ? sy + ', ' + timeStr : sy;
+      }
+      if (r.type === 'daily') return timeStr ? t('previewDaily') + ' ' + timeStr : t('previewDaily');
+      if (r.type === 'weekly'){
+        var names = r.weekdays.map(function(w){ return t('days')[w]; }).join(', ');
+        var sw = t('previewWeekly') + ' ' + names;
+        return timeStr ? sw + ', ' + timeStr : sw;
+      }
+    }
+    return null;
+  }
+  function updateParsePreview(){
+    var text = buildParsePreviewText(noteInput.value);
+    if (text){ parsePreviewText.textContent = text; parsePreview.style.display = 'flex'; }
+    else parsePreview.style.display = 'none';
+  }
+
   function flashSaved(){
     savedFlash.style.opacity = '1';
     setTimeout(function(){ savedFlash.style.opacity = '0'; }, 1200);
@@ -1012,9 +1117,11 @@
     addBtn.textContent = t('saveChanges');
     cancelEditBtn.style.display = 'inline';
     vibrate(10);
+    updateParsePreview();
   }
   function exitEditMode(){
     editingId = null; noteInput.value = ''; addBtn.style.display = 'none'; cancelEditBtn.style.display = 'none';
+    updateParsePreview();
   }
   cancelEditBtn.addEventListener('click', exitEditMode);
 
@@ -1054,6 +1161,14 @@
         });
         actions.appendChild(bellBtn);
       }
+
+      var icsBtn = document.createElement('button');
+      icsBtn.className = 'icon-btn';
+      icsBtn.innerHTML = '<i class="ti ti-calendar-plus" aria-hidden="true"></i>';
+      icsBtn.title = t('exportIcsTitle');
+      icsBtn.setAttribute('aria-label', t('exportIcsTitle'));
+      icsBtn.addEventListener('click', function(){ vibrate(6); downloadICSForNote(note); });
+      actions.appendChild(icsBtn);
 
       var editBtn = document.createElement('button');
       editBtn.className = 'icon-btn';
@@ -1197,6 +1312,7 @@
   }
 
   noteInput.addEventListener('input', function(){
+    updateParsePreview();
     if (editingId != null) return;
     var value = noteInput.value;
     if (!/\n\s*\n/.test(value)) return;
@@ -1207,6 +1323,7 @@
     completed.forEach(function(p){ addNewNoteFromRaw(p); });
     noteInput.value = remaining;
     vibrate(20); flashSaved(); renderAll();
+    updateParsePreview();
   });
   noteInput.addEventListener('blur', function(){
     if (recording) return;
@@ -1216,6 +1333,7 @@
     else {
       value.split(/\n\s*\n+/).map(function(p){ return p.trim(); }).filter(Boolean).forEach(function(p){ addNewNoteFromRaw(p); });
       noteInput.value = '';
+      updateParsePreview();
     }
     vibrate(20); flashSaved(); renderAll();
   });
