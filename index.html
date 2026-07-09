@@ -196,6 +196,23 @@
   #next-alarm { font-size:13px; color:#274257; line-height:1.4; }
 
   .footer-note { text-align:center; font-size:11px; color:#274257; opacity:.6; margin-top:16px; }
+
+  @media (max-width: 680px) {
+    body { padding: 10px; }
+    .header { margin-bottom: 10px; }
+    .cols { gap: 10px; }
+    .sky-panel { padding: 12px; }
+    .col-left, .col-right { min-height: auto; max-width: none; }
+    .col-right { order: -1; }
+    .top-row { margin-bottom: 6px; }
+    #notes-list { max-height: 260px; margin-top: 8px; }
+    .note-block { padding: 8px 84px 8px 4px; }
+    #cal-grid { grid-auto-rows: 30px; }
+    .cal-cell { font-size: 9px; }
+    .legend { font-size: 8px; gap: 6px; margin-top: 6px; }
+    .next-alarm-box { margin-top: 10px; padding-top: 10px; }
+    .footer-note { margin-top: 10px; }
+  }
 </style>
 </head>
 <body>
