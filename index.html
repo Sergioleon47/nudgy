@@ -64,7 +64,7 @@
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
   }
   #contacts-btn.open { background:#D98A1F; color:white; }
-  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn {
+  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn {
     background: #F2F2F7; border: none; color: #274257;
     width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px;
@@ -141,6 +141,18 @@
   #datecalc-op { width:54px; }
   #datecalc-unit { flex:1; }
   .datecalc-result { margin-top:10px; font-size:14px; font-weight:600; color:#D98A1F; }
+  #receipt-modal {
+    display:none; position:fixed; inset:0; background:rgba(20,40,55,0.55); z-index:1000;
+    align-items:center; justify-content:center; padding:16px;
+  }
+  #receipt-desc-input, #receipt-date-input {
+    width:100%; box-sizing:border-box; font-size:13px; padding:8px 9px; border-radius:9px;
+    border:none; background:#F2F2F7; color:#1C1C1E; font-family:inherit;
+  }
+  #receipt-photo-preview { display:block; width:100%; max-height:160px; object-fit:cover; border-radius:12px; margin-bottom:16px; }
+  #receipt-processing-bar-wrap { width:100%; height:6px; border-radius:3px; background:#F2F2F7; margin-top:16px; overflow:hidden; }
+  #receipt-processing-bar { width:30%; height:100%; background:#D98A1F; border-radius:3px; animation: receipt-progress 1.2s ease-in-out infinite; }
+  @keyframes receipt-progress { 0%{transform:translateX(-100%);} 100%{transform:translateX(333%);} }
   .contact-row { display:flex; align-items:center; justify-content:space-between; font-size:13px; color:#1C1C1E; background:#F2F2F7; padding:7px 10px; border-radius:9px; }
   .contact-row button { background:none; border:none; color:#B5493D; cursor:pointer; font-size:13px; }
   .contact-call-link { color:#185FA5; text-decoration:underline; text-underline-offset:2px; cursor:pointer; }
@@ -314,6 +326,8 @@
           <button id="scan-btn" aria-label="Escanear calendario" title="Escanear calendario"><i class="ti ti-scan" aria-hidden="true"></i></button>
           <input type="file" id="scan-file-input" accept="image/*" style="display:none">
           <button id="datecalc-btn" aria-label="Calculadora de fechas" title="Calculadora de fechas"><i class="ti ti-calculator" aria-hidden="true"></i></button>
+          <button id="receipt-btn" aria-label="Foto de recibo" title="Foto de recibo"><i class="ti ti-receipt-2" aria-hidden="true"></i></button>
+          <input type="file" id="receipt-file-input" accept="image/*" style="display:none">
         </div>
       </div>
 
@@ -461,6 +475,44 @@
   </div>
 </div>
 
+<div id="receipt-modal">
+  <div class="datecalc-modal-inner">
+    <div class="scan-modal-header">
+      <span id="receipt-title">Foto de recibo</span>
+      <button id="receipt-close-btn" class="icon-btn" aria-label="Cerrar"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </div>
+
+    <div id="receipt-step-processing" class="scan-step">
+      <div id="receipt-processing-text" class="scan-hint">Leyendo el recibo...</div>
+      <div id="receipt-processing-bar-wrap"><div id="receipt-processing-bar"></div></div>
+    </div>
+
+    <div id="receipt-step-confirm" class="scan-step" style="display:none;">
+      <img id="receipt-photo-preview" alt="">
+      <div class="datecalc-section">
+        <div class="datecalc-section-label" id="receipt-label-desc">Que es este recibo?</div>
+        <input type="text" id="receipt-desc-input" placeholder="Ej. Recibo de la luz">
+      </div>
+      <div class="datecalc-section">
+        <div class="datecalc-section-label" id="receipt-label-date">Fecha de compra</div>
+        <input type="date" id="receipt-date-input">
+      </div>
+      <div class="datecalc-section">
+        <div class="datecalc-section-label" id="receipt-label-remind">Recordar antes de cumplirse el mes</div>
+        <div class="datecalc-offset-row">
+          <select id="receipt-days-before">
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
+          <input type="time" id="receipt-time-input" value="09:00">
+        </div>
+        <div id="receipt-remind-result" class="datecalc-result"></div>
+      </div>
+      <button id="receipt-create-btn" class="sky-btn primary">Crear recordatorio</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   var STORAGE_KEY = 'mi_alarma_notes_v1';
@@ -522,6 +574,16 @@
       datecalcUnitWeeks: 'semanas',
       datecalcUnitMonths: 'meses',
       datecalcUnitYears: 'anos',
+      receiptBtnTitle: 'Foto de recibo',
+      receiptTitle: 'Foto de recibo',
+      receiptProcessing: 'Leyendo el recibo...',
+      receiptLabelDesc: 'Que es este recibo?',
+      receiptDescPlaceholder: 'Ej. Recibo de la luz',
+      receiptLabelDate: 'Fecha de compra',
+      receiptLabelRemind: 'Recordar dias antes de cumplirse el mes',
+      receiptCreateBtn: 'Crear recordatorio',
+      receiptRemindResult: 'Se te recordara el {date}',
+      receiptDateNotFound: 'No se detecto la fecha, escribela a mano',
       searchPlaceholder: 'Buscar en tus notas...',
       noMatches: 'Sin coincidencias.',
       alarmTag: '\u23F0 Alarma',
@@ -584,6 +646,16 @@
       datecalcUnitWeeks: 'weeks',
       datecalcUnitMonths: 'months',
       datecalcUnitYears: 'years',
+      receiptBtnTitle: 'Receipt photo',
+      receiptTitle: 'Receipt photo',
+      receiptProcessing: 'Reading the receipt...',
+      receiptLabelDesc: 'What is this receipt for?',
+      receiptDescPlaceholder: 'E.g. Electric bill',
+      receiptLabelDate: 'Purchase date',
+      receiptLabelRemind: 'Remind days before the month is up',
+      receiptCreateBtn: 'Create reminder',
+      receiptRemindResult: "You'll be reminded on {date}",
+      receiptDateNotFound: "Date wasn't detected, type it in manually",
       searchPlaceholder: 'Search your notes...',
       noMatches: 'No matches.',
       alarmTag: '\u23F0 Alarm',
@@ -1843,6 +1915,149 @@
   datecalcOp.addEventListener('change', datecalcComputeOffset);
   datecalcAmount.addEventListener('input', datecalcComputeOffset);
   datecalcUnit.addEventListener('change', datecalcComputeOffset);
+
+  // ---------- Receipt photo -> auto reminder ----------
+  var receiptBtn = document.getElementById('receipt-btn');
+  var receiptFileInput = document.getElementById('receipt-file-input');
+  var receiptModal = document.getElementById('receipt-modal');
+  var receiptCloseBtn = document.getElementById('receipt-close-btn');
+  var receiptTitleEl = document.getElementById('receipt-title');
+  var receiptStepProcessing = document.getElementById('receipt-step-processing');
+  var receiptStepConfirm = document.getElementById('receipt-step-confirm');
+  var receiptProcessingText = document.getElementById('receipt-processing-text');
+  var receiptPhotoPreview = document.getElementById('receipt-photo-preview');
+  var receiptLabelDescEl = document.getElementById('receipt-label-desc');
+  var receiptDescInput = document.getElementById('receipt-desc-input');
+  var receiptLabelDateEl = document.getElementById('receipt-label-date');
+  var receiptDateInput = document.getElementById('receipt-date-input');
+  var receiptLabelRemindEl = document.getElementById('receipt-label-remind');
+  var receiptDaysBefore = document.getElementById('receipt-days-before');
+  var receiptTimeInput = document.getElementById('receipt-time-input');
+  var receiptRemindResult = document.getElementById('receipt-remind-result');
+  var receiptCreateBtn = document.getElementById('receipt-create-btn');
+  var receiptPendingImage = null;
+  var tesseractLoadPromise = null;
+
+  function loadTesseract(){
+    if (window.Tesseract) return Promise.resolve();
+    if (tesseractLoadPromise) return tesseractLoadPromise;
+    tesseractLoadPromise = new Promise(function(resolve, reject){
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      s.onload = function(){ resolve(); };
+      s.onerror = function(){ reject(new Error('load-failed')); };
+      document.head.appendChild(s);
+    });
+    return tesseractLoadPromise;
+  }
+
+  function extractNumericDate(text){
+    var m = text.match(/\b(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})\b/);
+    if (m) return { year: parseInt(m[1],10), month: parseInt(m[2],10)-1, day: parseInt(m[3],10) };
+    m = text.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\b/);
+    if (m){
+      var a = parseInt(m[1],10), b = parseInt(m[2],10);
+      var year = parseInt(m[3],10); if (year < 100) year += 2000;
+      var day, month;
+      if (a > 12){ day = a; month = b - 1; }
+      else if (b > 12){ month = a - 1; day = b; }
+      else { day = a; month = b - 1; }
+      return { year: year, month: month, day: day };
+    }
+    return null;
+  }
+  function receiptApplyLanguage(){
+    receiptTitleEl.textContent = t('receiptTitle');
+    receiptProcessingText.textContent = t('receiptProcessing');
+    receiptLabelDescEl.textContent = t('receiptLabelDesc');
+    receiptDescInput.placeholder = t('receiptDescPlaceholder');
+    receiptLabelDateEl.textContent = t('receiptLabelDate');
+    receiptLabelRemindEl.textContent = t('receiptLabelRemind');
+    receiptCreateBtn.textContent = t('receiptCreateBtn');
+    receiptBtn.title = t('receiptBtnTitle'); receiptBtn.setAttribute('aria-label', t('receiptBtnTitle'));
+  }
+  function receiptComputeRemindDate(){
+    var val = receiptDateInput.value;
+    if (!val) return null;
+    var parts = val.split('-').map(Number);
+    var purchase = new Date(parts[0], parts[1]-1, parts[2]);
+    var due = new Date(purchase);
+    due.setMonth(due.getMonth() + 1);
+    due.setDate(due.getDate() - parseInt(receiptDaysBefore.value, 10));
+    var timeParts = (receiptTimeInput.value || '09:00').split(':').map(Number);
+    due.setHours(timeParts[0], timeParts[1] || 0, 0, 0);
+    return due;
+  }
+  function receiptUpdateRemindResult(){
+    var due = receiptComputeRemindDate();
+    if (!due){ receiptRemindResult.textContent = ''; return; }
+    var label = datecalcFormatLabel(due) + ', ' + formatHM2(due.getHours(), due.getMinutes());
+    receiptRemindResult.textContent = t('receiptRemindResult').replace('{date}', label);
+  }
+  function receiptShowStep(step){
+    receiptStepProcessing.style.display = step === 'processing' ? 'block' : 'none';
+    receiptStepConfirm.style.display = step === 'confirm' ? 'block' : 'none';
+  }
+  function receiptCloseModal(){ receiptModal.style.display = 'none'; }
+  function receiptOpenModal(){
+    receiptApplyLanguage();
+    receiptShowStep('processing');
+    receiptModal.style.display = 'flex';
+  }
+  receiptBtn.addEventListener('mousedown', function(e){ e.preventDefault(); });
+  receiptBtn.addEventListener('click', function(){ receiptFileInput.click(); });
+  receiptCloseBtn.addEventListener('click', receiptCloseModal);
+  receiptModal.addEventListener('click', function(e){ if (e.target === receiptModal) receiptCloseModal(); });
+  receiptDateInput.addEventListener('input', receiptUpdateRemindResult);
+  receiptDaysBefore.addEventListener('change', receiptUpdateRemindResult);
+  receiptTimeInput.addEventListener('input', receiptUpdateRemindResult);
+
+  receiptFileInput.addEventListener('change', function(e){
+    var file = e.target.files[0];
+    receiptFileInput.value = '';
+    if (!file || !/^image\//.test(file.type)) return;
+    receiptOpenModal();
+    processImageFile(file, function(dataUrl){
+      receiptPendingImage = dataUrl;
+      receiptPhotoPreview.src = dataUrl;
+      loadTesseract().then(function(){
+        return window.Tesseract.recognize(dataUrl, 'spa+eng');
+      }).then(function(result){
+        var text = result.data.text || '';
+        var found = extractNumericDate(text);
+        if (found){
+          receiptDateInput.value = found.year + '-' + (found.month+1).toString().padStart(2,'0') + '-' + found.day.toString().padStart(2,'0');
+        } else {
+          receiptDateInput.value = datecalcDateInputValue(new Date());
+        }
+        receiptDescInput.value = '';
+        receiptDaysBefore.value = '1';
+        receiptTimeInput.value = '09:00';
+        receiptUpdateRemindResult();
+        receiptShowStep('confirm');
+      }).catch(function(){
+        receiptDateInput.value = datecalcDateInputValue(new Date());
+        receiptDescInput.value = '';
+        receiptUpdateRemindResult();
+        receiptShowStep('confirm');
+      });
+    });
+  });
+  receiptCreateBtn.addEventListener('click', function(){
+    var due = receiptComputeRemindDate();
+    if (!due) return;
+    var desc = receiptDescInput.value.trim() || t('receiptDescPlaceholder');
+    var raw = capitalizeFirst(desc);
+    notes.push({
+      id: idCounter++, raw: raw, hour: due.getHours(), minute: due.getMinutes(), target: due,
+      recurring: null, dateOnly: null, createdAt: new Date(), enabled: true, firedKey: null,
+      image: receiptPendingImage
+    });
+    receiptPendingImage = null;
+    receiptCloseModal();
+    renderAll();
+    vibrate(15);
+  });
 
   function flashSaved(){
     savedFlash.style.opacity = '1';

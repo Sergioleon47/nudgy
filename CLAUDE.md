@@ -33,6 +33,7 @@ Repositorio en GitHub (`Sergioleon47/nudgy`), conectado a Netlify (proyecto "nud
 - Adjuntar una foto a una nota (camara o galeria/capturas de pantalla) o pegarla directo con Ctrl+V; se comprime a JPEG antes de guardarse en localStorage, se muestra como miniatura en la nota y se puede ver en grande al tocarla
 - Escanear un calendario fisico: se toma una foto de un calendario de papel escrito a mano, se ajustan las 4 esquinas de la cuadricula sobre la foto, y la app detecta automaticamente (por contraste de tinta, sin IA ni backend) que dias tienen algo escrito. Despues, un asistente rapido pregunta dia por dia que se escribio ahi y crea las notas/alarmas correspondientes
 - Calculadora de fechas: cuantos dias faltan para una fecha especifica, y que dia sera sumando/restando dias, semanas o meses desde hoy
+- Foto de recibo con recordatorio automatico de pago: se toma una foto de un recibo, la app lee el texto con OCR gratis en el navegador (Tesseract.js, cargado solo cuando se usa esta funcion, sin backend) y detecta la fecha de compra (formatos numericos DD/MM/YYYY o YYYY-MM-DD). El usuario confirma/corrige la fecha, elige 1 o 2 dias de anticipacion, y la app crea una alarma para recordar pagarlo antes de que se cumpla el mes
 
 ## Limitaciones conocidas
 
