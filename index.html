@@ -117,6 +117,30 @@
   }
   .scan-wizard-actions { display:flex; justify-content:space-between; align-items:center; gap:8px; }
   #scan-wizard-skip { background:none; border:none; color:#5B7B94; font-size:12px; cursor:pointer; }
+
+  #datecalc-modal {
+    display:none; position:fixed; inset:0; background:rgba(20,40,55,0.55); z-index:1000;
+    align-items:center; justify-content:center; padding:16px;
+  }
+  .datecalc-modal-inner {
+    background: linear-gradient(180deg, #DDEEFB, #AFD8F5); border-radius:14px; padding:16px;
+    width:100%; max-width:380px; box-shadow:0 12px 32px rgba(0,0,0,0.3);
+  }
+  .datecalc-section { margin-bottom:18px; }
+  .datecalc-section:last-child { margin-bottom:0; }
+  .datecalc-section-label { font-size:13px; font-weight:600; color:#274257; margin-bottom:6px; }
+  #datecalc-target-date {
+    width:100%; box-sizing:border-box; font-size:13px; padding:7px 8px; border-radius:6px;
+    border:1px solid rgba(0,0,0,0.15); background:white; color:#274257;
+  }
+  .datecalc-offset-row { display:flex; gap:6px; }
+  .datecalc-offset-row select, .datecalc-offset-row input {
+    font-size:13px; padding:7px 8px; border-radius:6px; border:1px solid rgba(0,0,0,0.15); background:white; color:#274257;
+  }
+  #datecalc-amount { width:64px; text-align:center; }
+  #datecalc-op { width:54px; }
+  #datecalc-unit { flex:1; }
+  .datecalc-result { margin-top:8px; font-size:14px; font-weight:600; color:#D98A1F; }
   .contact-row { display:flex; align-items:center; justify-content:space-between; font-size:12px; color:#274257; background:rgba(255,255,255,0.5); padding:5px 8px; border-radius:6px; }
   .contact-row button { background:none; border:none; color:#B5493D; cursor:pointer; font-size:13px; }
   .contact-call-link { color:#185FA5; text-decoration:underline; text-underline-offset:2px; cursor:pointer; }
@@ -205,6 +229,7 @@
     .col-left, .col-right { min-height: auto; max-width: none; }
     .col-right { order: -1; }
     .top-row { margin-bottom: 6px; }
+    #note-input { height: 60px; overflow-y: auto; }
     #notes-list { max-height: 260px; margin-top: 8px; }
     .note-block { padding: 8px 84px 8px 4px; }
     #cal-grid { grid-auto-rows: 30px; }
@@ -254,6 +279,7 @@
           <button id="mic-btn" aria-label="Hablar nota" title="Hablar nota"><i class="ti ti-microphone" aria-hidden="true"></i></button>
           <button id="scan-btn" aria-label="Escanear calendario" title="Escanear calendario"><i class="ti ti-scan" aria-hidden="true"></i></button>
           <input type="file" id="scan-file-input" accept="image/*" style="display:none">
+          <button id="datecalc-btn" aria-label="Calculadora de fechas" title="Calculadora de fechas"><i class="ti ti-calculator" aria-hidden="true"></i></button>
         </div>
       </div>
 
@@ -373,6 +399,34 @@
   </div>
 </div>
 
+<div id="datecalc-modal">
+  <div class="datecalc-modal-inner">
+    <div class="scan-modal-header">
+      <span id="datecalc-title">Calculadora de fechas</span>
+      <button id="datecalc-close-btn" class="icon-btn" aria-label="Cerrar"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </div>
+
+    <div class="datecalc-section">
+      <div id="datecalc-label-until" class="datecalc-section-label">Cuantos dias faltan para...</div>
+      <input type="date" id="datecalc-target-date">
+      <div id="datecalc-until-result" class="datecalc-result"></div>
+    </div>
+
+    <div class="datecalc-section">
+      <div id="datecalc-label-offset" class="datecalc-section-label">Que dia sera...</div>
+      <div class="datecalc-offset-row">
+        <select id="datecalc-op">
+          <option value="add">+</option>
+          <option value="sub">-</option>
+        </select>
+        <input type="number" id="datecalc-amount" min="0" value="7">
+        <select id="datecalc-unit"></select>
+      </div>
+      <div id="datecalc-offset-result" class="datecalc-result"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   var STORAGE_KEY = 'mi_alarma_notes_v1';
@@ -423,6 +477,17 @@
       scanWizardPlaceholder: 'Que anotaste ese dia?',
       scanWizardSkip: 'Omitir',
       scanWizardNext: 'Guardar y siguiente',
+      datecalcBtnTitle: 'Calculadora de fechas',
+      datecalcTitle: 'Calculadora de fechas',
+      datecalcLabelUntil: 'Cuantos dias faltan para...',
+      datecalcLabelOffset: 'Que dia sera...',
+      datecalcToday: 'Es hoy',
+      datecalcInDays: 'Faltan {n} dias',
+      datecalcAgoDays: 'Fue hace {n} dias',
+      datecalcUnitDays: 'dias',
+      datecalcUnitWeeks: 'semanas',
+      datecalcUnitMonths: 'meses',
+      datecalcUnitYears: 'anos',
       searchPlaceholder: 'Buscar en tus notas...',
       noMatches: 'Sin coincidencias.',
       alarmTag: '\u23F0 Alarma',
@@ -474,6 +539,17 @@
       scanWizardPlaceholder: 'What did you write that day?',
       scanWizardSkip: 'Skip',
       scanWizardNext: 'Save and next',
+      datecalcBtnTitle: 'Date calculator',
+      datecalcTitle: 'Date calculator',
+      datecalcLabelUntil: 'How many days until...',
+      datecalcLabelOffset: 'What day will it be...',
+      datecalcToday: "It's today",
+      datecalcInDays: '{n} days left',
+      datecalcAgoDays: '{n} days ago',
+      datecalcUnitDays: 'days',
+      datecalcUnitWeeks: 'weeks',
+      datecalcUnitMonths: 'months',
+      datecalcUnitYears: 'years',
       searchPlaceholder: 'Search your notes...',
       noMatches: 'No matches.',
       alarmTag: '\u23F0 Alarm',
@@ -1608,6 +1684,84 @@
     scanWizardIndex++;
     scanAdvanceWizard();
   });
+
+  // ---------- Date calculator ----------
+  var datecalcBtn = document.getElementById('datecalc-btn');
+  var datecalcModal = document.getElementById('datecalc-modal');
+  var datecalcCloseBtn = document.getElementById('datecalc-close-btn');
+  var datecalcTitleEl = document.getElementById('datecalc-title');
+  var datecalcLabelUntilEl = document.getElementById('datecalc-label-until');
+  var datecalcLabelOffsetEl = document.getElementById('datecalc-label-offset');
+  var datecalcTargetDate = document.getElementById('datecalc-target-date');
+  var datecalcUntilResult = document.getElementById('datecalc-until-result');
+  var datecalcOp = document.getElementById('datecalc-op');
+  var datecalcAmount = document.getElementById('datecalc-amount');
+  var datecalcUnit = document.getElementById('datecalc-unit');
+  var datecalcOffsetResult = document.getElementById('datecalc-offset-result');
+
+  function datecalcDateInputValue(d){
+    return d.getFullYear() + '-' + (d.getMonth()+1).toString().padStart(2,'0') + '-' + d.getDate().toString().padStart(2,'0');
+  }
+  function datecalcFormatLabel(d){
+    var now = new Date();
+    var suffix = d.getFullYear() !== now.getFullYear() ? ', ' + d.getFullYear() : '';
+    return t('days')[d.getDay()] + ' ' + d.getDate() + ' ' + t('months')[d.getMonth()] + suffix;
+  }
+  function datecalcApplyLanguage(){
+    datecalcTitleEl.textContent = t('datecalcTitle');
+    datecalcLabelUntilEl.textContent = t('datecalcLabelUntil');
+    datecalcLabelOffsetEl.textContent = t('datecalcLabelOffset');
+    datecalcUnit.innerHTML = '';
+    [['days', t('datecalcUnitDays')], ['weeks', t('datecalcUnitWeeks')], ['months', t('datecalcUnitMonths')], ['years', t('datecalcUnitYears')]].forEach(function(u){
+      var o = document.createElement('option'); o.value = u[0]; o.textContent = u[1];
+      datecalcUnit.appendChild(o);
+    });
+    datecalcBtn.title = t('datecalcBtnTitle'); datecalcBtn.setAttribute('aria-label', t('datecalcBtnTitle'));
+  }
+  function datecalcComputeUntil(){
+    var val = datecalcTargetDate.value;
+    if (!val){ datecalcUntilResult.textContent = ''; return; }
+    var parts = val.split('-').map(Number);
+    var target = new Date(parts[0], parts[1] - 1, parts[2]);
+    var now = new Date();
+    var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var diffDays = Math.round((target - t0) / 86400000);
+    var label;
+    if (diffDays === 0) label = t('datecalcToday');
+    else if (diffDays > 0) label = t('datecalcInDays').replace('{n}', diffDays);
+    else label = t('datecalcAgoDays').replace('{n}', Math.abs(diffDays));
+    datecalcUntilResult.textContent = label + ' · ' + datecalcFormatLabel(target);
+  }
+  function datecalcComputeOffset(){
+    var amount = parseInt(datecalcAmount.value, 10);
+    if (isNaN(amount) || amount < 0) amount = 0;
+    var sign = datecalcOp.value === 'sub' ? -1 : 1;
+    var unit = datecalcUnit.value;
+    var result = new Date();
+    if (unit === 'weeks') result.setDate(result.getDate() + sign * amount * 7);
+    else if (unit === 'months') result.setMonth(result.getMonth() + sign * amount);
+    else if (unit === 'years') result.setFullYear(result.getFullYear() + sign * amount);
+    else result.setDate(result.getDate() + sign * amount);
+    datecalcOffsetResult.textContent = datecalcFormatLabel(result);
+  }
+  function datecalcOpenModal(){
+    datecalcApplyLanguage();
+    datecalcTargetDate.value = datecalcDateInputValue(new Date());
+    datecalcAmount.value = 7;
+    datecalcOp.value = 'add';
+    datecalcUnit.value = 'days';
+    datecalcComputeUntil();
+    datecalcComputeOffset();
+    datecalcModal.style.display = 'flex';
+  }
+  function datecalcCloseModal(){ datecalcModal.style.display = 'none'; }
+  datecalcBtn.addEventListener('click', datecalcOpenModal);
+  datecalcCloseBtn.addEventListener('click', datecalcCloseModal);
+  datecalcModal.addEventListener('click', function(e){ if (e.target === datecalcModal) datecalcCloseModal(); });
+  datecalcTargetDate.addEventListener('input', datecalcComputeUntil);
+  datecalcOp.addEventListener('change', datecalcComputeOffset);
+  datecalcAmount.addEventListener('input', datecalcComputeOffset);
+  datecalcUnit.addEventListener('change', datecalcComputeOffset);
 
   function flashSaved(){
     savedFlash.style.opacity = '1';
