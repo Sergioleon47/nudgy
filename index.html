@@ -317,9 +317,9 @@
 
       <div id="contacts-panel" style="display:none; background:rgba(255,255,255,0.5); border-radius:10px; padding:12px; margin-bottom:10px;">
         <div id="contacts-list" style="display:flex; flex-direction:column; gap:6px; margin-bottom:8px;"></div>
-        <div style="display:flex; gap:6px;">
-          <input id="contact-name-input" type="text" placeholder="Nombre (ej. Mama)" style="flex:1; font-size:12px; padding:6px 8px; border-radius:6px; border:1px solid rgba(0,0,0,0.15);">
-          <input id="contact-phone-input" type="tel" placeholder="Numero" style="flex:1; font-size:12px; padding:6px 8px; border-radius:6px; border:1px solid rgba(0,0,0,0.15);">
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <input id="contact-name-input" type="text" placeholder="Nombre (ej. Mama)" style="flex:1; min-width:0; font-size:12px; padding:6px 8px; border-radius:6px; border:1px solid rgba(0,0,0,0.15);">
+          <input id="contact-phone-input" type="tel" placeholder="Numero" style="flex:1; min-width:0; font-size:12px; padding:6px 8px; border-radius:6px; border:1px solid rgba(0,0,0,0.15);">
           <button id="contact-add-btn" class="sky-btn">Agregar</button>
         </div>
       </div>
@@ -1029,19 +1029,32 @@
     while ((m = re.exec(text))){
       var day = parseInt(m[1], 10);
       if (day < 1 || day > 31) continue;
-      var word = m[2].toLowerCase();
-      var monthIdx = -1;
-      for (var mi = 0; mi < 12; mi++){
-        var baseEs = monthNamesEs[mi].toLowerCase();
-        var baseEn = monthNamesEn[mi].toLowerCase();
-        if (word[0] === baseEs[0] && levenshtein(word, baseEs) <= 1){ monthIdx = mi; break; }
-        if (word[0] === baseEn[0] && levenshtein(word, baseEn) <= 1){ monthIdx = mi; break; }
-      }
+      var monthIdx = findMonthIndex(m[2].toLowerCase());
       if (monthIdx === -1) continue;
       var year = m[3] ? parseInt(m[3], 10) : null;
       return { match: m[0], day: day, month: monthIdx, year: year };
     }
+    // English-style "Month Day" order (e.g. "August 15", "August 15th, 2026") -
+    // the regex above only matches "Day Month" order (Spanish convention).
+    var reMonthFirst = /\b([a-záéíóúñA-Z]+)\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*,?\s*(\d{4}))?\b/gi;
+    while ((m = reMonthFirst.exec(text))){
+      var day2 = parseInt(m[2], 10);
+      if (day2 < 1 || day2 > 31) continue;
+      var monthIdx2 = findMonthIndex(m[1].toLowerCase());
+      if (monthIdx2 === -1) continue;
+      var year2 = m[3] ? parseInt(m[3], 10) : null;
+      return { match: m[0], day: day2, month: monthIdx2, year: year2 };
+    }
     return null;
+  }
+  function findMonthIndex(word){
+    for (var mi = 0; mi < 12; mi++){
+      var baseEs = monthNamesEs[mi].toLowerCase();
+      var baseEn = monthNamesEn[mi].toLowerCase();
+      if (word[0] === baseEs[0] && levenshtein(word, baseEs) <= 1) return mi;
+      if (word[0] === baseEn[0] && levenshtein(word, baseEn) <= 1) return mi;
+    }
+    return -1;
   }
   function extractBareDayOfMonth(text){
     var m = text.match(/\bon\s+the\s+(\d{1,2})(?:st|nd|rd|th)?\b/i);
@@ -1080,6 +1093,8 @@
   function extractRecurringExact(text){
     var range = extractWeekdayRange(text);
     if (range) return { type: 'weekly', weekdays: range.days, match: range.match };
+    var wd = text.match(/\bweekdays?\b/i) || text.match(/\bentre\s+semana\b/i) || text.match(/\bd[ií]as?\s+h[áa]biles\b/i);
+    if (wd) return { type: 'weekly', weekdays: [1,2,3,4,5], match: wd[0] };
     var m = text.match(/todos\s+los\s+d[ií]as/i) || text.match(/\bevery\s*day\b/i);
     if (m) return { type: 'daily', match: m[0] };
     for (var name in dayWords){
