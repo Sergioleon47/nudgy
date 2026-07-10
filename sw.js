@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mi-alarma-v4';
+const CACHE_NAME = 'mi-alarma-v5';
 const FILES_TO_CACHE = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -17,9 +17,18 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Network-first: always try to get the latest deployed version when online,
+// only falling back to the cached copy when there's no connection. A pure
+// cache-first strategy (the old behavior) would keep serving the very first
+// version ever cached forever, since a byte-identical sw.js never re-triggers
+// install/cache refresh even after new deploys.
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    fetch(event.request).then((response) => {
+      var copy = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+      return response;
+    }).catch(() => caches.match(event.request))
   );
 });
 
