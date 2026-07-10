@@ -67,11 +67,12 @@
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
   }
   #contacts-btn.open { background:#D98A1F; color:white; }
-  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn {
+  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn, #auth-btn {
     background: #F2F2F7; border: none; color: #274257;
     width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px;
   }
+  #auth-btn.synced { color: #2FA360; background:#E7F7EE; }
   #image-preview { display:none; align-items:center; gap:8px; margin-top:8px; }
   #image-preview img { max-height:64px; max-width:96px; object-fit:cover; border-radius:8px; border:1px solid rgba(0,0,0,0.15); }
   #image-preview-remove {
@@ -335,6 +336,7 @@
           <button id="datecalc-btn" aria-label="Calculadora de fechas" title="Calculadora de fechas"><i class="ti ti-calculator" aria-hidden="true"></i></button>
           <button id="receipt-btn" aria-label="Foto de recibo" title="Foto de recibo"><i class="ti ti-receipt-2" aria-hidden="true"></i></button>
           <input type="file" id="receipt-file-input" accept="image/*" style="display:none">
+          <button id="auth-btn" aria-label="Iniciar sesion para sincronizar" title="Iniciar sesion para sincronizar"><i class="ti ti-cloud" aria-hidden="true"></i></button>
         </div>
       </div>
 
@@ -520,6 +522,20 @@
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyD_v2PMTGFYczqMQKfCV88HJ8acFX9Mpzc",
+    authDomain: "nudgyapp.firebaseapp.com",
+    projectId: "nudgyapp",
+    storageBucket: "nudgyapp.firebasestorage.app",
+    messagingSenderId: "803567703829",
+    appId: "1:803567703829:web:0afcd26967b485062a7b1c"
+  };
+  firebase.initializeApp(firebaseConfig);
+</script>
 <script>
 (function(){
   var STORAGE_KEY = 'mi_alarma_notes_v1';
@@ -822,6 +838,14 @@
   var currentRinging = null;
   var ringQueue = [];
 
+  // ---------- Firebase sync state (opt-in, app works fully offline without it) ----------
+  var currentUser = null;
+  var applyingRemoteSnapshot = false;
+  var unsubNotesSnapshot = null;
+  var unsubContactsSnapshot = null;
+  var notesSyncDebounce = null;
+  var contactsSyncDebounce = null;
+
   // parsing always understands both languages regardless of UI language
   var monthNamesEs = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   var monthNamesEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -889,6 +913,7 @@
 
   function saveContacts(){
     try { localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts)); } catch(e){}
+    if (currentUser && !applyingRemoteSnapshot) scheduleContactsSync();
   }
   function loadContacts(){
     try {
@@ -975,36 +1000,188 @@
   }
 
   // ---------- Persistence ----------
+  function serializeOneNote(n){
+    return {
+      id: n.id, raw: n.raw, hour: n.hour, minute: n.minute,
+      target: n.target ? n.target.toISOString() : null,
+      dateOnly: n.dateOnly ? n.dateOnly.toISOString() : null,
+      recurring: n.recurring, createdAt: n.createdAt.toISOString(),
+      enabled: n.enabled, firedKey: n.firedKey, image: n.image || null
+    };
+  }
+  function deserializeOneNote(n){
+    return {
+      id: n.id, raw: n.raw, hour: n.hour, minute: n.minute,
+      target: n.target ? new Date(n.target) : null,
+      dateOnly: n.dateOnly ? new Date(n.dateOnly) : null,
+      recurring: n.recurring, createdAt: new Date(n.createdAt),
+      enabled: n.enabled, firedKey: n.firedKey, image: n.image || null
+    };
+  }
   function serializeNotes(){
-    return notes.map(function(n){
-      return {
-        id: n.id, raw: n.raw, hour: n.hour, minute: n.minute,
-        target: n.target ? n.target.toISOString() : null,
-        dateOnly: n.dateOnly ? n.dateOnly.toISOString() : null,
-        recurring: n.recurring, createdAt: n.createdAt.toISOString(),
-        enabled: n.enabled, firedKey: n.firedKey, image: n.image || null
-      };
-    });
+    return notes.map(serializeOneNote);
   }
   function saveToStorage(){
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeNotes())); } catch(e){}
+    if (currentUser && !applyingRemoteSnapshot) scheduleNotesSync();
   }
   function loadFromStorage(){
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       var arr = JSON.parse(raw);
-      notes = arr.map(function(n){
-        return {
-          id: n.id, raw: n.raw, hour: n.hour, minute: n.minute,
-          target: n.target ? new Date(n.target) : null,
-          dateOnly: n.dateOnly ? new Date(n.dateOnly) : null,
-          recurring: n.recurring, createdAt: new Date(n.createdAt),
-          enabled: n.enabled, firedKey: n.firedKey, image: n.image || null
-        };
-      });
+      notes = arr.map(deserializeOneNote);
       idCounter = notes.reduce(function(max, n){ return Math.max(max, n.id + 1); }, 0);
     } catch(e){}
+  }
+
+  // ---------- Firebase sync (opt-in; everything above still works fully offline/signed-out) ----------
+  function firestoreNotesRef(uid){ return firebase.firestore().collection('users').doc(uid).collection('notes'); }
+  function firestoreContactsRef(uid){ return firebase.firestore().collection('users').doc(uid).collection('contacts'); }
+
+  function scheduleNotesSync(){
+    if (notesSyncDebounce) clearTimeout(notesSyncDebounce);
+    notesSyncDebounce = setTimeout(syncAllNotesToFirestore, 400);
+  }
+  function scheduleContactsSync(){
+    if (contactsSyncDebounce) clearTimeout(contactsSyncDebounce);
+    contactsSyncDebounce = setTimeout(syncAllContactsToFirestore, 400);
+  }
+
+  // Whole-collection batched write: sets every current note/contact and deletes any
+  // remote doc id no longer present locally, using the ids seen in the last onSnapshot
+  // as the "previously known remote ids" set (avoids an extra read to diff against).
+  var lastKnownRemoteNoteIds = null;
+  var lastKnownRemoteContactIds = null;
+
+  function syncAllNotesToFirestore(){
+    if (!currentUser) return;
+    var uid = currentUser.uid;
+    var batch = firebase.firestore().batch();
+    var ref = firestoreNotesRef(uid);
+    var currentIds = {};
+    notes.forEach(function(n){
+      currentIds[String(n.id)] = true;
+      batch.set(ref.doc(String(n.id)), serializeOneNote(n));
+    });
+    if (lastKnownRemoteNoteIds){
+      lastKnownRemoteNoteIds.forEach(function(id){
+        if (!currentIds[id]) batch.delete(ref.doc(id));
+      });
+    }
+    batch.commit().catch(function(){});
+  }
+  function syncAllContactsToFirestore(){
+    if (!currentUser) return;
+    var uid = currentUser.uid;
+    var batch = firebase.firestore().batch();
+    var ref = firestoreContactsRef(uid);
+    var currentIds = {};
+    contacts.forEach(function(c){
+      currentIds[String(c.id)] = true;
+      batch.set(ref.doc(String(c.id)), c);
+    });
+    if (lastKnownRemoteContactIds){
+      lastKnownRemoteContactIds.forEach(function(id){
+        if (!currentIds[id]) batch.delete(ref.doc(id));
+      });
+    }
+    batch.commit().catch(function(){});
+  }
+
+  function applyRemoteNotesSnapshot(snapshot){
+    if (snapshot.metadata.hasPendingWrites) return; // echo of our own write, not a remote change
+    applyingRemoteSnapshot = true;
+    lastKnownRemoteNoteIds = snapshot.docs.map(function(d){ return d.id; });
+    notes = snapshot.docs.map(function(d){ return deserializeOneNote(d.data()); });
+    idCounter = notes.reduce(function(max, n){ return Math.max(max, n.id + 1); }, 0);
+    renderAll();
+    applyingRemoteSnapshot = false;
+  }
+  function applyRemoteContactsSnapshot(snapshot){
+    if (snapshot.metadata.hasPendingWrites) return;
+    applyingRemoteSnapshot = true;
+    lastKnownRemoteContactIds = snapshot.docs.map(function(d){ return d.id; });
+    contacts = snapshot.docs.map(function(d){ return d.data(); });
+    contactIdCounter = contacts.reduce(function(max, c){ return Math.max(max, c.id + 1); }, 0);
+    saveContacts();
+    renderContacts();
+    renderNotes();
+    applyingRemoteSnapshot = false;
+  }
+
+  function attachFirestoreListeners(uid){
+    unsubNotesSnapshot = firestoreNotesRef(uid).onSnapshot(applyRemoteNotesSnapshot, function(){});
+    unsubContactsSnapshot = firestoreContactsRef(uid).onSnapshot(applyRemoteContactsSnapshot, function(){});
+  }
+  function detachFirestoreListeners(){
+    if (unsubNotesSnapshot) unsubNotesSnapshot();
+    if (unsubContactsSnapshot) unsubContactsSnapshot();
+    unsubNotesSnapshot = null;
+    unsubContactsSnapshot = null;
+    lastKnownRemoteNoteIds = null;
+    lastKnownRemoteContactIds = null;
+  }
+
+  // First sign-in on this account: if the account has no notes yet in Firestore, this
+  // device's local notes/contacts are pushed up once. If the account already has notes,
+  // remote wins and the onSnapshot listeners (attached right after) populate `notes`/
+  // `contacts` from there instead. Known limitation: this is NOT a 3-way merge — a second
+  // device with its own unsynced local notes, signing in after the account already has
+  // remote data, will not have those local notes merged in; they stay local-only on that device.
+  function runFirstSignInMigrationIfNeeded(uid){
+    var migratedFlagKey = 'mi_alarma_migrated_' + uid;
+    try { if (localStorage.getItem(migratedFlagKey)) return; } catch(e){}
+    firestoreNotesRef(uid).limit(1).get().then(function(snapshot){
+      if (snapshot.empty){
+        var batch = firebase.firestore().batch();
+        notes.forEach(function(n){ batch.set(firestoreNotesRef(uid).doc(String(n.id)), serializeOneNote(n)); });
+        contacts.forEach(function(c){ batch.set(firestoreContactsRef(uid).doc(String(c.id)), c); });
+        return batch.commit();
+      }
+    }).then(function(){
+      try { localStorage.setItem(migratedFlagKey, '1'); } catch(e){}
+    }).catch(function(){});
+  }
+
+  function updateAuthBtn(){
+    if (!authBtn) return;
+    if (currentUser){
+      authBtn.classList.add('synced');
+      authBtn.querySelector('i').className = 'ti ti-cloud-check';
+      var label = currentLang === 'en' ? ('Synced as ' + (currentUser.email || '') + ' — tap to sign out') : ('Sincronizado como ' + (currentUser.email || '') + ' — toca para cerrar sesion');
+      authBtn.title = label; authBtn.setAttribute('aria-label', label);
+    } else {
+      authBtn.classList.remove('synced');
+      authBtn.querySelector('i').className = 'ti ti-cloud';
+      var label2 = currentLang === 'en' ? 'Sign in to sync' : 'Iniciar sesion para sincronizar';
+      authBtn.title = label2; authBtn.setAttribute('aria-label', label2);
+    }
+  }
+
+  var authBtn = document.getElementById('auth-btn');
+  if (authBtn){
+    authBtn.addEventListener('click', function(){
+      if (!window.firebase || !firebase.apps || !firebase.apps.length) return;
+      if (currentUser){
+        firebase.auth().signOut();
+      } else {
+        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function(){});
+      }
+    });
+  }
+
+  if (window.firebase && firebase.apps && firebase.apps.length){
+    firebase.auth().onAuthStateChanged(function(user){
+      currentUser = user;
+      updateAuthBtn();
+      if (user){
+        attachFirestoreListeners(user.uid);
+        runFirstSignInMigrationIfNeeded(user.uid);
+      } else {
+        detachFirestoreListeners();
+      }
+    });
   }
 
   // ---------- Notifications ----------
@@ -1444,7 +1621,12 @@
     upcoming.sort(function(a, b){ return a.t - b.t; });
     if (!upcoming.length){ nextAlarmEl.textContent = t('nextAlarmNone'); return; }
     var top = upcoming[0];
-    nextAlarmEl.innerHTML = '<strong>' + relativeDayLabel(top.t) + ' ' + formatHM(top.t) + '</strong><br>' + top.n.raw;
+    nextAlarmEl.textContent = '';
+    var strong = document.createElement('strong');
+    strong.textContent = relativeDayLabel(top.t) + ' ' + formatHM(top.t);
+    nextAlarmEl.appendChild(strong);
+    nextAlarmEl.appendChild(document.createElement('br'));
+    nextAlarmEl.appendChild(document.createTextNode(top.n.raw));
   }
 
   function parseNoteInput(raw){

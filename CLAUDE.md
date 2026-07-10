@@ -8,6 +8,7 @@ App PWA de notas/alarmas bilingue (espanol/ingles) que vive en un solo archivo `
 - `manifest.json` — configuracion PWA (nombre, colores, icono)
 - `sw.js` — service worker (cache offline + notificaciones con botones de accion)
 - `icon.svg` — icono de la app (una campana simple)
+- `firestore.rules` — reglas de seguridad de Firestore (se pegan a mano en la consola de Firebase, no se deployan por CLI)
 - `COMO_PUBLICARLO.md` — instrucciones de publicacion antiguas (ya no se usan)
 
 ## Deploy
@@ -34,11 +35,12 @@ Repositorio en GitHub (`Sergioleon47/nudgy`), conectado a Netlify (proyecto "nud
 - Escanear un calendario fisico: se toma una foto de un calendario de papel escrito a mano, se ajustan las 4 esquinas de la cuadricula sobre la foto, y la app detecta automaticamente (por contraste de tinta, sin IA ni backend) que dias tienen algo escrito. Despues, un asistente rapido pregunta dia por dia que se escribio ahi y crea las notas/alarmas correspondientes
 - Calculadora de fechas: cuantos dias faltan para una fecha especifica, y que dia sera sumando/restando dias, semanas o meses desde hoy
 - Foto de recibo con recordatorio automatico de pago: se toma una foto de un recibo, la app lee el texto con OCR gratis en el navegador (Tesseract.js, cargado solo cuando se usa esta funcion, sin backend) y detecta la fecha de compra (formatos numericos DD/MM/YYYY o YYYY-MM-DD). El usuario confirma/corrige la fecha, elige 1 o 2 dias de anticipacion, y la app crea una alarma para recordar pagarlo antes de que se cumpla el mes
+- Sincronizacion opcional con Firebase: un boton (icono de nube junto a los demas iconos del encabezado) permite iniciar sesion con Google. Sin iniciar sesion, la app funciona exactamente igual que siempre (100% localStorage, sin cuenta). Al iniciar sesion, las notas y contactos se guardan tambien en Firestore (`users/{uid}/notes`, `users/{uid}/contacts`) y se sincronizan en tiempo real entre dispositivos logueados con la misma cuenta. La primera vez que una cuenta inicia sesion: si no tiene notas en Firestore, sube las locales; si ya tiene, las de Firestore mandan (no es un merge de 3 vias)
 
 ## Limitaciones conocidas
 
-- No hay sincronizacion entre dispositivos (todo vive en localStorage de ese navegador)
-- No hay cuentas de usuario ni backend
+- No hay alarmas con el navegador completamente cerrado (requeriria Firebase Cloud Messaging + Cloud Functions programadas + plan de facturacion Blaze — evaluado pero no implementado, ver seccion de sync de Firebase arriba)
+- El sync de Firebase no hace merge de 3 vias: si un segundo dispositivo tiene notas locales sin sincronizar y se loguea despues de que la cuenta ya tiene datos en Firestore, esas notas locales del segundo dispositivo no se mezclan (quedan solo ahi, no aparecen en la cuenta)
 - Ideas pendientes que requieren backend/Firebase (guardadas para el futuro, NO implementar todavia): autocompletado de contactos, compartir notas entre usuarios con permisos, busqueda automatica de telefonos de negocios via Google Places API
 
 ## Estilo de diseno
