@@ -27,7 +27,7 @@
     background: #E5E5EA; border-radius:9px; padding:2px;
   }
   #lang-toggle button {
-    background:none; border:none; color:#8E8E93; font-size:11px; font-weight:600;
+    background:none; border:none; color:#5F5F63; font-size:11px; font-weight:600;
     padding:5px 10px; border-radius:7px; cursor:pointer;
   }
   #lang-toggle button.active { background:#FFFFFF; color:#D98A1F; box-shadow:0 1px 2px rgba(0,0,0,0.12); }
@@ -106,7 +106,7 @@
     position:absolute; width:26px; height:26px; margin-left:-13px; margin-top:-13px;
     background: rgba(217,138,31,0.9); border:2px solid white; border-radius:50%; cursor:grab; touch-action:none;
   }
-  .scan-hint { font-size:12px; color:#8E8E93; margin:10px 0; text-align:center; }
+  .scan-hint { font-size:12px; color:#5F5F63; margin:10px 0; text-align:center; }
   #scan-review-grid { display:grid; grid-template-columns: repeat(7, 1fr); gap:5px; margin-bottom:14px; }
   .scan-day-cell {
     aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:12px; color:#1C1C1E;
@@ -120,7 +120,7 @@
     border-radius:12px; border:none; background:#F2F2F7; resize:none; margin-bottom:12px;
   }
   .scan-wizard-actions { display:flex; justify-content:space-between; align-items:center; gap:8px; }
-  #scan-wizard-skip { background:none; border:none; color:#8E8E93; font-size:13px; cursor:pointer; }
+  #scan-wizard-skip { background:none; border:none; color:#5F5F63; font-size:13px; cursor:pointer; }
 
   #datecalc-modal {
     display:none; position:fixed; inset:0; background:rgba(20,40,55,0.55); z-index:1000;
@@ -184,7 +184,7 @@
   .action-row { display:flex; align-items:center; gap:12px; margin-top:8px; min-height:22px; }
   #saved-flash { font-size:12px; color:#2FA360; opacity:0; transition:opacity .3s ease; }
   #mic-status { font-size:12px; color:#B5493D; opacity:0; transition:opacity .2s ease; }
-  #cancel-edit-btn { display:none; background:none; border:none; color:#8E8E93; font-size:12px; cursor:pointer; }
+  #cancel-edit-btn { display:none; background:none; border:none; color:#5F5F63; font-size:12px; cursor:pointer; }
   #add-btn { display:none; }
 
   #notes-list { display:flex; flex-direction:column; gap:2px; margin-top:14px; overflow-y:auto; flex:1; max-height:420px; }
@@ -192,11 +192,11 @@
     width:100%; margin-top:12px; font-size:13px; color:#1C1C1E; background:#F2F2F7;
     border:none; border-radius:10px; padding:9px 11px; font-family:inherit;
   }
-  #search-input::placeholder { color:#8E8E93; }
-  #empty-msg { text-align:center; color:#8E8E93; font-size:13px; padding:10px 0 0; }
+  #search-input::placeholder { color:#5F5F63; }
+  #empty-msg { text-align:center; color:#5F5F63; font-size:13px; padding:10px 0 0; }
   #onboarding-hint { display:none; text-align:center; margin-top:14px; }
   #onboarding-hint .hint-line {
-    font-size:12px; color:#8E8E93; font-style:italic; margin-bottom:8px;
+    font-size:12px; color:#5F5F63; font-style:italic; margin-bottom:8px;
   }
 
   @keyframes note-in { 0%{opacity:0; transform:translateY(-6px);} 100%{opacity:1; transform:translateY(0);} }
@@ -217,7 +217,7 @@
   #cal-weekdays, #cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
   #cal-weekdays { margin-bottom:4px; }
   #cal-grid { grid-auto-rows:36px; }
-  .cal-wd { font-size:9px; text-align:center; color:#8E8E93; font-weight:600; }
+  .cal-wd { font-size:9px; text-align:center; color:#5F5F63; font-weight:600; }
   .cal-cell { position:relative; border-radius:10px; padding:2px 3px; font-size:10px; cursor:pointer; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; }
   .cal-cell:hover { background: #F2F2F7; }
   .cal-cell.empty { cursor:default; }
@@ -229,15 +229,15 @@
   .cal-activity-icon { font-size:17px; color:#2FA360; }
   .cal-count { font-size:8px; font-weight:700; color:#2FA360; margin-top:1px; }
   .cal-mini-note { font-size:11px; padding:6px 8px; border-radius:9px; background:#F2F2F7; color:#1C1C1E; white-space:pre-wrap; }
-  .legend { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; font-size:9px; color:#8E8E93; align-items:center; }
+  .legend { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; font-size:9px; color:#5F5F63; align-items:center; }
   .legend-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:3px; background:#2FA360; }
   #cal-selected-panel { margin-top:10px; display:none; }
   #cal-selected-title { font-size:11px; font-weight:600; color:#D98A1F; margin-bottom:5px; }
   .next-alarm-box { margin-top:16px; padding-top:14px; border-top:1px solid rgba(60,60,67,0.1); }
-  .next-alarm-label { font-size:11px; font-weight:600; color:#8E8E93; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
+  .next-alarm-label { font-size:11px; font-weight:600; color:#5F5F63; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
   #next-alarm { font-size:13px; color:#1C1C1E; line-height:1.4; }
 
-  .footer-note { text-align:center; font-size:11px; color:#8E8E93; margin-top:16px; }
+  .footer-note { text-align:center; font-size:11px; color:#5F5F63; margin-top:16px; }
 
   @media (max-width: 680px) {
     body { padding: 10px; }
@@ -1062,7 +1062,10 @@
     var currentIds = {};
     notes.forEach(function(n){
       currentIds[String(n.id)] = true;
-      batch.set(ref.doc(String(n.id)), serializeOneNote(n));
+      // Strip any stray `undefined` field first — Firestore rejects the whole
+      // batch write if even one note has one, which would silently stop every
+      // other note from syncing too.
+      batch.set(ref.doc(String(n.id)), JSON.parse(JSON.stringify(serializeOneNote(n))));
     });
     if (lastKnownRemoteNoteIds){
       lastKnownRemoteNoteIds.forEach(function(id){
@@ -1079,7 +1082,7 @@
     var currentIds = {};
     contacts.forEach(function(c){
       currentIds[String(c.id)] = true;
-      batch.set(ref.doc(String(c.id)), c);
+      batch.set(ref.doc(String(c.id)), JSON.parse(JSON.stringify(c)));
     });
     if (lastKnownRemoteContactIds){
       lastKnownRemoteContactIds.forEach(function(id){
@@ -1135,8 +1138,8 @@
     firestoreNotesRef(uid).limit(1).get().then(function(snapshot){
       if (snapshot.empty){
         var batch = firebase.firestore().batch();
-        notes.forEach(function(n){ batch.set(firestoreNotesRef(uid).doc(String(n.id)), serializeOneNote(n)); });
-        contacts.forEach(function(c){ batch.set(firestoreContactsRef(uid).doc(String(c.id)), c); });
+        notes.forEach(function(n){ batch.set(firestoreNotesRef(uid).doc(String(n.id)), JSON.parse(JSON.stringify(serializeOneNote(n)))); });
+        contacts.forEach(function(c){ batch.set(firestoreContactsRef(uid).doc(String(c.id)), JSON.parse(JSON.stringify(c))); });
         return batch.commit();
       }
     }).then(function(){
