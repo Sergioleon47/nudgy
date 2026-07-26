@@ -577,7 +577,10 @@
       previewDaily: 'Se repite todos los dias',
       previewEveryNDays: 'Se repite cada',
       previewEveryNYears: 'Se repite cada',
+      previewEveryNHours: 'Se repite cada',
       previewUntil: 'hasta',
+      unitHours: 'horas',
+      unitHour: 'hora',
       exportIcsTitle: 'Agregar al calendario (.ics)',
       editLabel: 'Editar',
       deleteLabel: 'Eliminar',
@@ -660,7 +663,10 @@
       previewDaily: 'Repeats every day',
       previewEveryNDays: 'Repeats every',
       previewEveryNYears: 'Repeats every',
+      previewEveryNHours: 'Repeats every',
       previewUntil: 'until',
+      unitHours: 'hours',
+      unitHour: 'hour',
       exportIcsTitle: 'Add to calendar (.ics)',
       editLabel: 'Edit',
       deleteLabel: 'Delete',
@@ -1448,8 +1454,23 @@
     if (n < 2) return null;
     return { match: m[0], n: n };
   }
+  // "cada 2 horas" / "every 2 hours" — intra-day repetition (hydration, meds during
+  // training), as opposed to the other "every N" patterns which fire once a day/year.
+  function extractEveryNHours(text){
+    var m = text.match(/\bcada\s+(\d{1,3})\s*horas?\b/i) || text.match(/\bevery\s+(\d{1,3})\s*hours?\b/i);
+    if (m){
+      var n = parseInt(m[1], 10);
+      if (n < 1) return null;
+      return { match: m[0], n: n };
+    }
+    var m2 = text.match(/\bcada\s+hora\b/i) || text.match(/\bevery\s+hour\b/i);
+    if (m2) return { match: m2[0], n: 1 };
+    return null;
+  }
 
   function extractRecurringExact(text){
+    var everyHours = extractEveryNHours(text);
+    if (everyHours) return { type: 'everyNHours', n: everyHours.n, match: everyHours.match };
     var everyDays = extractEveryNDays(text);
     if (everyDays) return { type: 'everyNDays', n: everyDays.n, match: everyDays.match };
     var everyYears = extractEveryNYears(text);
@@ -1603,7 +1624,7 @@
       osc.start(); osc.stop(audioCtx.currentTime + 0.35);
     } catch(e){}
   }
-  var typeFreq = { once: 880, daily: 660, weekly: 740, yearly: 990, everyNDays: 700, everyNYears: 940 };
+  var typeFreq = { once: 880, daily: 660, weekly: 740, yearly: 990, everyNDays: 700, everyNYears: 940, everyNHours: 620 };
   function noteTypeKey(n){ return n.recurring ? n.recurring.type : 'once'; }
 
   // Shared by notesForDate() and the alarm-check loop: does this note's recurring
@@ -1626,6 +1647,17 @@
       if (d.getMonth() !== anchorY.getMonth() || d.getDate() !== anchorY.getDate()) return false;
       var yearsDiff = d.getFullYear() - anchorY.getFullYear();
       return yearsDiff >= 0 && yearsDiff % recurring.n === 0;
+    }
+    if (recurring.type === 'everyNHours'){
+      var anchorH = new Date(createdAt);
+      var anchorFloor = new Date(anchorH.getFullYear(), anchorH.getMonth(), anchorH.getDate(), anchorH.getHours(), anchorH.getMinutes(), 0, 0);
+      var dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+      var dayEnd = new Date(dayStart.getTime() + 24*60*60*1000);
+      if (dayEnd <= anchorFloor) return false;
+      var intervalMs = recurring.n * 60 * 60 * 1000;
+      var stepsToDayStart = Math.max(0, Math.ceil((dayStart.getTime() - anchorFloor.getTime()) / intervalMs));
+      var firstInDay = new Date(anchorFloor.getTime() + stepsToDayStart * intervalMs);
+      return firstInDay < dayEnd;
     }
     return false;
   }
@@ -1664,6 +1696,13 @@
       var t5 = new Date(anchorY2.getFullYear(), anchorY2.getMonth(), anchorY2.getDate(), note.hour, note.minute, 0, 0);
       while (t5 <= now) t5.setFullYear(t5.getFullYear() + note.recurring.n);
       result = t5;
+    } else if (note.recurring.type === 'everyNHours'){
+      var anchorH2 = new Date(note.createdAt);
+      var anchorFloor2 = new Date(anchorH2.getFullYear(), anchorH2.getMonth(), anchorH2.getDate(), anchorH2.getHours(), anchorH2.getMinutes(), 0, 0);
+      var intervalMs2 = note.recurring.n * 60 * 60 * 1000;
+      var t6 = new Date(anchorFloor2.getTime());
+      while (t6 <= now) t6 = new Date(t6.getTime() + intervalMs2);
+      result = t6;
     }
     if (result && until && result > until) return null;
     return result;
@@ -1716,6 +1755,8 @@
         lines.push('RRULE:FREQ=DAILY;INTERVAL=' + note.recurring.n + untilClause);
       } else if (note.recurring.type === 'everyNYears'){
         lines.push('RRULE:FREQ=YEARLY;INTERVAL=' + note.recurring.n + untilClause);
+      } else if (note.recurring.type === 'everyNHours'){
+        lines.push('RRULE:FREQ=HOURLY;INTERVAL=' + note.recurring.n + untilClause);
       }
     }
     lines.push('END:VEVENT', 'END:VCALENDAR');
@@ -1779,6 +1820,7 @@
     if (recurInfo.type === 'daily') return { type: 'daily' };
     if (recurInfo.type === 'everyNDays') return { type: 'everyNDays', n: recurInfo.n };
     if (recurInfo.type === 'everyNYears') return { type: 'everyNYears', n: recurInfo.n };
+    if (recurInfo.type === 'everyNHours') return { type: 'everyNHours', n: recurInfo.n };
     return { type: 'weekly', weekdays: recurInfo.weekdays };
   }
 
@@ -1863,6 +1905,7 @@
         base = t('previewWeekly') + ' ' + names;
       } else if (r.type === 'everyNDays') base = t('previewEveryNDays') + ' ' + r.n + ' ' + t('datecalcUnitDays');
       else if (r.type === 'everyNYears') base = t('previewEveryNYears') + ' ' + r.n + ' ' + t('datecalcUnitYears');
+      else if (r.type === 'everyNHours') base = t('previewEveryNHours') + ' ' + r.n + ' ' + (r.n === 1 ? t('unitHour') : t('unitHours'));
       if (base == null) return null;
       if (timeStr) base += ', ' + timeStr;
       if (r.until){
@@ -2630,10 +2673,21 @@
   calPrev.addEventListener('click', function(){ vibrate(6); calState.month--; if (calState.month < 0){ calState.month = 11; calState.year--; } renderCalendar(); });
   calNext.addEventListener('click', function(){ vibrate(6); calState.month++; if (calState.month > 11){ calState.month = 0; calState.year++; } renderCalendar(); });
 
+  // "cada N horas" fires several times a day, so it needs a real anchor moment to
+  // count from. If the user didn't give an explicit start time, anchor it to the
+  // exact moment the note was written (or last edited) instead of leaving it timeless.
+  function applyEveryNHoursAnchor(parsed, anchorMoment){
+    if (parsed.recurring && parsed.recurring.type === 'everyNHours' && parsed.hour == null){
+      parsed.hour = anchorMoment.getHours();
+      parsed.minute = anchorMoment.getMinutes();
+    }
+  }
+
   function addNewNoteFromRaw(raw, image){
     raw = capitalizeFirst(raw);
     var parsed = parseNoteInput(raw);
     var createdAt = new Date();
+    applyEveryNHoursAnchor(parsed, createdAt);
     var hasDateInfo = parsed.hour != null || parsed.dateOnly || parsed.recurring;
     var recurring = parsed.recurring;
     if (!hasDateInfo) recurring = { type: 'yearly', month: createdAt.getMonth(), day: createdAt.getDate() };
@@ -2653,6 +2707,7 @@
     var idx = notes.findIndex(function(n){ return n.id === editingId; });
     if (idx !== -1){
       var parsed = parseNoteInput(raw);
+      applyEveryNHoursAnchor(parsed, notes[idx].createdAt);
       var hasDateInfo = parsed.hour != null || parsed.dateOnly || parsed.recurring;
       notes[idx].raw = raw; notes[idx].hour = parsed.hour; notes[idx].minute = parsed.minute;
       notes[idx].target = parsed.target; notes[idx].dateOnly = parsed.dateOnly; notes[idx].firedKey = null;
@@ -2745,6 +2800,26 @@
       if (note.hour == null || !note.enabled) return;
       if (note === currentRinging) return;
       if (ringQueue.indexOf(note) !== -1) return;
+
+      // "cada N horas" can fire several times in one day, so it needs its own
+      // per-occurrence dedup key instead of the once-a-day `todayKey`.
+      if (note.recurring && note.recurring.type === 'everyNHours'){
+        var until = note.recurring.until ? new Date(note.recurring.until) : null;
+        if (until && now > until) return;
+        var anchor = new Date(note.createdAt);
+        var anchorFloor = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), anchor.getHours(), anchor.getMinutes(), 0, 0);
+        var nowFloor = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), 0, 0);
+        var diffMinutes = Math.round((nowFloor - anchorFloor) / 60000);
+        var intervalMinutes = note.recurring.n * 60;
+        if (diffMinutes < 0 || diffMinutes % intervalMinutes !== 0) return;
+        var occurrenceKey = 'h' + diffMinutes;
+        if (note.firedKey !== occurrenceKey){
+          note.firedKey = occurrenceKey;
+          if (currentRinging) ringQueue.push(note); else startRinging(note);
+        }
+        return;
+      }
+
       var minuteMatches = now.getHours() === note.hour && now.getMinutes() === note.minute;
       var dayMatches = note.recurring ? recurringMatchesDay(note.recurring, note.createdAt, now) : dateKey(note.target) === todayKey;
       if (minuteMatches && dayMatches && note.firedKey !== todayKey){
