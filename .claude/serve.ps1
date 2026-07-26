@@ -1,6 +1,10 @@
-param([int]$Port = 5050)
+param([int]$Port = 5050, [string]$Root = "")
 
-$root = Split-Path -Parent $PSScriptRoot
+if ([string]::IsNullOrEmpty($Root)) {
+  $root = Split-Path -Parent $PSScriptRoot
+} else {
+  $root = $Root
+}
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://localhost:$Port/")
 $listener.Start()
