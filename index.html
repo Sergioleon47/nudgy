@@ -245,7 +245,7 @@
     .cols { gap: 10px; }
     .sky-panel { padding: 12px; }
     .col-left, .col-right { min-height: auto; max-width: none; }
-    .col-right { order: -1; }
+    .col-right { order: -1; margin-top: 16px; }
     .top-row { margin-bottom: 6px; }
     #note-input { height: 60px; overflow-y: auto; }
     #notes-list { max-height: 260px; margin-top: 8px; }
@@ -1127,21 +1127,42 @@
   }
 
   // First sign-in on this account: if the account has no notes yet in Firestore, this
-  // device's local notes/contacts are pushed up once. If the account already has notes,
-  // remote wins and the onSnapshot listeners (attached right after) populate `notes`/
-  // `contacts` from there instead. Known limitation: this is NOT a 3-way merge — a second
-  // device with its own unsynced local notes, signing in after the account already has
-  // remote data, will not have those local notes merged in; they stay local-only on that device.
-  function runFirstSignInMigrationIfNeeded(uid){
+  // device's local notes/contacts are pushed up as-is. If the account already has notes
+  // (synced before from another device), this device's own local-only notes/contacts are
+  // merged in too instead of being silently discarded — re-numbered past the highest id
+  // already on the account so they can never collide with and overwrite one that's there.
+  // Contacts are also de-duped by phone number so the same person saved on two phones
+  // doesn't turn into two contact entries.
+  function runFirstSignInMigrationIfNeeded(uid, localNotes, localContacts){
     var migratedFlagKey = 'mi_alarma_migrated_' + uid;
     try { if (localStorage.getItem(migratedFlagKey)) return; } catch(e){}
-    firestoreNotesRef(uid).limit(1).get().then(function(snapshot){
-      if (snapshot.empty){
+    firestoreNotesRef(uid).get().then(function(notesSnapshot){
+      if (notesSnapshot.empty){
         var batch = firebase.firestore().batch();
-        notes.forEach(function(n){ batch.set(firestoreNotesRef(uid).doc(String(n.id)), JSON.parse(JSON.stringify(serializeOneNote(n)))); });
-        contacts.forEach(function(c){ batch.set(firestoreContactsRef(uid).doc(String(c.id)), JSON.parse(JSON.stringify(c))); });
+        localNotes.forEach(function(n){ batch.set(firestoreNotesRef(uid).doc(String(n.id)), JSON.parse(JSON.stringify(serializeOneNote(n)))); });
+        localContacts.forEach(function(c){ batch.set(firestoreContactsRef(uid).doc(String(c.id)), JSON.parse(JSON.stringify(c))); });
         return batch.commit();
       }
+      var remoteNoteIds = notesSnapshot.docs.map(function(d){ return parseInt(d.id, 10); }).filter(function(n){ return !isNaN(n); });
+      var nextNoteId = (remoteNoteIds.length ? Math.max.apply(null, remoteNoteIds) : -1) + 1;
+      return firestoreContactsRef(uid).get().then(function(contactsSnapshot){
+        var remotePhones = {};
+        contactsSnapshot.docs.forEach(function(d){ var c = d.data(); if (c.phone) remotePhones[c.phone] = true; });
+        var remoteContactIds = contactsSnapshot.docs.map(function(d){ return parseInt(d.id, 10); }).filter(function(n){ return !isNaN(n); });
+        var nextContactId = (remoteContactIds.length ? Math.max.apply(null, remoteContactIds) : -1) + 1;
+        var contactsToMerge = localContacts.filter(function(c){ return !remotePhones[c.phone]; });
+        if (!localNotes.length && !contactsToMerge.length) return;
+        var batch = firebase.firestore().batch();
+        localNotes.forEach(function(n){
+          n.id = nextNoteId++;
+          batch.set(firestoreNotesRef(uid).doc(String(n.id)), JSON.parse(JSON.stringify(serializeOneNote(n))));
+        });
+        contactsToMerge.forEach(function(c){
+          c.id = nextContactId++;
+          batch.set(firestoreContactsRef(uid).doc(String(c.id)), JSON.parse(JSON.stringify(c)));
+        });
+        return batch.commit();
+      });
     }).then(function(){
       try { localStorage.setItem(migratedFlagKey, '1'); } catch(e){}
     }).catch(function(){});
@@ -1179,8 +1200,14 @@
       currentUser = user;
       updateAuthBtn();
       if (user){
+        // Snapshot this device's local notes/contacts before the listener below
+        // has a chance to overwrite `notes`/`contacts` with whatever the account
+        // already has remotely — the migration merge needs the true pre-sync
+        // local state, not a copy that's already been replaced.
+        var localNotesAtSignIn = notes.slice();
+        var localContactsAtSignIn = contacts.slice();
         attachFirestoreListeners(user.uid);
-        runFirstSignInMigrationIfNeeded(user.uid);
+        runFirstSignInMigrationIfNeeded(user.uid, localNotesAtSignIn, localContactsAtSignIn);
       } else {
         detachFirestoreListeners();
       }
