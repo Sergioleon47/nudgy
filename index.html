@@ -575,6 +575,9 @@
       previewYearly: 'Se repite cada',
       previewWeekly: 'Se repite',
       previewDaily: 'Se repite todos los dias',
+      previewEveryNDays: 'Se repite cada',
+      previewEveryNYears: 'Se repite cada',
+      previewUntil: 'hasta',
       exportIcsTitle: 'Agregar al calendario (.ics)',
       editLabel: 'Editar',
       deleteLabel: 'Eliminar',
@@ -655,6 +658,9 @@
       previewYearly: 'Repeats every',
       previewWeekly: 'Repeats',
       previewDaily: 'Repeats every day',
+      previewEveryNDays: 'Repeats every',
+      previewEveryNYears: 'Repeats every',
+      previewUntil: 'until',
       exportIcsTitle: 'Add to calendar (.ics)',
       editLabel: 'Edit',
       deleteLabel: 'Delete',
@@ -1406,10 +1412,52 @@
     }
     return { match: m[0], days: days };
   }
+  // "lunes y miercoles", "lunes, miercoles y viernes", "monday and wednesday" — a list of
+  // specific (not necessarily consecutive) weekdays, as opposed to a range like "de lunes a viernes".
+  function extractWeekdayList(text){
+    var names = Object.keys(dayWords).join('|');
+    var reEs = new RegExp('\\b((?:' + names + ')(?:\\s*,\\s*(?:' + names + '))*\\s+y\\s+(?:' + names + '))\\b', 'i');
+    var reEn = new RegExp('\\b((?:' + names + ')(?:\\s*,\\s*(?:' + names + '))*\\s+and\\s+(?:' + names + '))\\b', 'i');
+    var m = text.match(reEs) || text.match(reEn);
+    if (!m) return null;
+    var parts = m[1].split(/\s*,\s*|\s+y\s+|\s+and\s+/i);
+    var days = [];
+    for (var i = 0; i < parts.length; i++){
+      var d = dayWords[parts[i].trim().toLowerCase()];
+      if (d != null && days.indexOf(d) === -1) days.push(d);
+    }
+    if (days.length < 2) return null;
+    days.sort(function(a,b){ return a - b; });
+    return { match: m[1], days: days };
+  }
+  // "cada 3 dias" / "every 3 days" — a plain weekly/daily pattern doesn't fit rotating
+  // shifts that aren't tied to a fixed day of the week.
+  function extractEveryNDays(text){
+    var m = text.match(/\bcada\s+(\d{1,3})\s*d[ií]as\b/i) || text.match(/\bevery\s+(\d{1,3})\s*days\b/i);
+    if (!m) return null;
+    var n = parseInt(m[1], 10);
+    if (n < 2) return null;
+    return { match: m[0], n: n };
+  }
+  // "cada 2 anos" / "every 2 years" — for periodic renewals (certifications, licenses)
+  // that don't happen every single year.
+  function extractEveryNYears(text){
+    var m = text.match(/\bcada\s+(\d{1,2})\s*a[ñn]os\b/i) || text.match(/\bevery\s+(\d{1,2})\s*years\b/i);
+    if (!m) return null;
+    var n = parseInt(m[1], 10);
+    if (n < 2) return null;
+    return { match: m[0], n: n };
+  }
 
   function extractRecurringExact(text){
+    var everyDays = extractEveryNDays(text);
+    if (everyDays) return { type: 'everyNDays', n: everyDays.n, match: everyDays.match };
+    var everyYears = extractEveryNYears(text);
+    if (everyYears) return { type: 'everyNYears', n: everyYears.n, match: everyYears.match };
     var range = extractWeekdayRange(text);
     if (range) return { type: 'weekly', weekdays: range.days, match: range.match };
+    var list = extractWeekdayList(text);
+    if (list) return { type: 'weekly', weekdays: list.days, match: list.match };
     var wd = text.match(/\bweekdays?\b/i) || text.match(/\bentre\s+semana\b/i) || text.match(/\bd[ií]as?\s+h[áa]biles\b/i);
     if (wd) return { type: 'weekly', weekdays: [1,2,3,4,5], match: wd[0] };
     var m = text.match(/todos\s+los\s+d[ií]as/i) || text.match(/\bevery\s*day\b/i);
@@ -1555,19 +1603,43 @@
       osc.start(); osc.stop(audioCtx.currentTime + 0.35);
     } catch(e){}
   }
-  var typeFreq = { once: 880, daily: 660, weekly: 740, yearly: 990 };
+  var typeFreq = { once: 880, daily: 660, weekly: 740, yearly: 990, everyNDays: 700, everyNYears: 940 };
   function noteTypeKey(n){ return n.recurring ? n.recurring.type : 'once'; }
 
+  // Shared by notesForDate() and the alarm-check loop: does this note's recurring
+  // pattern land on day `d` (also respecting an optional "until" cutoff)?
+  function recurringMatchesDay(recurring, createdAt, d){
+    if (recurring.until && d > new Date(recurring.until)) return false;
+    if (recurring.type === 'daily') return true;
+    if (recurring.type === 'weekly') return recurring.weekdays.indexOf(d.getDay()) !== -1;
+    if (recurring.type === 'yearly') return recurring.month === d.getMonth() && recurring.day === d.getDate();
+    if (recurring.type === 'everyNDays'){
+      var anchor = new Date(createdAt);
+      var anchorMid = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate());
+      var dMid = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      if (dMid < anchorMid) return false;
+      var diffDays = Math.round((dMid - anchorMid) / (24*60*60*1000));
+      return diffDays % recurring.n === 0;
+    }
+    if (recurring.type === 'everyNYears'){
+      var anchorY = new Date(createdAt);
+      if (d.getMonth() !== anchorY.getMonth() || d.getDate() !== anchorY.getDate()) return false;
+      var yearsDiff = d.getFullYear() - anchorY.getFullYear();
+      return yearsDiff >= 0 && yearsDiff % recurring.n === 0;
+    }
+    return false;
+  }
   function nextOccurrence(note){
     if (note.hour == null || !note.enabled) return null;
     var now = new Date();
     if (!note.recurring) return note.target;
+    var until = note.recurring.until ? new Date(note.recurring.until) : null;
+    var result = null;
     if (note.recurring.type === 'daily'){
       var t = new Date(now); t.setHours(note.hour, note.minute, 0, 0);
       if (t <= now) t.setDate(t.getDate() + 1);
-      return t;
-    }
-    if (note.recurring.type === 'weekly'){
+      result = t;
+    } else if (note.recurring.type === 'weekly'){
       var wds = note.recurring.weekdays;
       var best = null;
       for (var wi = 0; wi < wds.length; wi++){
@@ -1577,14 +1649,24 @@
         t2.setDate(now.getDate() + diff);
         if (!best || t2 < best) best = t2;
       }
-      return best;
-    }
-    if (note.recurring.type === 'yearly'){
+      result = best;
+    } else if (note.recurring.type === 'yearly'){
       var t3 = new Date(now.getFullYear(), note.recurring.month, note.recurring.day, note.hour, note.minute, 0, 0);
       if (t3 <= now) t3 = new Date(now.getFullYear() + 1, note.recurring.month, note.recurring.day, note.hour, note.minute, 0, 0);
-      return t3;
+      result = t3;
+    } else if (note.recurring.type === 'everyNDays'){
+      var anchorD = new Date(note.createdAt);
+      var t4 = new Date(anchorD.getFullYear(), anchorD.getMonth(), anchorD.getDate(), note.hour, note.minute, 0, 0);
+      while (t4 <= now) t4.setDate(t4.getDate() + note.recurring.n);
+      result = t4;
+    } else if (note.recurring.type === 'everyNYears'){
+      var anchorY2 = new Date(note.createdAt);
+      var t5 = new Date(anchorY2.getFullYear(), anchorY2.getMonth(), anchorY2.getDate(), note.hour, note.minute, 0, 0);
+      while (t5 <= now) t5.setFullYear(t5.getFullYear() + note.recurring.n);
+      result = t5;
     }
-    return null;
+    if (result && until && result > until) return null;
+    return result;
   }
   function icsPad2(n){ return n < 10 ? '0' + n : '' + n; }
   function icsLocalStamp(d){
@@ -1623,12 +1705,17 @@
     }
 
     if (note.recurring){
-      if (note.recurring.type === 'daily') lines.push('RRULE:FREQ=DAILY');
+      var untilClause = note.recurring.until ? (';UNTIL=' + icsUTCStamp(new Date(note.recurring.until))) : '';
+      if (note.recurring.type === 'daily') lines.push('RRULE:FREQ=DAILY' + untilClause);
       else if (note.recurring.type === 'weekly'){
         var byday = note.recurring.weekdays.map(function(w){ return ['SU','MO','TU','WE','TH','FR','SA'][w]; }).join(',');
-        lines.push('RRULE:FREQ=WEEKLY;BYDAY=' + byday);
+        lines.push('RRULE:FREQ=WEEKLY;BYDAY=' + byday + untilClause);
       } else if (note.recurring.type === 'yearly'){
-        lines.push('RRULE:FREQ=YEARLY');
+        lines.push('RRULE:FREQ=YEARLY' + untilClause);
+      } else if (note.recurring.type === 'everyNDays'){
+        lines.push('RRULE:FREQ=DAILY;INTERVAL=' + note.recurring.n + untilClause);
+      } else if (note.recurring.type === 'everyNYears'){
+        lines.push('RRULE:FREQ=YEARLY;INTERVAL=' + note.recurring.n + untilClause);
       }
     }
     lines.push('END:VEVENT', 'END:VCALENDAR');
@@ -1659,13 +1746,58 @@
     nextAlarmEl.appendChild(document.createTextNode(top.n.raw));
   }
 
+  // "hasta el 15 de diciembre" / "until December" — an end date for a recurring note.
+  // Only meaningful when the note also has a recurring pattern once that clause is
+  // removed, so callers must check for that before trusting this as an end date
+  // (otherwise a one-time note like "vacaciones hasta el 15 de agosto" would get its
+  // date swallowed as if it were a recurrence cutoff instead of the note's own date).
+  function extractUntilDate(text){
+    var m = text.match(/\bhasta\s+(?:el\s+)?(.+)/i) || text.match(/\b(?:until|through)\s+(.+)/i);
+    if (!m) return null;
+    var tail = m[1];
+    var specific = extractSpecificDate(tail);
+    if (specific){
+      var year = specific.year;
+      var candidate = new Date(year != null ? year : new Date().getFullYear(), specific.month, specific.day, 23, 59, 59, 999);
+      if (year == null && candidate < new Date()) candidate.setFullYear(candidate.getFullYear() + 1);
+      return { match: m[0], date: candidate };
+    }
+    for (var mi = 0; mi < 12; mi++){
+      var reEs = new RegExp('\\b' + monthNamesEs[mi] + '\\b', 'i');
+      var reEn = new RegExp('\\b' + monthNamesEn[mi] + '\\b', 'i');
+      if (reEs.test(tail) || reEn.test(tail)){
+        var y = new Date().getFullYear();
+        var lastDay = new Date(y, mi + 1, 0).getDate();
+        var cand2 = new Date(y, mi, lastDay, 23, 59, 59, 999);
+        if (cand2 < new Date()) cand2 = new Date(y + 1, mi, lastDay, 23, 59, 59, 999);
+        return { match: m[0], date: cand2 };
+      }
+    }
+    return null;
+  }
+  function recurringFromInfo(recurInfo){
+    if (recurInfo.type === 'daily') return { type: 'daily' };
+    if (recurInfo.type === 'everyNDays') return { type: 'everyNDays', n: recurInfo.n };
+    if (recurInfo.type === 'everyNYears') return { type: 'everyNYears', n: recurInfo.n };
+    return { type: 'weekly', weekdays: recurInfo.weekdays };
+  }
+
   function parseNoteInput(raw){
-    var relInfo = extractRelativeTime(raw);
-    var specificDateInfo = relInfo ? null : extractSpecificDate(raw);
-    var bareDayInfo = (relInfo || specificDateInfo) ? null : extractBareDayOfMonth(raw);
-    var recurInfo = (relInfo || specificDateInfo || bareDayInfo) ? null : extractRecurring(raw);
-    var dayInfo = (relInfo || specificDateInfo || bareDayInfo || recurInfo) ? null : extractDay(raw);
-    var timeInfoRaw = extractTime(raw);
+    var untilInfo = extractUntilDate(raw);
+    var workText = raw;
+    if (untilInfo){
+      var idx = raw.indexOf(untilInfo.match);
+      var stripped = raw.slice(0, idx) + raw.slice(idx + untilInfo.match.length);
+      if (extractRecurring(stripped)) workText = stripped;
+      else untilInfo = null; // nothing recurring for it to bound; treat "hasta X" as the note's own date instead
+    }
+
+    var relInfo = extractRelativeTime(workText);
+    var specificDateInfo = relInfo ? null : extractSpecificDate(workText);
+    var bareDayInfo = (relInfo || specificDateInfo) ? null : extractBareDayOfMonth(workText);
+    var recurInfo = (relInfo || specificDateInfo || bareDayInfo) ? null : extractRecurring(workText);
+    var dayInfo = (relInfo || specificDateInfo || bareDayInfo || recurInfo) ? null : extractDay(workText);
+    var timeInfoRaw = extractTime(workText);
     var hour = null, minute = null, target = null, recurring = null, dateOnly = null;
 
     if (relInfo){
@@ -1695,7 +1827,7 @@
       else dateOnly = bareDate;
     } else if (hour != null){
       if (recurInfo){
-        recurring = recurInfo.type === 'daily' ? { type: 'daily' } : { type: 'weekly', weekdays: recurInfo.weekdays };
+        recurring = recurringFromInfo(recurInfo);
       } else if (dayInfo){
         var resolved = resolveDayOnly(dayInfo);
         target = new Date(resolved); target.setHours(hour, minute, 0, 0);
@@ -1703,10 +1835,11 @@
         target = resolveTarget(hour, minute, null);
       }
     } else if (recurInfo){
-      recurring = recurInfo.type === 'daily' ? { type: 'daily' } : { type: 'weekly', weekdays: recurInfo.weekdays };
+      recurring = recurringFromInfo(recurInfo);
     } else if (dayInfo){
       dateOnly = resolveDayOnly(dayInfo);
     }
+    if (recurring && untilInfo) recurring.until = untilInfo.date.toISOString();
     return { text: raw, hour: hour, minute: minute, target: target, recurring: recurring, dateOnly: dateOnly };
   }
 
@@ -1722,16 +1855,21 @@
     }
     if (parsed.recurring){
       var r = parsed.recurring;
-      if (r.type === 'yearly'){
-        var sy = t('previewYearly') + ' ' + t('months')[r.month] + ' ' + r.day;
-        return timeStr ? sy + ', ' + timeStr : sy;
-      }
-      if (r.type === 'daily') return timeStr ? t('previewDaily') + ' ' + timeStr : t('previewDaily');
-      if (r.type === 'weekly'){
+      var base = null;
+      if (r.type === 'yearly') base = t('previewYearly') + ' ' + t('months')[r.month] + ' ' + r.day;
+      else if (r.type === 'daily') base = t('previewDaily');
+      else if (r.type === 'weekly'){
         var names = r.weekdays.map(function(w){ return t('days')[w]; }).join(', ');
-        var sw = t('previewWeekly') + ' ' + names;
-        return timeStr ? sw + ', ' + timeStr : sw;
+        base = t('previewWeekly') + ' ' + names;
+      } else if (r.type === 'everyNDays') base = t('previewEveryNDays') + ' ' + r.n + ' ' + t('datecalcUnitDays');
+      else if (r.type === 'everyNYears') base = t('previewEveryNYears') + ' ' + r.n + ' ' + t('datecalcUnitYears');
+      if (base == null) return null;
+      if (timeStr) base += ', ' + timeStr;
+      if (r.until){
+        var untilD = new Date(r.until);
+        base += ' (' + t('previewUntil') + ' ' + t('months')[untilD.getMonth()] + ' ' + untilD.getDate() + ')';
       }
+      return base;
     }
     return null;
   }
@@ -2365,7 +2503,7 @@
       var actions = document.createElement('div');
       actions.className = 'note-block-actions';
 
-      var hasAlarmCapability = note.hour != null || (note.recurring && note.recurring.type === 'yearly');
+      var hasAlarmCapability = note.hour != null || (note.recurring && (note.recurring.type === 'yearly' || note.recurring.type === 'everyNYears'));
       if (hasAlarmCapability){
         var bellBtn = document.createElement('button');
         bellBtn.className = 'icon-btn ' + (note.enabled ? 'bell-on' : 'bell-off');
@@ -2460,11 +2598,7 @@
   function notesForDate(d){
     return notes.filter(function(n){
       if (n.dateOnly && dateKey(n.dateOnly) === dateKey(d)) return true;
-      if (n.recurring){
-        if (n.recurring.type === 'daily') return true;
-        if (n.recurring.type === 'weekly') return n.recurring.weekdays.indexOf(d.getDay()) !== -1;
-        if (n.recurring.type === 'yearly') return n.recurring.month === d.getMonth() && n.recurring.day === d.getDate();
-      }
+      if (n.recurring) return recurringMatchesDay(n.recurring, n.createdAt, d);
       if (n.hour == null) return false;
       return dateKey(n.target) === dateKey(d);
     });
@@ -2511,6 +2645,7 @@
     var focusDate = parsed.target || parsed.dateOnly;
     if (focusDate){ calState.year = focusDate.getFullYear(); calState.month = focusDate.getMonth(); selectedDateKey = dateKey(focusDate); }
     else if (recurring && recurring.type === 'yearly'){ calState.month = recurring.month; selectedDateKey = calState.year + '-' + (recurring.month+1) + '-' + recurring.day; }
+    else if (recurring && (recurring.type === 'everyNDays' || recurring.type === 'everyNYears')){ calState.year = createdAt.getFullYear(); calState.month = createdAt.getMonth(); selectedDateKey = dateKey(createdAt); }
   }
 
   function saveEditedNote(raw){
@@ -2611,14 +2746,7 @@
       if (note === currentRinging) return;
       if (ringQueue.indexOf(note) !== -1) return;
       var minuteMatches = now.getHours() === note.hour && now.getMinutes() === note.minute;
-      var dayMatches = false;
-      if (note.recurring){
-        if (note.recurring.type === 'daily') dayMatches = true;
-        else if (note.recurring.type === 'weekly') dayMatches = note.recurring.weekdays.indexOf(now.getDay()) !== -1;
-        else if (note.recurring.type === 'yearly') dayMatches = note.recurring.month === now.getMonth() && note.recurring.day === now.getDate();
-      } else {
-        dayMatches = dateKey(note.target) === todayKey;
-      }
+      var dayMatches = note.recurring ? recurringMatchesDay(note.recurring, note.createdAt, now) : dateKey(note.target) === todayKey;
       if (minuteMatches && dayMatches && note.firedKey !== todayKey){
         note.firedKey = todayKey;
         if (currentRinging) ringQueue.push(note); else startRinging(note);
