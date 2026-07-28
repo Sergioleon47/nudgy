@@ -1511,19 +1511,56 @@
   // matches when a time immediately follows "hasta"/"until", avoiding misreading a
   // calendar-date cutoff like "hasta el 15 de agosto" as a clock time.
   function extractUntilHour(text){
-    var m = text.match(/\bhasta\s+(?:las\s+)?(\d{1,2})(?::(\d{2}))?\s*(a\.?\s?m\.?|p\.?\s?m\.?)?\s*$/i);
-    if (!m) m = text.match(/\b(?:until|through)\s+(\d{1,2})(?::(\d{2}))?\s*(a\.?\s?m\.?|p\.?\s?m\.?)?\s*$/i);
+    var mer = null, merMatch = '';
+    var tailMer = text.match(/(?:\s*(?:de|en)\s+la\s+(?:tarde|noche|ma[ñn]ana|madrugada)|\s*in\s+the\s+(?:morning|afternoon|evening)|\s*at\s+night)\s*$/i);
+    var workTail = text;
+    if (tailMer){
+      var info = extractMeridiemWord(tailMer[0]);
+      if (info){ mer = info.mer; merMatch = tailMer[0]; workTail = text.slice(0, text.length - tailMer[0].length); }
+    }
+    var m = workTail.match(new RegExp('\\bhasta\\s+(?:las?\\s+)?(' + NUM_TOKEN_SRC + ')(?::(\\d{2}))?\\s*(a\\.?\\s?m\\.?|p\\.?\\s?m\\.?)?\\s*$', 'i'));
+    if (!m) m = workTail.match(new RegExp('\\b(?:until|through)\\s+(' + NUM_TOKEN_SRC + ')(?::(\\d{2}))?\\s*(a\\.?\\s?m\\.?|p\\.?\\s?m\\.?)?\\s*$', 'i'));
     if (!m) return null;
-    var h = parseInt(m[1], 10);
+    var h = parseNumberToken(m[1]);
+    if (h == null) return null;
     var mnt = m[2] ? parseInt(m[2], 10) : 0;
-    var mer = m[3] ? m[3].replace(/[.\s]/g, '').toLowerCase() : null;
-    var norm = normalizeHour(h, mnt, mer);
+    var finalMer = m[3] ? m[3].replace(/[.\s]/g, '').toLowerCase() : mer;
+    var norm = normalizeHour(h, mnt, finalMer);
     if (!norm) return null;
-    return { match: m[0], h: norm.h, mnt: norm.mnt };
+    return { match: m[0] + merMatch, h: norm.h, mnt: norm.mnt };
+  }
+  // "de la tarde" / "de la noche" / "de la manana" / "de la madrugada" / "in the morning" /
+  // "in the afternoon" / "in the evening" / "at night" — spoken meridiem phrases, understood
+  // the same as a literal "am"/"pm" suffix (e.g. "a las 8 de la noche").
+  function extractMeridiemWord(text){
+    var m = text.match(/\b(?:de|en)\s+la\s+tarde\b/i) || text.match(/\bin\s+the\s+afternoon\b/i);
+    if (m) return { match: m[0], mer: 'pm' };
+    m = text.match(/\b(?:de|en)\s+la\s+noche\b/i) || text.match(/\bin\s+the\s+evening\b/i) || text.match(/\bat\s+night\b/i);
+    if (m) return { match: m[0], mer: 'pm' };
+    m = text.match(/\b(?:de|en)\s+la\s+ma[ñn]ana\b/i) || text.match(/\bin\s+the\s+morning\b/i);
+    if (m) return { match: m[0], mer: 'am' };
+    m = text.match(/\b(?:de|en)\s+la\s+madrugada\b/i);
+    if (m) return { match: m[0], mer: 'am' };
+    return null;
+  }
+  // "mediodia" / "noon" / "medianoche" / "midnight" — explicit standalone times that don't
+  // need a separate hour number.
+  function extractNoonMidnight(text){
+    var m = text.match(/\b(?:al?\s+)?mediod[ií]a\b/i) || text.match(/\bnoon\b/i);
+    if (m) return { match: m[0], h: 12, mnt: 0 };
+    m = text.match(/\b(?:a\s+la\s+)?medianoche\b/i) || text.match(/\bmidnight\b/i);
+    if (m) return { match: m[0], h: 0, mnt: 0 };
+    return null;
   }
   function extractTime(text){
+    var noonMidnight = extractNoonMidnight(text);
+    if (noonMidnight) return { match: noonMidnight.match, h: noonMidnight.h, mnt: noonMidnight.mnt, mer: null };
+    var meridiemInfo = extractMeridiemWord(text);
     var m = text.match(/(\d{1,2}):(\d{2})\s*(a\.?\s?m\.?|p\.?\s?m\.?)?/i);
-    if (m) return { match: m[0], h: parseInt(m[1],10), mnt: parseInt(m[2],10), mer: m[3] ? m[3].replace(/[.\s]/g,'').toLowerCase() : null };
+    if (m){
+      var mer0 = m[3] ? m[3].replace(/[.\s]/g,'').toLowerCase() : (meridiemInfo ? meridiemInfo.mer : null);
+      return { match: m[0], h: parseInt(m[1],10), mnt: parseInt(m[2],10), mer: mer0 };
+    }
     m = text.match(/\b(\d{1,2})\s*(a\.?\s?m\.?|p\.?\s?m\.?)\b/i);
     if (m) return { match: m[0], h: parseInt(m[1],10), mnt: 0, mer: m[2].replace(/[.\s]/g,'').toLowerCase() };
     m = text.match(/a\s*las\s*(\d{3,4})\b/i);
@@ -1533,8 +1570,14 @@
       var mnt = d.length === 3 ? parseInt(d.slice(1),10) : parseInt(d.slice(2),10);
       return { match: m[0], h: h, mnt: mnt, mer: null };
     }
-    m = text.match(/(?:a\s*las|\bat)\s*(\d{1,2})\b/i);
-    if (m) return { match: m[0], h: parseInt(m[1],10), mnt: 0, mer: null };
+    // "a la una" / "a las dos" / "a los tres" / "at two" — hour spelled out in words, plus
+    // the plain digit fallback ("a las 8") folded in via NUM_TOKEN_SRC.
+    m = text.match(new RegExp('\\b(?:a\\s*(?:la|las|los)|at)\\s*(' + NUM_TOKEN_SRC + ')\\b', 'i'));
+    if (m){
+      var h2 = parseNumberToken(m[1]);
+      if (h2 == null) return null;
+      return { match: m[0], h: h2, mnt: 0, mer: meridiemInfo ? meridiemInfo.mer : null };
+    }
     return null;
   }
   function extractDayExact(text){
