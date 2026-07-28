@@ -577,10 +577,13 @@
       previewDaily: 'Se repite todos los dias',
       previewEveryNDays: 'Se repite cada',
       previewEveryNYears: 'Se repite cada',
+      previewEveryNMonths: 'Se repite cada',
       previewEveryNHours: 'Se repite cada',
       previewUntil: 'hasta',
       unitHours: 'horas',
       unitHour: 'hora',
+      unitMonths: 'meses',
+      unitMonth: 'mes',
       exportIcsTitle: 'Agregar al calendario (.ics)',
       editLabel: 'Editar',
       deleteLabel: 'Eliminar',
@@ -663,10 +666,13 @@
       previewDaily: 'Repeats every day',
       previewEveryNDays: 'Repeats every',
       previewEveryNYears: 'Repeats every',
+      previewEveryNMonths: 'Repeats every',
       previewEveryNHours: 'Repeats every',
       previewUntil: 'until',
       unitHours: 'hours',
       unitHour: 'hour',
+      unitMonths: 'months',
+      unitMonth: 'month',
       exportIcsTitle: 'Add to calendar (.ics)',
       editLabel: 'Edit',
       deleteLabel: 'Delete',
@@ -1454,6 +1460,20 @@
     if (n < 2) return null;
     return { match: m[0], n: n };
   }
+  // "cada mes" / "cada 2 meses" / "every month" / "every 2 months" — monthly recurrence,
+  // for bills and check-ins that repeat once a month (rent, credit card) rather than
+  // daily or yearly.
+  function extractEveryNMonths(text){
+    var m = text.match(/\bcada\s+(\d{1,2})\s*meses\b/i) || text.match(/\bevery\s+(\d{1,2})\s*months\b/i);
+    if (m){
+      var n = parseInt(m[1], 10);
+      if (n < 2) return null;
+      return { match: m[0], n: n };
+    }
+    var m2 = text.match(/\bcada\s+mes\b/i) || text.match(/\bevery\s+month\b/i);
+    if (m2) return { match: m2[0], n: 1 };
+    return null;
+  }
   // "cada 2 horas" / "every 2 hours" — intra-day repetition (hydration, meds during
   // training), as opposed to the other "every N" patterns which fire once a day/year.
   function extractEveryNHours(text){
@@ -1475,6 +1495,8 @@
     if (everyDays) return { type: 'everyNDays', n: everyDays.n, match: everyDays.match };
     var everyYears = extractEveryNYears(text);
     if (everyYears) return { type: 'everyNYears', n: everyYears.n, match: everyYears.match };
+    var everyMonths = extractEveryNMonths(text);
+    if (everyMonths) return { type: 'everyNMonths', n: everyMonths.n, match: everyMonths.match };
     var range = extractWeekdayRange(text);
     if (range) return { type: 'weekly', weekdays: range.days, match: range.match };
     var list = extractWeekdayList(text);
@@ -1515,6 +1537,22 @@
     return null;
   }
   function extractRecurring(text){ return extractRecurringExact(text) || fuzzyRecurringMatch(text); }
+  // "cada 2 horas hasta las 8pm" / "every 2 hours until 8pm" — a daily clock-time cutoff
+  // for intra-day recurrence (only meaningful for everyNHours), as opposed to
+  // extractUntilDate's calendar-date cutoff. Anchored to the end of the string so it only
+  // matches when a time immediately follows "hasta"/"until", avoiding misreading a
+  // calendar-date cutoff like "hasta el 15 de agosto" as a clock time.
+  function extractUntilHour(text){
+    var m = text.match(/\bhasta\s+(?:las\s+)?(\d{1,2})(?::(\d{2}))?\s*(a\.?\s?m\.?|p\.?\s?m\.?)?\s*$/i);
+    if (!m) m = text.match(/\b(?:until|through)\s+(\d{1,2})(?::(\d{2}))?\s*(a\.?\s?m\.?|p\.?\s?m\.?)?\s*$/i);
+    if (!m) return null;
+    var h = parseInt(m[1], 10);
+    var mnt = m[2] ? parseInt(m[2], 10) : 0;
+    var mer = m[3] ? m[3].replace(/[.\s]/g, '').toLowerCase() : null;
+    var norm = normalizeHour(h, mnt, mer);
+    if (!norm) return null;
+    return { match: m[0], h: norm.h, mnt: norm.mnt };
+  }
   function extractTime(text){
     var m = text.match(/(\d{1,2}):(\d{2})\s*(a\.?\s?m\.?|p\.?\s?m\.?)?/i);
     if (m) return { match: m[0], h: parseInt(m[1],10), mnt: parseInt(m[2],10), mer: m[3] ? m[3].replace(/[.\s]/g,'').toLowerCase() : null };
@@ -1624,7 +1662,7 @@
       osc.start(); osc.stop(audioCtx.currentTime + 0.35);
     } catch(e){}
   }
-  var typeFreq = { once: 880, daily: 660, weekly: 740, yearly: 990, everyNDays: 700, everyNYears: 940, everyNHours: 620 };
+  var typeFreq = { once: 880, daily: 660, weekly: 740, yearly: 990, everyNDays: 700, everyNMonths: 820, everyNYears: 940, everyNHours: 620 };
   function noteTypeKey(n){ return n.recurring ? n.recurring.type : 'once'; }
 
   // Shared by notesForDate() and the alarm-check loop: does this note's recurring
@@ -1647,6 +1685,14 @@
       if (d.getMonth() !== anchorY.getMonth() || d.getDate() !== anchorY.getDate()) return false;
       var yearsDiff = d.getFullYear() - anchorY.getFullYear();
       return yearsDiff >= 0 && yearsDiff % recurring.n === 0;
+    }
+    if (recurring.type === 'everyNMonths'){
+      var anchorMo = new Date(createdAt);
+      var monthsDiff = (d.getFullYear() - anchorMo.getFullYear()) * 12 + (d.getMonth() - anchorMo.getMonth());
+      if (monthsDiff < 0 || monthsDiff % recurring.n !== 0) return false;
+      var lastDayOfDMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      var expectedDay = Math.min(anchorMo.getDate(), lastDayOfDMonth);
+      return d.getDate() === expectedDay;
     }
     if (recurring.type === 'everyNHours'){
       var anchorH = new Date(createdAt);
@@ -1696,12 +1742,31 @@
       var t5 = new Date(anchorY2.getFullYear(), anchorY2.getMonth(), anchorY2.getDate(), note.hour, note.minute, 0, 0);
       while (t5 <= now) t5.setFullYear(t5.getFullYear() + note.recurring.n);
       result = t5;
+    } else if (note.recurring.type === 'everyNMonths'){
+      var anchorMo2 = new Date(note.createdAt);
+      var anchorDay2 = anchorMo2.getDate();
+      var t7 = new Date(anchorMo2.getFullYear(), anchorMo2.getMonth(), 1, note.hour, note.minute, 0, 0);
+      t7.setDate(Math.min(anchorDay2, new Date(t7.getFullYear(), t7.getMonth() + 1, 0).getDate()));
+      while (t7 <= now){
+        var t7next = new Date(t7.getFullYear(), t7.getMonth() + note.recurring.n, 1, note.hour, note.minute, 0, 0);
+        t7next.setDate(Math.min(anchorDay2, new Date(t7next.getFullYear(), t7next.getMonth() + 1, 0).getDate()));
+        t7 = t7next;
+      }
+      result = t7;
     } else if (note.recurring.type === 'everyNHours'){
       var anchorH2 = new Date(note.createdAt);
       var anchorFloor2 = new Date(anchorH2.getFullYear(), anchorH2.getMonth(), anchorH2.getDate(), anchorH2.getHours(), anchorH2.getMinutes(), 0, 0);
       var intervalMs2 = note.recurring.n * 60 * 60 * 1000;
       var t6 = new Date(anchorFloor2.getTime());
       while (t6 <= now) t6 = new Date(t6.getTime() + intervalMs2);
+      if (note.recurring.untilHour != null){
+        var cutoffClock2 = note.recurring.untilHour * 60 + (note.recurring.untilMinute || 0);
+        var guard = 0;
+        while ((t6.getHours() * 60 + t6.getMinutes()) > cutoffClock2 && guard < 1000){
+          t6 = new Date(t6.getTime() + intervalMs2);
+          guard++;
+        }
+      }
       result = t6;
     }
     if (result && until && result > until) return null;
@@ -1755,6 +1820,8 @@
         lines.push('RRULE:FREQ=DAILY;INTERVAL=' + note.recurring.n + untilClause);
       } else if (note.recurring.type === 'everyNYears'){
         lines.push('RRULE:FREQ=YEARLY;INTERVAL=' + note.recurring.n + untilClause);
+      } else if (note.recurring.type === 'everyNMonths'){
+        lines.push('RRULE:FREQ=MONTHLY;INTERVAL=' + note.recurring.n + untilClause);
       } else if (note.recurring.type === 'everyNHours'){
         lines.push('RRULE:FREQ=HOURLY;INTERVAL=' + note.recurring.n + untilClause);
       }
@@ -1820,13 +1887,22 @@
     if (recurInfo.type === 'daily') return { type: 'daily' };
     if (recurInfo.type === 'everyNDays') return { type: 'everyNDays', n: recurInfo.n };
     if (recurInfo.type === 'everyNYears') return { type: 'everyNYears', n: recurInfo.n };
+    if (recurInfo.type === 'everyNMonths') return { type: 'everyNMonths', n: recurInfo.n };
     if (recurInfo.type === 'everyNHours') return { type: 'everyNHours', n: recurInfo.n };
     return { type: 'weekly', weekdays: recurInfo.weekdays };
   }
 
   function parseNoteInput(raw){
-    var untilInfo = extractUntilDate(raw);
+    var untilHourInfo = extractUntilHour(raw);
     var workText = raw;
+    if (untilHourInfo){
+      var hIdx = raw.indexOf(untilHourInfo.match);
+      var hStripped = raw.slice(0, hIdx) + raw.slice(hIdx + untilHourInfo.match.length);
+      var hRecur = extractRecurring(hStripped);
+      if (hRecur && hRecur.type === 'everyNHours') workText = hStripped;
+      else untilHourInfo = null; // only everyNHours notes get a clock-time cutoff
+    }
+    var untilInfo = untilHourInfo ? null : extractUntilDate(raw);
     if (untilInfo){
       var idx = raw.indexOf(untilInfo.match);
       var stripped = raw.slice(0, idx) + raw.slice(idx + untilInfo.match.length);
@@ -1882,6 +1958,7 @@
       dateOnly = resolveDayOnly(dayInfo);
     }
     if (recurring && untilInfo) recurring.until = untilInfo.date.toISOString();
+    if (recurring && untilHourInfo){ recurring.untilHour = untilHourInfo.h; recurring.untilMinute = untilHourInfo.mnt; }
     return { text: raw, hour: hour, minute: minute, target: target, recurring: recurring, dateOnly: dateOnly };
   }
 
@@ -1905,6 +1982,7 @@
         base = t('previewWeekly') + ' ' + names;
       } else if (r.type === 'everyNDays') base = t('previewEveryNDays') + ' ' + r.n + ' ' + t('datecalcUnitDays');
       else if (r.type === 'everyNYears') base = t('previewEveryNYears') + ' ' + r.n + ' ' + t('datecalcUnitYears');
+      else if (r.type === 'everyNMonths') base = t('previewEveryNMonths') + ' ' + r.n + ' ' + (r.n === 1 ? t('unitMonth') : t('unitMonths'));
       else if (r.type === 'everyNHours') base = t('previewEveryNHours') + ' ' + r.n + ' ' + (r.n === 1 ? t('unitHour') : t('unitHours'));
       if (base == null) return null;
       if (timeStr) base += ', ' + timeStr;
@@ -1912,6 +1990,7 @@
         var untilD = new Date(r.until);
         base += ' (' + t('previewUntil') + ' ' + t('months')[untilD.getMonth()] + ' ' + untilD.getDate() + ')';
       }
+      if (r.untilHour != null) base += ' (' + t('previewUntil') + ' ' + formatHM2(r.untilHour, r.untilMinute || 0) + ')';
       return base;
     }
     return null;
@@ -2546,7 +2625,7 @@
       var actions = document.createElement('div');
       actions.className = 'note-block-actions';
 
-      var hasAlarmCapability = note.hour != null || (note.recurring && (note.recurring.type === 'yearly' || note.recurring.type === 'everyNYears'));
+      var hasAlarmCapability = note.hour != null || (note.recurring && (note.recurring.type === 'yearly' || note.recurring.type === 'everyNYears' || note.recurring.type === 'everyNMonths'));
       if (hasAlarmCapability){
         var bellBtn = document.createElement('button');
         bellBtn.className = 'icon-btn ' + (note.enabled ? 'bell-on' : 'bell-off');
@@ -2699,7 +2778,7 @@
     var focusDate = parsed.target || parsed.dateOnly;
     if (focusDate){ calState.year = focusDate.getFullYear(); calState.month = focusDate.getMonth(); selectedDateKey = dateKey(focusDate); }
     else if (recurring && recurring.type === 'yearly'){ calState.month = recurring.month; selectedDateKey = calState.year + '-' + (recurring.month+1) + '-' + recurring.day; }
-    else if (recurring && (recurring.type === 'everyNDays' || recurring.type === 'everyNYears')){ calState.year = createdAt.getFullYear(); calState.month = createdAt.getMonth(); selectedDateKey = dateKey(createdAt); }
+    else if (recurring && (recurring.type === 'everyNDays' || recurring.type === 'everyNYears' || recurring.type === 'everyNMonths')){ calState.year = createdAt.getFullYear(); calState.month = createdAt.getMonth(); selectedDateKey = dateKey(createdAt); }
   }
 
   function saveEditedNote(raw){
@@ -2806,6 +2885,11 @@
       if (note.recurring && note.recurring.type === 'everyNHours'){
         var until = note.recurring.until ? new Date(note.recurring.until) : null;
         if (until && now > until) return;
+        if (note.recurring.untilHour != null){
+          var nowClock = now.getHours() * 60 + now.getMinutes();
+          var cutoffClock = note.recurring.untilHour * 60 + (note.recurring.untilMinute || 0);
+          if (nowClock > cutoffClock) return;
+        }
         var anchor = new Date(note.createdAt);
         var anchorFloor = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), anchor.getHours(), anchor.getMinutes(), 0, 0);
         var nowFloor = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), 0, 0);
