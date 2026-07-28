@@ -1270,9 +1270,10 @@
 
   // ---------- Parsing (bilingual, independent of UI language) ----------
   function extractRelativeTime(text){
-    var m = text.match(/\b(?:en|in)\s+(\d{1,3})\s*(minutos?|mins?|horas?|hrs?|hours?|minutes?|dias?|d[ií]as?|days?|semanas?|weeks?)\b/i);
+    var m = text.match(new RegExp('\\b(?:en|in)\\s+(' + NUM_TOKEN_SRC + ')\\s*(minutos?|mins?|horas?|hrs?|hours?|minutes?|dias?|d[ií]as?|days?|semanas?|weeks?)\\b', 'i'));
     if (!m) return null;
-    var qty = parseInt(m[1], 10);
+    var qty = parseNumberToken(m[1]);
+    if (qty == null) return null;
     var unit = m[2].toLowerCase();
     var target = new Date();
     if (unit.indexOf('h') === 0){
@@ -1376,45 +1377,78 @@
     days.sort(function(a,b){ return a - b; });
     return { match: m[1], days: days };
   }
-  // "cada 3 dias" / "every 3 days" — a plain weekly/daily pattern doesn't fit rotating
-  // shifts that aren't tied to a fixed day of the week.
+  // Spelled-out numbers ("dos", "three") so "cada dos horas" / "en tres dias" work the
+  // same as their digit forms. Scoped to just the quantity slot of each "cada"/"every"/
+  // "en"/"in" regex below (never a blind find-and-replace across the note), so common
+  // words like "una" in "una reunion" are never touched.
+  var numberWordsEs = {
+    cero: 0, un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7,
+    ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12, trece: 13, catorce: 14, quince: 15,
+    dieciseis: 16, 'dieciséis': 16, diecisiete: 17, dieciocho: 18, diecinueve: 19, veinte: 20,
+    veintiuno: 21, veintiuna: 21, veintidos: 22, 'veintidós': 22, veintitres: 23, 'veintitrés': 23,
+    veinticuatro: 24, veinticinco: 25, veintiseis: 26, 'veintiséis': 26, veintisiete: 27,
+    veintiocho: 28, veintinueve: 29, treinta: 30
+  };
+  var numberWordsEn = {
+    zero: 0, a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7,
+    eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15,
+    sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, thirty: 30
+  };
+  var numberWordNames = Object.keys(numberWordsEs).concat(Object.keys(numberWordsEn));
+  numberWordNames.sort(function(a, b){ return b.length - a.length; });
+  var NUM_TOKEN_SRC = '(?:\\d{1,3}|' + numberWordNames.join('|') + ')';
+  function parseNumberToken(s){
+    if (s == null) return null;
+    var low = s.toLowerCase();
+    if (numberWordsEs.hasOwnProperty(low)) return numberWordsEs[low];
+    if (numberWordsEn.hasOwnProperty(low)) return numberWordsEn[low];
+    var n = parseInt(s, 10);
+    return isNaN(n) ? null : n;
+  }
+  // "cada 3 dias" / "cada tres dias" / "every 3 days" / "every three days" — a plain
+  // weekly/daily pattern doesn't fit rotating shifts that aren't tied to a fixed weekday.
   function extractEveryNDays(text){
-    var m = text.match(/\bcada\s+(\d{1,3})\s*d[ií]as\b/i) || text.match(/\bevery\s+(\d{1,3})\s*days\b/i);
+    var m = text.match(new RegExp('\\bcada\\s+(' + NUM_TOKEN_SRC + ')\\s*d[ií]as\\b', 'i')) ||
+            text.match(new RegExp('\\bevery\\s+(' + NUM_TOKEN_SRC + ')\\s*days\\b', 'i'));
     if (!m) return null;
-    var n = parseInt(m[1], 10);
-    if (n < 2) return null;
+    var n = parseNumberToken(m[1]);
+    if (n == null || n < 2) return null;
     return { match: m[0], n: n };
   }
-  // "cada 2 anos" / "every 2 years" — for periodic renewals (certifications, licenses)
-  // that don't happen every single year.
+  // "cada 2 anos" / "cada dos anos" / "every 2 years" / "every two years" — for periodic
+  // renewals (certifications, licenses) that don't happen every single year.
   function extractEveryNYears(text){
-    var m = text.match(/\bcada\s+(\d{1,2})\s*a[ñn]os\b/i) || text.match(/\bevery\s+(\d{1,2})\s*years\b/i);
+    var m = text.match(new RegExp('\\bcada\\s+(' + NUM_TOKEN_SRC + ')\\s*a[ñn]os\\b', 'i')) ||
+            text.match(new RegExp('\\bevery\\s+(' + NUM_TOKEN_SRC + ')\\s*years\\b', 'i'));
     if (!m) return null;
-    var n = parseInt(m[1], 10);
-    if (n < 2) return null;
+    var n = parseNumberToken(m[1]);
+    if (n == null || n < 2) return null;
     return { match: m[0], n: n };
   }
-  // "cada mes" / "cada 2 meses" / "every month" / "every 2 months" — monthly recurrence,
-  // for bills and check-ins that repeat once a month (rent, credit card) rather than
-  // daily or yearly.
+  // "cada mes" / "cada 2 meses" / "cada dos meses" / "every month" / "every 2 months" —
+  // monthly recurrence, for bills and check-ins that repeat once a month (rent, credit
+  // card) rather than daily or yearly.
   function extractEveryNMonths(text){
-    var m = text.match(/\bcada\s+(\d{1,2})\s*meses\b/i) || text.match(/\bevery\s+(\d{1,2})\s*months\b/i);
+    var m = text.match(new RegExp('\\bcada\\s+(' + NUM_TOKEN_SRC + ')\\s*meses\\b', 'i')) ||
+            text.match(new RegExp('\\bevery\\s+(' + NUM_TOKEN_SRC + ')\\s*months\\b', 'i'));
     if (m){
-      var n = parseInt(m[1], 10);
-      if (n < 2) return null;
+      var n = parseNumberToken(m[1]);
+      if (n == null || n < 2) return null;
       return { match: m[0], n: n };
     }
     var m2 = text.match(/\bcada\s+mes\b/i) || text.match(/\bevery\s+month\b/i);
     if (m2) return { match: m2[0], n: 1 };
     return null;
   }
-  // "cada 2 horas" / "every 2 hours" — intra-day repetition (hydration, meds during
-  // training), as opposed to the other "every N" patterns which fire once a day/year.
+  // "cada 2 horas" / "cada dos horas" / "every 2 hours" / "every two hours" — intra-day
+  // repetition (hydration, meds during training), as opposed to the other "every N"
+  // patterns which fire once a day/year.
   function extractEveryNHours(text){
-    var m = text.match(/\bcada\s+(\d{1,3})\s*horas?\b/i) || text.match(/\bevery\s+(\d{1,3})\s*hours?\b/i);
+    var m = text.match(new RegExp('\\bcada\\s+(' + NUM_TOKEN_SRC + ')\\s*horas?\\b', 'i')) ||
+            text.match(new RegExp('\\bevery\\s+(' + NUM_TOKEN_SRC + ')\\s*hours?\\b', 'i'));
     if (m){
-      var n = parseInt(m[1], 10);
-      if (n < 1) return null;
+      var n = parseNumberToken(m[1]);
+      if (n == null || n < 1) return null;
       return { match: m[0], n: n };
     }
     var m2 = text.match(/\bcada\s+hora\b/i) || text.match(/\bevery\s+hour\b/i);
