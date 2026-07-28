@@ -721,6 +721,10 @@
     return s.slice(0, i) + s.charAt(i).toUpperCase() + s.slice(i + 1);
   }
 
+  // Optimal string alignment distance: classic Levenshtein (insert/delete/substitute)
+  // plus adjacent-letter transpositions counted as a single edit, so a typo like
+  // "imercoles" (swapped first two letters of "miercoles") counts as distance 1 instead
+  // of 2 and still passes the fuzzy-match threshold used across this file.
   function levenshtein(a, b){
     a = a.toLowerCase(); b = b.toLowerCase();
     var m = a.length, n = b.length;
@@ -731,9 +735,19 @@
       for (j = 1; j <= n; j++){
         if (a[i-1] === b[j-1]) dp[i][j] = dp[i-1][j-1];
         else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+        if (i > 1 && j > 1 && a[i-1] === b[j-2] && a[i-2] === b[j-1]){
+          dp[i][j] = Math.min(dp[i][j], dp[i-2][j-2] + 1);
+        }
       }
     }
     return dp[m][n];
+  }
+  // Guard used before running levenshtein against every day/month name: the first letter
+  // has to match, OR the first two letters are swapped (so "imercoles" still reaches the
+  // levenshtein check for "miercoles" instead of being rejected before it starts).
+  function firstLettersFuzzyOk(w, base){
+    if (w[0] === base[0]) return true;
+    return w.length > 1 && base.length > 1 && w[0] === base[1] && w[1] === base[0];
   }
 
   var headerTitle = document.getElementById('header-title');
@@ -1496,7 +1510,7 @@
         if (levenshtein(w2, 'dia') <= 1) return { type: 'daily', match: text.slice(tokens[i].i, tokens[i+2].i + w2raw.length) };
         for (var name in dayWords){
           var base = name.replace(/s$/, '');
-          if (base.length >= 4 && w2[0] === base[0] && levenshtein(w2, base) <= 1){
+          if (base.length >= 4 && firstLettersFuzzyOk(w2, base) && levenshtein(w2, base) <= 1){
             return { type: 'weekly', weekdays: [dayWords[name]], match: text.slice(tokens[i].i, tokens[i+2].i + w2raw.length) };
           }
         }
@@ -1571,12 +1585,22 @@
       return { match: m[0], h: h, mnt: mnt, mer: null };
     }
     // "a la una" / "a las dos" / "a los tres" / "at two" — hour spelled out in words, plus
-    // the plain digit fallback ("a las 8") folded in via NUM_TOKEN_SRC.
+    // the plain digit fallback ("a las 8") folded in via NUM_TOKEN_SRC. Also picks up a
+    // trailing "y media" / "y cuarto" ("a las cuatro y media" = 4:30).
     m = text.match(new RegExp('\\b(?:a\\s*(?:la|las|los)|at)\\s*(' + NUM_TOKEN_SRC + ')\\b', 'i'));
     if (m){
       var h2 = parseNumberToken(m[1]);
       if (h2 == null) return null;
-      return { match: m[0], h: h2, mnt: 0, mer: meridiemInfo ? meridiemInfo.mer : null };
+      var mnt2 = 0;
+      var matchText = m[0];
+      var restAfter = text.slice(m.index + m[0].length);
+      var half = restAfter.match(/^\s*y\s+media\b/i);
+      if (half){ mnt2 = 30; matchText += half[0]; }
+      else {
+        var quarter = restAfter.match(/^\s*y\s+cuarto\b/i);
+        if (quarter){ mnt2 = 15; matchText += quarter[0]; }
+      }
+      return { match: matchText, h: h2, mnt: mnt2, mer: meridiemInfo ? meridiemInfo.mer : null };
     }
     return null;
   }
@@ -1602,7 +1626,7 @@
       var w = raw.toLowerCase().replace(/s$/, '');
       for (var name in dayWords){
         var base = name.replace(/s$/, '');
-        if (base.length >= 4 && w[0] === base[0] && levenshtein(w, base) <= 1) return { type: 'weekday', weekday: dayWords[name], match: raw };
+        if (base.length >= 4 && firstLettersFuzzyOk(w, base) && levenshtein(w, base) <= 1) return { type: 'weekday', weekday: dayWords[name], match: raw };
       }
     }
     return null;
