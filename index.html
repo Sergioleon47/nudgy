@@ -55,12 +55,6 @@
   }
   #notif-btn.granted { color: #2FA360; background:#E7F7EE; }
   #notif-btn-text { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
-  #mic-btn {
-    background: #F2F2F7; border: none; color: #274257;
-    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
-  }
-  #mic-btn.recording { background: #E2604B; color: white; animation: mic-pulse 1.2s ease-in-out infinite; }
   #contacts-btn {
     background: #F2F2F7; border: none; color: #274257;
     width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
@@ -161,8 +155,6 @@
   .contact-row button { background:none; border:none; color:#B5493D; cursor:pointer; font-size:13px; }
   .contact-call-link { color:#185FA5; text-decoration:underline; text-underline-offset:2px; cursor:pointer; }
   .contact-call-link i { font-size:11px; margin-right:2px; }
-  @keyframes mic-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(226,96,75,0.5);} 50%{box-shadow:0 0 0 6px rgba(226,96,75,0);} }
-
   .sky-btn { background: #F2F2F7; border: none; color: #274257; font-size: 13px; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-weight:500; }
   .sky-btn:hover { background: #E5E5EA; }
   .sky-btn.primary { background:#D98A1F; border:none; color:#fff; font-weight:600; text-decoration:none; padding:8px 16px; border-radius:10px; }
@@ -183,7 +175,6 @@
   #parse-preview i { font-size:13px; }
   .action-row { display:flex; align-items:center; gap:12px; margin-top:8px; min-height:22px; }
   #saved-flash { font-size:12px; color:#2FA360; opacity:0; transition:opacity .3s ease; }
-  #mic-status { font-size:12px; color:#B5493D; opacity:0; transition:opacity .2s ease; }
   #cancel-edit-btn { display:none; background:none; border:none; color:#5F5F63; font-size:12px; cursor:pointer; }
   #add-btn { display:none; }
 
@@ -330,7 +321,6 @@
           <button id="contacts-btn" title="Contactos" aria-label="Contactos"><i class="ti ti-address-book" aria-hidden="true"></i></button>
           <button id="photo-btn" aria-label="Adjuntar foto" title="Adjuntar foto"><i class="ti ti-camera" aria-hidden="true"></i></button>
           <input type="file" id="photo-file-input" accept="image/*" style="display:none">
-          <button id="mic-btn" aria-label="Hablar nota" title="Hablar nota"><i class="ti ti-microphone" aria-hidden="true"></i></button>
           <button id="scan-btn" aria-label="Escanear calendario" title="Escanear calendario"><i class="ti ti-scan" aria-hidden="true"></i></button>
           <input type="file" id="scan-file-input" accept="image/*" style="display:none">
           <button id="datecalc-btn" aria-label="Calculadora de fechas" title="Calculadora de fechas"><i class="ti ti-calculator" aria-hidden="true"></i></button>
@@ -360,7 +350,6 @@
         <button id="add-btn" class="sky-btn primary">Guardar cambios</button>
         <button id="cancel-edit-btn">Cancelar</button>
         <span id="saved-flash">Guardado ✓</span>
-        <span id="mic-status">● Escuchando...</span>
       </div>
 
       <input id="search-input" type="text" placeholder="Buscar en tus notas...">
@@ -550,9 +539,6 @@
       notifDefault: 'Activar notificaciones',
       notifGranted: 'Notificaciones activas',
       notifBlocked: 'Notificaciones bloqueadas',
-      micTitle: 'Hablar nota',
-      micUnsupported: 'Tu navegador no soporta dictado por voz.',
-      micListening: '● Escuchando...',
       saved: 'Guardado ✓',
       saveChanges: 'Guardar cambios',
       cancel: 'Cancelar',
@@ -639,9 +625,6 @@
       notifDefault: 'Enable notifications',
       notifGranted: 'Notifications on',
       notifBlocked: 'Notifications blocked',
-      micTitle: 'Speak note',
-      micUnsupported: "Your browser doesn't support voice dictation.",
-      micListening: '● Listening...',
       saved: 'Saved ✓',
       saveChanges: 'Save changes',
       cancel: 'Cancel',
@@ -810,8 +793,6 @@
   var addBtn = document.getElementById('add-btn');
   var cancelEditBtn = document.getElementById('cancel-edit-btn');
   var savedFlash = document.getElementById('saved-flash');
-  var micBtn = document.getElementById('mic-btn');
-  var micStatus = document.getElementById('mic-status');
   var notifBtn = document.getElementById('notif-btn');
   var notifBtnText = document.getElementById('notif-btn-text');
   var listEl = document.getElementById('notes-list');
@@ -881,8 +862,6 @@
     headerTitle.textContent = t('headerTitle');
     langEsBtn.classList.toggle('active', currentLang === 'es');
     langEnBtn.classList.toggle('active', currentLang === 'en');
-    micBtn.title = t('micTitle');
-    micBtn.setAttribute('aria-label', t('micTitle'));
     savedFlash.textContent = t('saved');
     cancelEditBtn.textContent = t('cancel');
     emptyMsg.textContent = t('empty');
@@ -1288,51 +1267,6 @@
     }
     return null;
   }
-
-  // ---------- Voice ----------
-  var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  var recognition = null;
-  var recording = false;
-  function buildRecognition(){
-    var r = new SpeechRecognition();
-    r.lang = currentLang === 'en' ? 'en-US' : 'es-ES';
-    r.continuous = true; r.interimResults = false;
-    r.onresult = function(e){
-      var transcript = '';
-      for (var i = e.resultIndex; i < e.results.length; i++) transcript += e.results[i][0].transcript;
-      transcript = transcript.trim();
-      if (transcript){
-        var needsSpace = noteInput.value && !/[\n\s]$/.test(noteInput.value);
-        noteInput.value += (needsSpace ? ' ' : '') + transcript;
-        noteInput.dispatchEvent(new Event('input'));
-      }
-    };
-    r.onerror = function(){ stopRecording(); };
-    r.onend = function(){ if (recording){ try { r.start(); } catch(e){ stopRecording(); } } };
-    return r;
-  }
-  function startRecording(){
-    if (!SpeechRecognition){
-      micStatus.textContent = t('micUnsupported');
-      micStatus.style.opacity = '1';
-      setTimeout(function(){ micStatus.style.opacity = '0'; }, 2500);
-      return;
-    }
-    recognition = buildRecognition();
-    recording = true;
-    micBtn.classList.add('recording');
-    micStatus.textContent = t('micListening');
-    micStatus.style.opacity = '1';
-    try { recognition.start(); } catch(e){}
-    vibrate(10);
-  }
-  function stopRecording(){
-    recording = false;
-    micBtn.classList.remove('recording');
-    micStatus.style.opacity = '0';
-    if (recognition){ try { recognition.stop(); } catch(e){} }
-  }
-  micBtn.addEventListener('click', function(){ if (recording) stopRecording(); else startRecording(); });
 
   // ---------- Parsing (bilingual, independent of UI language) ----------
   function extractRelativeTime(text){
@@ -2812,7 +2746,6 @@
     updateParsePreview();
   });
   noteInput.addEventListener('blur', function(){
-    if (recording) return;
     var value = noteInput.value.trim();
     if (!value) return;
     if (editingId != null){ saveEditedNote(value); exitEditMode(); }
