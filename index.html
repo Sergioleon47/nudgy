@@ -149,7 +149,7 @@
   #datecalc-unit { flex:1; }
   .datecalc-result { margin-top:10px; font-size:14px; font-weight:600; color:var(--accent); }
 
-  #print-modal, #highlight-modal {
+  #print-modal {
     display:none; position:fixed; inset:0; background:rgba(20,40,55,0.55); z-index:1000;
     align-items:center; justify-content:center; padding:16px;
   }
@@ -172,13 +172,12 @@
   #receipt-processing-bar { width:30%; height:100%; background:var(--accent); border-radius:3px; animation: receipt-progress 1.2s ease-in-out infinite; }
   @keyframes receipt-progress { 0%{transform:translateX(-100%);} 100%{transform:translateX(333%);} }
   .contact-row { display:flex; align-items:center; justify-content:space-between; font-size:13px; color:#1C1C1E; background:#F2F2F7; padding:7px 10px; border-radius:9px; }
-  .highlight-shortcuts { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
-  .highlight-shortcut-btn { background:#F2F2F7; border:none; color:#274257; font-size:12px; padding:7px 12px; border-radius:9px; cursor:pointer; font-weight:500; }
-  .highlight-shortcut-btn:hover { background:#E5E5EA; }
-  .highlight-palette { display:flex; gap:8px; flex-wrap:wrap; }
-  .highlight-swatch { width:30px; height:30px; border-radius:50%; border:none; cursor:pointer; box-shadow:0 0 0 1px rgba(0,0,0,0.12); padding:0; }
+  .highlight-palette { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  .highlight-swatch { width:30px; height:30px; border-radius:50%; border:none; cursor:pointer; box-shadow:0 0 0 1px rgba(0,0,0,0.12); padding:0; flex-shrink:0; }
   .highlight-swatch.selected { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent); }
-  .highlight-swatch-custom { display:flex; align-items:center; justify-content:center; font-size:14px; }
+  .highlight-swatch-custom, .highlight-swatch-eraser { display:flex; align-items:center; justify-content:center; font-size:14px; background:#F2F2F7; color:#5F5F63; }
+  .paint-palette-bar { margin-top:8px; padding:10px; background:#F7F7F9; border-radius:14px; }
+  .paint-palette-hint { font-size:11px; color:#5F5F63; margin-bottom:8px; text-align:center; }
   .contact-row button { background:none; border:none; color:#B5493D; cursor:pointer; font-size:13px; }
   .contact-call-link { color:#185FA5; text-decoration:underline; text-underline-offset:2px; cursor:pointer; }
   .contact-call-link i { font-size:11px; margin-right:2px; }
@@ -248,6 +247,8 @@
   .cal-count { font-size:8px; font-weight:700; color:#2FA360; margin-top:1px; }
   .cal-action-btn { border:none; background:#F2F2F7; font-size:16px; color:var(--accent); padding:0; }
   .cal-action-btn:hover { background:#E5E5EA; }
+  .cal-action-btn.active { background:var(--accent); color:#fff; }
+  #cal-grid.paint-mode { touch-action:none; }
   .cal-mini-note { font-size:11px; padding:6px 8px; border-radius:9px; background:#F2F2F7; color:#1C1C1E; white-space:pre-wrap; }
   .legend { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; font-size:9px; color:#5F5F63; align-items:center; }
   .legend-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:3px; background:#2FA360; }
@@ -428,7 +429,11 @@
       <div id="cal-weekdays"></div>
       <div id="cal-grid">
         <button id="print-btn" class="cal-cell cal-action-btn" aria-label="Imprimir calendario" title="Imprimir calendario"><i class="ti ti-printer" aria-hidden="true"></i></button>
-        <button id="highlight-btn" class="cal-cell cal-action-btn" aria-label="Resaltar fechas" title="Resaltar fechas"><i class="ti ti-color-swatch" aria-hidden="true"></i></button>
+        <button id="highlight-btn" class="cal-cell cal-action-btn" aria-label="Pintar fechas" title="Pintar fechas"><i class="ti ti-brush" aria-hidden="true"></i></button>
+      </div>
+      <div id="paint-palette-bar" class="paint-palette-bar" style="display:none;">
+        <div id="paint-palette-hint" class="paint-palette-hint">Desliza el dedo sobre los dias para pintarlos</div>
+        <div id="paint-palette-swatches" class="highlight-palette"></div>
       </div>
       <div class="legend">
         <span><i class="ti ti-cake" style="color:#128C4A;"></i> <span id="legend-birthday">Cumpleanos</span></span>
@@ -592,39 +597,7 @@
 </div>
 <div id="print-area"></div>
 
-<div id="highlight-modal">
-  <div class="datecalc-modal-inner">
-    <div class="scan-modal-header">
-      <span id="highlight-title">Resaltar fechas</span>
-      <button id="highlight-close-btn" class="icon-btn" aria-label="Cerrar"><i class="ti ti-x" aria-hidden="true"></i></button>
-    </div>
-
-    <div class="datecalc-section">
-      <div id="highlight-label-range" class="datecalc-section-label">Que fechas queres resaltar?</div>
-      <div class="highlight-shortcuts">
-        <button type="button" id="highlight-shortcut-today" class="highlight-shortcut-btn" data-range="today">Hoy</button>
-        <button type="button" id="highlight-shortcut-week" class="highlight-shortcut-btn" data-range="week">Esta semana</button>
-        <button type="button" id="highlight-shortcut-weekend" class="highlight-shortcut-btn" data-range="weekend">Este fin de semana</button>
-      </div>
-      <div class="datecalc-offset-row">
-        <input type="date" id="highlight-start-date">
-        <input type="date" id="highlight-end-date">
-      </div>
-    </div>
-
-    <div class="datecalc-section">
-      <div id="highlight-label-color" class="datecalc-section-label">Color</div>
-      <div id="highlight-palette" class="highlight-palette"></div>
-      <input type="color" id="highlight-color-input" value="#D98A1F" style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;">
-      <button id="highlight-apply-btn" class="sky-btn primary" style="width:100%; margin-top:12px;">Aplicar</button>
-    </div>
-
-    <div class="datecalc-section">
-      <div id="highlight-label-list" class="datecalc-section-label">Resaltados activos</div>
-      <div id="highlight-list" style="display:flex; flex-direction:column; gap:6px;"></div>
-    </div>
-  </div>
-</div>
+<input type="color" id="highlight-color-input" value="#D98A1F" style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;">
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -731,16 +704,10 @@
       printModeWeek: 'Por semana',
       printGoBtn: 'Imprimir',
       printMore: 'mas',
-      highlightBtnTitle: 'Resaltar fechas',
-      highlightTitle: 'Resaltar fechas',
-      highlightLabelRange: 'Que fechas queres resaltar?',
-      highlightLabelColor: 'Color',
-      highlightLabelList: 'Resaltados activos',
-      highlightApplyBtn: 'Aplicar',
-      highlightShortcutToday: 'Hoy',
-      highlightShortcutWeek: 'Esta semana',
-      highlightShortcutWeekend: 'Este fin de semana',
+      highlightBtnTitle: 'Pintar fechas',
+      highlightHint: 'Desliza el dedo sobre los dias para pintarlos',
       highlightCustomColor: 'Personalizado',
+      highlightEraserTitle: 'Borrar color',
       searchPlaceholder: 'Buscar en tus notas...',
       noMatches: 'Sin coincidencias.',
       alarmTag: '\u23F0 Alarma',
@@ -833,16 +800,10 @@
       printModeWeek: 'By week',
       printGoBtn: 'Print',
       printMore: 'more',
-      highlightBtnTitle: 'Highlight dates',
-      highlightTitle: 'Highlight dates',
-      highlightLabelRange: 'Which dates do you want to highlight?',
-      highlightLabelColor: 'Color',
-      highlightLabelList: 'Active highlights',
-      highlightApplyBtn: 'Apply',
-      highlightShortcutToday: 'Today',
-      highlightShortcutWeek: 'This week',
-      highlightShortcutWeekend: 'This weekend',
+      highlightBtnTitle: 'Paint dates',
+      highlightHint: 'Drag your finger over the days to paint them',
       highlightCustomColor: 'Custom',
+      highlightEraserTitle: 'Erase color',
       searchPlaceholder: 'Search your notes...',
       noMatches: 'No matches.',
       alarmTag: '\u23F0 Alarm',
@@ -2873,6 +2834,7 @@
       var key = dateKey(cellDate);
       var cell = document.createElement('div');
       cell.className = 'cal-cell';
+      cell.dataset.dateKey = key;
       if (key === dateKey(today)) cell.classList.add('today');
       if (key === selectedDateKey) cell.classList.add('selected');
       var dayNotes = notesForDate(cellDate);
@@ -2895,6 +2857,7 @@
       }
       cell.addEventListener('click', function(k){
         return function(){
+          if (paintMode) return;
           vibrate(6);
           selectedDateKey = (selectedDateKey === k) ? null : k;
           renderCalendar(); renderSelectedPanel();
@@ -3131,175 +3094,107 @@
     window.print();
   });
 
-  // ---------- Date-range highlights ----------
+  // ---------- Paint-to-highlight dates ----------
   var HIGHLIGHTS_KEY = 'mi_alarma_highlights';
-  var highlights = [];
-  var highlightIdCounter = 0;
+  var highlights = {};
   var highlightBtn = document.getElementById('highlight-btn');
-  var highlightModal = document.getElementById('highlight-modal');
-  var highlightCloseBtn = document.getElementById('highlight-close-btn');
-  var highlightTitleEl = document.getElementById('highlight-title');
-  var highlightLabelRangeEl = document.getElementById('highlight-label-range');
-  var highlightLabelColorEl = document.getElementById('highlight-label-color');
-  var highlightLabelListEl = document.getElementById('highlight-label-list');
-  var highlightStartDate = document.getElementById('highlight-start-date');
-  var highlightEndDate = document.getElementById('highlight-end-date');
+  var paintPaletteBar = document.getElementById('paint-palette-bar');
+  var paintPaletteHint = document.getElementById('paint-palette-hint');
+  var paintPaletteSwatches = document.getElementById('paint-palette-swatches');
   var highlightColorInput = document.getElementById('highlight-color-input');
-  var highlightApplyBtn = document.getElementById('highlight-apply-btn');
-  var highlightListEl = document.getElementById('highlight-list');
-  var highlightPaletteEl = document.getElementById('highlight-palette');
-  var highlightShortcutTodayBtn = document.getElementById('highlight-shortcut-today');
-  var highlightShortcutWeekBtn = document.getElementById('highlight-shortcut-week');
-  var highlightShortcutWeekendBtn = document.getElementById('highlight-shortcut-weekend');
   var HIGHLIGHT_PALETTE = ['#E67C73', '#F4A261', '#F6C453', '#6FBF8B', '#4DB6AC', '#6FBCEE', '#9575CD', '#E88FB5'];
-  var selectedHighlightColor = HIGHLIGHT_PALETTE[0];
+  var paintMode = false;
+  var isPainting = false;
+  var currentPaintColor = HIGHLIGHT_PALETTE[0];
 
-  function isoDateOnly(d){
-    return d.getFullYear() + '-' + (d.getMonth() + 1).toString().padStart(2, '0') + '-' + d.getDate().toString().padStart(2, '0');
-  }
   function loadHighlights(){
     try {
       var raw = localStorage.getItem(HIGHLIGHTS_KEY);
-      if (!raw) return;
-      highlights = JSON.parse(raw);
-      highlightIdCounter = highlights.reduce(function(max, h){ return Math.max(max, h.id + 1); }, 0);
+      if (raw) highlights = JSON.parse(raw);
     } catch(e){}
   }
   function saveHighlights(){
     try { localStorage.setItem(HIGHLIGHTS_KEY, JSON.stringify(highlights)); } catch(e){}
   }
   function highlightColorForDate(d){
-    var iso = isoDateOnly(d);
-    for (var i = highlights.length - 1; i >= 0; i--){
-      var h = highlights[i];
-      if (iso >= h.start && iso <= h.end) return h.color;
-    }
-    return null;
+    return highlights[dateKey(d)] || null;
   }
-  function highlightRangeLabel(h){
-    var parts = h.start.split('-').map(Number);
-    var start = new Date(parts[0], parts[1] - 1, parts[2]);
-    var parts2 = h.end.split('-').map(Number);
-    var end = new Date(parts2[0], parts2[1] - 1, parts2[2]);
-    var startLabel = start.getDate() + ' ' + t('months')[start.getMonth()];
-    if (h.start === h.end) return startLabel;
-    var endLabel = end.getDate() + ' ' + t('months')[end.getMonth()];
-    return startLabel + ' - ' + endLabel;
-  }
-  function renderHighlightList(){
-    highlightListEl.innerHTML = '';
-    highlights.forEach(function(h){
-      var row = document.createElement('div');
-      row.className = 'contact-row';
-      var left = document.createElement('span');
-      left.style.cssText = 'display:flex; align-items:center; gap:8px;';
-      var dot = document.createElement('span');
-      dot.style.cssText = 'display:inline-block; width:14px; height:14px; border-radius:50%; background:' + h.color + ';';
-      left.appendChild(dot);
-      left.appendChild(document.createTextNode(highlightRangeLabel(h)));
-      row.appendChild(left);
-      var delBtn = document.createElement('button');
-      delBtn.innerHTML = '<i class="ti ti-trash" aria-hidden="true"></i>';
-      delBtn.setAttribute('aria-label', t('deleteLabel'));
-      delBtn.addEventListener('click', function(){
-        highlights = highlights.filter(function(x){ return x.id !== h.id; });
-        saveHighlights(); renderHighlightList(); renderAll();
-      });
-      row.appendChild(delBtn);
-      highlightListEl.appendChild(row);
-    });
-  }
-  function renderHighlightPalette(){
-    highlightPaletteEl.innerHTML = '';
-    var isCustom = HIGHLIGHT_PALETTE.indexOf(selectedHighlightColor) === -1;
+  function renderPaintPalette(){
+    paintPaletteSwatches.innerHTML = '';
+    var isCustom = HIGHLIGHT_PALETTE.indexOf(currentPaintColor) === -1;
     HIGHLIGHT_PALETTE.forEach(function(hex){
       var sw = document.createElement('button');
       sw.type = 'button';
-      sw.className = 'highlight-swatch' + (!isCustom && hex === selectedHighlightColor ? ' selected' : '');
+      sw.className = 'highlight-swatch' + (!isCustom && hex === currentPaintColor ? ' selected' : '');
       sw.style.background = hex;
       sw.setAttribute('aria-label', hex);
-      sw.addEventListener('click', function(){ vibrate(6); selectedHighlightColor = hex; renderHighlightPalette(); });
-      highlightPaletteEl.appendChild(sw);
+      sw.addEventListener('click', function(){ vibrate(6); currentPaintColor = hex; renderPaintPalette(); });
+      paintPaletteSwatches.appendChild(sw);
     });
     var customSw = document.createElement('button');
     customSw.type = 'button';
     customSw.className = 'highlight-swatch highlight-swatch-custom' + (isCustom ? ' selected' : '');
-    customSw.style.background = isCustom ? selectedHighlightColor : '#F2F2F7';
+    customSw.style.background = isCustom ? currentPaintColor : '#F2F2F7';
     customSw.style.color = isCustom ? '#fff' : '#5F5F63';
     customSw.innerHTML = '<i class="ti ti-plus" aria-hidden="true"></i>';
     customSw.setAttribute('aria-label', t('highlightCustomColor'));
     customSw.title = t('highlightCustomColor');
     customSw.addEventListener('click', function(){ vibrate(6); highlightColorInput.click(); });
-    highlightPaletteEl.appendChild(customSw);
+    paintPaletteSwatches.appendChild(customSw);
+    var eraserSw = document.createElement('button');
+    eraserSw.type = 'button';
+    eraserSw.className = 'highlight-swatch highlight-swatch-eraser' + (currentPaintColor === null ? ' selected' : '');
+    eraserSw.innerHTML = '<i class="ti ti-eraser" aria-hidden="true"></i>';
+    eraserSw.setAttribute('aria-label', t('highlightEraserTitle'));
+    eraserSw.title = t('highlightEraserTitle');
+    eraserSw.addEventListener('click', function(){ vibrate(6); currentPaintColor = null; renderPaintPalette(); });
+    paintPaletteSwatches.appendChild(eraserSw);
   }
-  function highlightWeekendRange(from){
-    var d = new Date(from.getFullYear(), from.getMonth(), from.getDate());
-    var day = d.getDay();
-    var satOffset = day === 0 ? -1 : (day === 6 ? 0 : (6 - day));
-    var sat = new Date(d); sat.setDate(sat.getDate() + satOffset);
-    var sun = new Date(sat); sun.setDate(sun.getDate() + 1);
-    return [sat, sun];
+  function setPaintMode(on){
+    paintMode = on;
+    highlightBtn.classList.toggle('active', on);
+    calGrid.classList.toggle('paint-mode', on);
+    paintPaletteBar.style.display = on ? 'block' : 'none';
+    if (on){
+      paintPaletteHint.textContent = t('highlightHint');
+      renderPaintPalette();
+    }
   }
-  function highlightApplyLanguage(){
-    highlightTitleEl.textContent = t('highlightTitle');
-    highlightLabelRangeEl.textContent = t('highlightLabelRange');
-    highlightLabelColorEl.textContent = t('highlightLabelColor');
-    highlightLabelListEl.textContent = t('highlightLabelList');
-    highlightApplyBtn.textContent = t('highlightApplyBtn');
-    highlightShortcutTodayBtn.textContent = t('highlightShortcutToday');
-    highlightShortcutWeekBtn.textContent = t('highlightShortcutWeek');
-    highlightShortcutWeekendBtn.textContent = t('highlightShortcutWeekend');
+  function paintCellByKey(key, cellEl){
+    if (currentPaintColor){
+      highlights[key] = currentPaintColor;
+      cellEl.style.background = currentPaintColor;
+    } else {
+      delete highlights[key];
+      cellEl.style.background = '';
+    }
+  }
+  highlightBtn.addEventListener('click', function(){
+    vibrate(8);
     highlightBtn.title = t('highlightBtnTitle'); highlightBtn.setAttribute('aria-label', t('highlightBtnTitle'));
-  }
-  function highlightDateInputValue(d){
-    return d.getFullYear() + '-' + (d.getMonth() + 1).toString().padStart(2, '0') + '-' + d.getDate().toString().padStart(2, '0');
-  }
-  function highlightOpenModal(){
-    highlightApplyLanguage();
-    highlightStartDate.value = highlightDateInputValue(today);
-    highlightEndDate.value = highlightDateInputValue(today);
-    selectedHighlightColor = HIGHLIGHT_PALETTE[0];
-    renderHighlightPalette();
-    renderHighlightList();
-    highlightModal.style.display = 'flex';
-  }
-  function highlightCloseModal(){ highlightModal.style.display = 'none'; }
-  highlightBtn.addEventListener('click', highlightOpenModal);
-  highlightCloseBtn.addEventListener('click', highlightCloseModal);
-  highlightModal.addEventListener('click', function(e){ if (e.target === highlightModal) highlightCloseModal(); });
+    setPaintMode(!paintMode);
+  });
   highlightColorInput.addEventListener('input', function(){
-    selectedHighlightColor = highlightColorInput.value;
-    renderHighlightPalette();
+    currentPaintColor = highlightColorInput.value;
+    renderPaintPalette();
   });
-  highlightShortcutTodayBtn.addEventListener('click', function(){
-    vibrate(6);
-    highlightStartDate.value = highlightDateInputValue(today);
-    highlightEndDate.value = highlightDateInputValue(today);
+  calGrid.addEventListener('pointerdown', function(e){
+    if (!paintMode) return;
+    var cell = e.target.closest('.cal-cell');
+    if (!cell || !cell.dataset.dateKey) return;
+    e.preventDefault();
+    isPainting = true;
+    paintCellByKey(cell.dataset.dateKey, cell);
   });
-  highlightShortcutWeekBtn.addEventListener('click', function(){
-    vibrate(6);
-    var start = printStartOfWeek(today);
-    var end = new Date(start); end.setDate(end.getDate() + 6);
-    highlightStartDate.value = highlightDateInputValue(start);
-    highlightEndDate.value = highlightDateInputValue(end);
+  calGrid.addEventListener('pointermove', function(e){
+    if (!paintMode || !isPainting) return;
+    var el = document.elementFromPoint(e.clientX, e.clientY);
+    var cell = el ? el.closest('.cal-cell') : null;
+    if (!cell || !cell.dataset.dateKey) return;
+    paintCellByKey(cell.dataset.dateKey, cell);
   });
-  highlightShortcutWeekendBtn.addEventListener('click', function(){
-    vibrate(6);
-    var range = highlightWeekendRange(today);
-    highlightStartDate.value = highlightDateInputValue(range[0]);
-    highlightEndDate.value = highlightDateInputValue(range[1]);
-  });
-  highlightApplyBtn.addEventListener('click', function(){
-    var startVal = highlightStartDate.value;
-    var endVal = highlightEndDate.value || startVal;
-    if (!startVal) return;
-    var start = startVal <= endVal ? startVal : endVal;
-    var end = startVal <= endVal ? endVal : startVal;
-    highlights.push({ id: highlightIdCounter++, start: start, end: end, color: selectedHighlightColor });
-    saveHighlights();
-    renderHighlightList();
-    renderAll();
-    vibrate(10); flashSaved();
+  document.addEventListener('pointerup', function(){
+    if (isPainting){ isPainting = false; saveHighlights(); vibrate(10); }
   });
   loadHighlights();
 
