@@ -615,8 +615,6 @@
 </div>
 <div id="print-area"></div>
 
-<input type="color" id="highlight-color-input" value="#D98A1F" style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;">
-
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -724,7 +722,6 @@
       printMore: 'mas',
       highlightBtnTitle: 'Pintar fechas',
       highlightHint: 'Desliza para pintar los dias. Toca un dia pintado para borrarlo.',
-      highlightCustomColor: 'Personalizado',
       noteSelectBtnTitle: 'Empezar nota desde el calendario',
       noteSelectHint: 'Desliza el dedo sobre los dias para tu nota',
       pendingAnchorPrefix: 'Nota para el',
@@ -822,7 +819,6 @@
       printMore: 'more',
       highlightBtnTitle: 'Paint dates',
       highlightHint: 'Drag to paint the days. Tap a painted day to erase it.',
-      highlightCustomColor: 'Custom',
       noteSelectBtnTitle: 'Start a note from the calendar',
       noteSelectHint: 'Drag your finger over the days for your note',
       pendingAnchorPrefix: 'Note for',
@@ -3181,7 +3177,6 @@
   var paintPaletteBar = document.getElementById('paint-palette-bar');
   var paintPaletteHint = document.getElementById('paint-palette-hint');
   var paintPaletteSwatches = document.getElementById('paint-palette-swatches');
-  var highlightColorInput = document.getElementById('highlight-color-input');
   var HIGHLIGHT_PALETTE = ['#E67C73', '#F4A261', '#F6C453', '#6FBF8B', '#4DB6AC', '#6FBCEE', '#9575CD', '#E88FB5'];
   var paintMode = false;
   var isPainting = false;
@@ -3260,16 +3255,14 @@
       sw.addEventListener('click', function(){ vibrate(6); currentPaintColor = hex; renderPaintPalette(); });
       paintPaletteSwatches.appendChild(sw);
     });
-    var customSw = document.createElement('button');
-    customSw.type = 'button';
-    customSw.className = 'highlight-swatch highlight-swatch-custom' + (isCustom ? ' selected' : '');
-    customSw.style.background = isCustom ? currentPaintColor : '#F2F2F7';
-    customSw.style.color = isCustom ? '#fff' : '#5F5F63';
-    customSw.innerHTML = '<i class="ti ti-plus" aria-hidden="true"></i>';
-    customSw.setAttribute('aria-label', t('highlightCustomColor'));
-    customSw.title = t('highlightCustomColor');
-    customSw.addEventListener('click', function(){ vibrate(6); highlightColorInput.click(); });
-    paintPaletteSwatches.appendChild(customSw);
+    var addNoteSw = document.createElement('button');
+    addNoteSw.type = 'button';
+    addNoteSw.className = 'highlight-swatch highlight-swatch-custom';
+    addNoteSw.innerHTML = '<i class="ti ti-square-plus" aria-hidden="true"></i>';
+    addNoteSw.setAttribute('aria-label', t('noteSelectBtnTitle'));
+    addNoteSw.title = t('noteSelectBtnTitle');
+    addNoteSw.addEventListener('click', function(){ vibrate(6); setNoteSelectMode(true); });
+    paintPaletteSwatches.appendChild(addNoteSw);
   }
   function setPaintMode(on){
     paintMode = on;
@@ -3296,10 +3289,6 @@
     vibrate(8);
     highlightBtn.title = t('highlightBtnTitle'); highlightBtn.setAttribute('aria-label', t('highlightBtnTitle'));
     setPaintMode(!paintMode);
-  });
-  highlightColorInput.addEventListener('input', function(){
-    currentPaintColor = highlightColorInput.value;
-    renderPaintPalette();
   });
   var paintEraseStroke = false;
   calGrid.addEventListener('pointerdown', function(e){
