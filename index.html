@@ -149,7 +149,7 @@
   #datecalc-unit { flex:1; }
   .datecalc-result { margin-top:10px; font-size:14px; font-weight:600; color:var(--accent); }
 
-  #print-modal {
+  #print-modal, #highlight-modal {
     display:none; position:fixed; inset:0; background:rgba(20,40,55,0.55); z-index:1000;
     align-items:center; justify-content:center; padding:16px;
   }
@@ -241,8 +241,6 @@
   .cal-count { font-size:8px; font-weight:700; color:#2FA360; margin-top:1px; }
   .cal-action-btn { border:none; background:#F2F2F7; font-size:16px; color:var(--accent); padding:0; }
   .cal-action-btn:hover { background:#E5E5EA; }
-  #theme-color-swatch { width:16px; height:16px; border-radius:50%; background:var(--accent); border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,0.15); }
-  #theme-color-input { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
   .cal-mini-note { font-size:11px; padding:6px 8px; border-radius:9px; background:#F2F2F7; color:#1C1C1E; white-space:pre-wrap; }
   .legend { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; font-size:9px; color:#5F5F63; align-items:center; }
   .legend-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:3px; background:#2FA360; }
@@ -423,9 +421,8 @@
       <div id="cal-weekdays"></div>
       <div id="cal-grid">
         <button id="print-btn" class="cal-cell cal-action-btn" aria-label="Imprimir calendario" title="Imprimir calendario"><i class="ti ti-printer" aria-hidden="true"></i></button>
-        <button id="theme-color-btn" class="cal-cell cal-action-btn" aria-label="Elegir color de acento" title="Elegir color de acento"><span id="theme-color-swatch"></span></button>
+        <button id="highlight-btn" class="cal-cell cal-action-btn" aria-label="Resaltar fechas" title="Resaltar fechas"><i class="ti ti-color-swatch" aria-hidden="true"></i></button>
       </div>
-      <input type="color" id="theme-color-input" value="#D98A1F" aria-hidden="true" tabindex="-1">
       <div class="legend">
         <span><i class="ti ti-cake" style="color:#128C4A;"></i> <span id="legend-birthday">Cumpleanos</span></span>
         <span><i class="ti ti-users" style="color:#128C4A;"></i> <span id="legend-meeting">Reunion</span></span>
@@ -588,6 +585,36 @@
 </div>
 <div id="print-area"></div>
 
+<div id="highlight-modal">
+  <div class="datecalc-modal-inner">
+    <div class="scan-modal-header">
+      <span id="highlight-title">Resaltar fechas</span>
+      <button id="highlight-close-btn" class="icon-btn" aria-label="Cerrar"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </div>
+
+    <div class="datecalc-section">
+      <div id="highlight-label-range" class="datecalc-section-label">Que fechas queres resaltar?</div>
+      <div class="datecalc-offset-row">
+        <input type="date" id="highlight-start-date">
+        <input type="date" id="highlight-end-date">
+      </div>
+    </div>
+
+    <div class="datecalc-section">
+      <div id="highlight-label-color" class="datecalc-section-label">Color</div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <input type="color" id="highlight-color-input" value="#D98A1F">
+        <button id="highlight-apply-btn" class="sky-btn primary">Aplicar</button>
+      </div>
+    </div>
+
+    <div class="datecalc-section">
+      <div id="highlight-label-list" class="datecalc-section-label">Resaltados activos</div>
+      <div id="highlight-list" style="display:flex; flex-direction:column; gap:6px;"></div>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -693,7 +720,12 @@
       printModeWeek: 'Por semana',
       printGoBtn: 'Imprimir',
       printMore: 'mas',
-      themeColorBtnTitle: 'Elegir color de acento',
+      highlightBtnTitle: 'Resaltar fechas',
+      highlightTitle: 'Resaltar fechas',
+      highlightLabelRange: 'Que fechas queres resaltar?',
+      highlightLabelColor: 'Color',
+      highlightLabelList: 'Resaltados activos',
+      highlightApplyBtn: 'Aplicar',
       searchPlaceholder: 'Buscar en tus notas...',
       noMatches: 'Sin coincidencias.',
       alarmTag: '\u23F0 Alarma',
@@ -786,7 +818,12 @@
       printModeWeek: 'By week',
       printGoBtn: 'Print',
       printMore: 'more',
-      themeColorBtnTitle: 'Choose accent color',
+      highlightBtnTitle: 'Highlight dates',
+      highlightTitle: 'Highlight dates',
+      highlightLabelRange: 'Which dates do you want to highlight?',
+      highlightLabelColor: 'Color',
+      highlightLabelList: 'Active highlights',
+      highlightApplyBtn: 'Apply',
       searchPlaceholder: 'Search your notes...',
       noMatches: 'No matches.',
       alarmTag: '\u23F0 Alarm',
@@ -992,7 +1029,7 @@
     datecalcBtn.title = t('datecalcBtnTitle'); datecalcBtn.setAttribute('aria-label', t('datecalcBtnTitle'));
     receiptBtn.title = t('receiptBtnTitle'); receiptBtn.setAttribute('aria-label', t('receiptBtnTitle'));
     printBtn.title = t('printBtnTitle'); printBtn.setAttribute('aria-label', t('printBtnTitle'));
-    themeColorBtn.title = t('themeColorBtnTitle'); themeColorBtn.setAttribute('aria-label', t('themeColorBtnTitle'));
+    highlightBtn.title = t('highlightBtnTitle'); highlightBtn.setAttribute('aria-label', t('highlightBtnTitle'));
     updateNotifBtn();
     updateAuthBtn();
     document.documentElement.lang = currentLang;
@@ -2822,6 +2859,8 @@
       var dayNotes = notesForDate(cellDate);
       var icon = dayNotes.length ? dayActivityIcon(dayNotes) : null;
       if (dayNotes.length) cell.classList.add('has-activity');
+      var hColor = highlightColorForDate(cellDate);
+      if (hColor) cell.style.background = hColor;
       if (icon){
         var iconEl = document.createElement('i');
         iconEl.className = 'ti ' + icon + ' cal-activity-icon';
@@ -2845,7 +2884,7 @@
       calGrid.appendChild(cell);
     }
     calGrid.appendChild(printBtn);
-    calGrid.appendChild(themeColorBtn);
+    calGrid.appendChild(highlightBtn);
   }
 
   function notesForDate(d){
@@ -2949,6 +2988,8 @@
       var cellDate = new Date(year, month, day);
       var cell = document.createElement('div');
       cell.className = 'print-month-cell' + (dateKey(cellDate) === todayKey ? ' is-today' : '');
+      var cellHColor = highlightColorForDate(cellDate);
+      if (cellHColor) cell.style.background = cellHColor;
       var num = document.createElement('div'); num.className = 'print-month-daynum'; num.textContent = day;
       cell.appendChild(num);
       var dayNotes = printSortDayNotes(notesForDate(cellDate));
@@ -2989,6 +3030,8 @@
       var d = new Date(weekStart); d.setDate(d.getDate() + i);
       var dayWrap = document.createElement('div');
       dayWrap.className = 'print-week-day';
+      var dayHColor = highlightColorForDate(d);
+      if (dayHColor) dayWrap.style.background = dayHColor;
       var head = document.createElement('div');
       head.className = 'print-week-day-head' + (dateKey(d) === todayKey ? ' is-today' : '');
       head.textContent = t('days')[d.getDay()] + ' ' + d.getDate() + ' ' + t('months')[d.getMonth()];
@@ -3069,47 +3112,114 @@
     window.print();
   });
 
-  // ---------- Accent color theming ----------
-  var ACCENT_KEY = 'mi_alarma_accent';
-  var DEFAULT_ACCENT = '#D98A1F';
-  var themeColorBtn = document.getElementById('theme-color-btn');
-  var themeColorInput = document.getElementById('theme-color-input');
+  // ---------- Date-range highlights ----------
+  var HIGHLIGHTS_KEY = 'mi_alarma_highlights';
+  var highlights = [];
+  var highlightIdCounter = 0;
+  var highlightBtn = document.getElementById('highlight-btn');
+  var highlightModal = document.getElementById('highlight-modal');
+  var highlightCloseBtn = document.getElementById('highlight-close-btn');
+  var highlightTitleEl = document.getElementById('highlight-title');
+  var highlightLabelRangeEl = document.getElementById('highlight-label-range');
+  var highlightLabelColorEl = document.getElementById('highlight-label-color');
+  var highlightLabelListEl = document.getElementById('highlight-label-list');
+  var highlightStartDate = document.getElementById('highlight-start-date');
+  var highlightEndDate = document.getElementById('highlight-end-date');
+  var highlightColorInput = document.getElementById('highlight-color-input');
+  var highlightApplyBtn = document.getElementById('highlight-apply-btn');
+  var highlightListEl = document.getElementById('highlight-list');
 
-  function clampByte(v){ return Math.max(0, Math.min(255, Math.round(v))); }
-  function hexToRgb(hex){
-    hex = hex.replace('#', '');
-    if (hex.length === 3) hex = hex.split('').map(function(c){ return c + c; }).join('');
-    var n = parseInt(hex, 16);
-    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  function isoDateOnly(d){
+    return d.getFullYear() + '-' + (d.getMonth() + 1).toString().padStart(2, '0') + '-' + d.getDate().toString().padStart(2, '0');
   }
-  function rgbToHex(r, g, b){
-    return '#' + [r, g, b].map(function(v){ var s = clampByte(v).toString(16); return s.length === 1 ? '0' + s : s; }).join('');
+  function loadHighlights(){
+    try {
+      var raw = localStorage.getItem(HIGHLIGHTS_KEY);
+      if (!raw) return;
+      highlights = JSON.parse(raw);
+      highlightIdCounter = highlights.reduce(function(max, h){ return Math.max(max, h.id + 1); }, 0);
+    } catch(e){}
   }
-  function mixColor(hex, targetHex, amount){
-    var c = hexToRgb(hex), tg = hexToRgb(targetHex);
-    return rgbToHex(c[0] + (tg[0] - c[0]) * amount, c[1] + (tg[1] - c[1]) * amount, c[2] + (tg[2] - c[2]) * amount);
+  function saveHighlights(){
+    try { localStorage.setItem(HIGHLIGHTS_KEY, JSON.stringify(highlights)); } catch(e){}
   }
-  function applyAccentColor(hex){
-    var root = document.documentElement.style;
-    root.setProperty('--accent', hex);
-    root.setProperty('--accent-dark', mixColor(hex, '#000000', 0.12));
-    root.setProperty('--accent-darker', mixColor(hex, '#000000', 0.28));
-    root.setProperty('--accent-line', mixColor(hex, '#000000', 0.35));
-    root.setProperty('--accent-light', mixColor(hex, '#ffffff', 0.35));
-    root.setProperty('--accent-soft', mixColor(hex, '#ffffff', 0.75));
-    root.setProperty('--accent-glow', mixColor(hex, '#ffffff', 0.55));
+  function highlightColorForDate(d){
+    var iso = isoDateOnly(d);
+    for (var i = highlights.length - 1; i >= 0; i--){
+      var h = highlights[i];
+      if (iso >= h.start && iso <= h.end) return h.color;
+    }
+    return null;
   }
-  var savedAccent = null;
-  try { savedAccent = localStorage.getItem(ACCENT_KEY); } catch(e){}
-  themeColorInput.value = savedAccent || DEFAULT_ACCENT;
-  if (savedAccent) applyAccentColor(savedAccent);
-
-  themeColorBtn.addEventListener('click', function(){ vibrate(6); themeColorInput.click(); });
-  themeColorInput.addEventListener('input', function(){ applyAccentColor(themeColorInput.value); });
-  themeColorInput.addEventListener('change', function(){
-    try { localStorage.setItem(ACCENT_KEY, themeColorInput.value); } catch(e){}
+  function highlightRangeLabel(h){
+    var parts = h.start.split('-').map(Number);
+    var start = new Date(parts[0], parts[1] - 1, parts[2]);
+    var parts2 = h.end.split('-').map(Number);
+    var end = new Date(parts2[0], parts2[1] - 1, parts2[2]);
+    var startLabel = start.getDate() + ' ' + t('months')[start.getMonth()];
+    if (h.start === h.end) return startLabel;
+    var endLabel = end.getDate() + ' ' + t('months')[end.getMonth()];
+    return startLabel + ' - ' + endLabel;
+  }
+  function renderHighlightList(){
+    highlightListEl.innerHTML = '';
+    highlights.forEach(function(h){
+      var row = document.createElement('div');
+      row.className = 'contact-row';
+      var left = document.createElement('span');
+      left.style.cssText = 'display:flex; align-items:center; gap:8px;';
+      var dot = document.createElement('span');
+      dot.style.cssText = 'display:inline-block; width:14px; height:14px; border-radius:50%; background:' + h.color + ';';
+      left.appendChild(dot);
+      left.appendChild(document.createTextNode(highlightRangeLabel(h)));
+      row.appendChild(left);
+      var delBtn = document.createElement('button');
+      delBtn.innerHTML = '<i class="ti ti-trash" aria-hidden="true"></i>';
+      delBtn.setAttribute('aria-label', t('deleteLabel'));
+      delBtn.addEventListener('click', function(){
+        highlights = highlights.filter(function(x){ return x.id !== h.id; });
+        saveHighlights(); renderHighlightList(); renderAll();
+      });
+      row.appendChild(delBtn);
+      highlightListEl.appendChild(row);
+    });
+  }
+  function highlightApplyLanguage(){
+    highlightTitleEl.textContent = t('highlightTitle');
+    highlightLabelRangeEl.textContent = t('highlightLabelRange');
+    highlightLabelColorEl.textContent = t('highlightLabelColor');
+    highlightLabelListEl.textContent = t('highlightLabelList');
+    highlightApplyBtn.textContent = t('highlightApplyBtn');
+    highlightBtn.title = t('highlightBtnTitle'); highlightBtn.setAttribute('aria-label', t('highlightBtnTitle'));
+  }
+  function highlightDateInputValue(d){
+    return d.getFullYear() + '-' + (d.getMonth() + 1).toString().padStart(2, '0') + '-' + d.getDate().toString().padStart(2, '0');
+  }
+  function highlightOpenModal(){
+    highlightApplyLanguage();
+    highlightStartDate.value = highlightDateInputValue(today);
+    highlightEndDate.value = highlightDateInputValue(today);
+    highlightColorInput.value = '#D98A1F';
+    renderHighlightList();
+    highlightModal.style.display = 'flex';
+  }
+  function highlightCloseModal(){ highlightModal.style.display = 'none'; }
+  highlightBtn.addEventListener('click', highlightOpenModal);
+  highlightCloseBtn.addEventListener('click', highlightCloseModal);
+  highlightModal.addEventListener('click', function(e){ if (e.target === highlightModal) highlightCloseModal(); });
+  highlightApplyBtn.addEventListener('click', function(){
+    var startVal = highlightStartDate.value;
+    var endVal = highlightEndDate.value || startVal;
+    if (!startVal) return;
+    var start = startVal <= endVal ? startVal : endVal;
+    var end = startVal <= endVal ? endVal : startVal;
+    highlights.push({ id: highlightIdCounter++, start: start, end: end, color: highlightColorInput.value });
+    saveHighlights();
+    renderHighlightList();
+    renderAll();
     vibrate(10); flashSaved();
   });
+  loadHighlights();
 
   // "cada N horas" fires several times a day, so it needs a real anchor moment to
   // count from. If the user didn't give an explicit start time, anchor it to the
