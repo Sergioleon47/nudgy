@@ -8,6 +8,15 @@
 <meta name="theme-color" content="#6FBCEE">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
 <style>
+  :root {
+    --accent: #D98A1F;
+    --accent-dark: #C67D1C;
+    --accent-darker: #B5730F;
+    --accent-line: #A9600F;
+    --accent-light: #FFC968;
+    --accent-soft: #FBE5C2;
+    --accent-glow: #FFE0A3;
+  }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -19,7 +28,7 @@
   .wrap { position: relative; max-width: 760px; margin: 0 auto; }
   .decor1 { position:absolute; top:-40px; right:-30px; width:160px; height:160px; pointer-events:none; }
   .header { position:relative; text-align:center; margin-bottom:20px; display:flex; align-items:center; justify-content:center; gap:8px; }
-  .header i { font-size:22px; color:#A9600F; }
+  .header i { font-size:22px; color:var(--accent-line); }
   .header-bell { width:26px; height:26px; flex-shrink:0; }
   .header span { font-size:20px; font-weight:700; color:#1C1C1E; letter-spacing:-0.2px; }
   #lang-toggle {
@@ -30,7 +39,7 @@
     background:none; border:none; color:#5F5F63; font-size:11px; font-weight:600;
     padding:5px 10px; border-radius:7px; cursor:pointer;
   }
-  #lang-toggle button.active { background:#FFFFFF; color:#D98A1F; box-shadow:0 1px 2px rgba(0,0,0,0.12); }
+  #lang-toggle button.active { background:#FFFFFF; color:var(--accent); box-shadow:0 1px 2px rgba(0,0,0,0.12); }
   .cols { position:relative; display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
   .sky-panel {
     background: #FFFFFF;
@@ -45,7 +54,7 @@
 
   #note-input, #note-input:focus {
     width:100%; box-sizing:border-box; resize:none; font-family:inherit; font-size:15px; color:#1C1C1E;
-    padding:0; border:none; outline:none; box-shadow:none; background:transparent; caret-color:#D98A1F;
+    padding:0; border:none; outline:none; box-shadow:none; background:transparent; caret-color:var(--accent);
   }
   .top-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; min-height:14px; gap:8px; flex-wrap:wrap; }
   #notif-btn {
@@ -60,8 +69,8 @@
     width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
   }
-  #contacts-btn.open { background:#D98A1F; color:white; }
-  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn, #print-btn, #auth-btn {
+  #contacts-btn.open { background:var(--accent); color:white; }
+  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn, #auth-btn {
     background: #F2F2F7; border: none; color: #274257;
     width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px;
@@ -98,7 +107,7 @@
   #scan-overlay-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
   .scan-handle {
     position:absolute; width:26px; height:26px; margin-left:-13px; margin-top:-13px;
-    background: rgba(217,138,31,0.9); border:2px solid white; border-radius:50%; cursor:grab; touch-action:none;
+    background: var(--accent); opacity:0.9; border:2px solid white; border-radius:50%; cursor:grab; touch-action:none;
   }
   .scan-hint { font-size:12px; color:#5F5F63; margin:10px 0; text-align:center; }
   #scan-review-grid { display:grid; grid-template-columns: repeat(7, 1fr); gap:5px; margin-bottom:14px; }
@@ -107,7 +116,7 @@
     border-radius:50%; border:none; background:#F2F2F7; cursor:pointer;
   }
   .scan-day-cell.empty { visibility:hidden; cursor:default; }
-  .scan-day-cell.checked { background:#D98A1F; color:white; font-weight:600; }
+  .scan-day-cell.checked { background:var(--accent); color:white; font-weight:600; }
   #scan-wizard-date { font-size:15px; font-weight:700; color:#1C1C1E; margin-bottom:10px; }
   #scan-wizard-input {
     width:100%; box-sizing:border-box; font-family:inherit; font-size:14px; color:#1C1C1E; padding:10px;
@@ -138,7 +147,7 @@
   #datecalc-amount { width:64px; text-align:center; }
   #datecalc-op { width:54px; }
   #datecalc-unit { flex:1; }
-  .datecalc-result { margin-top:10px; font-size:14px; font-weight:600; color:#D98A1F; }
+  .datecalc-result { margin-top:10px; font-size:14px; font-weight:600; color:var(--accent); }
 
   #print-modal {
     display:none; position:fixed; inset:0; background:rgba(20,40,55,0.55); z-index:1000;
@@ -146,7 +155,7 @@
   }
   .print-mode-toggle { display:flex; gap:2px; background:#E5E5EA; border-radius:9px; padding:2px; margin-bottom:16px; }
   .print-mode-btn { flex:1; background:none; border:none; color:#5F5F63; font-size:12px; font-weight:600; padding:7px 10px; border-radius:7px; cursor:pointer; }
-  .print-mode-btn.active { background:#FFFFFF; color:#D98A1F; box-shadow:0 1px 2px rgba(0,0,0,0.12); }
+  .print-mode-btn.active { background:#FFFFFF; color:var(--accent); box-shadow:0 1px 2px rgba(0,0,0,0.12); }
   #print-nav-label { font-size:15px; font-weight:700; color:#1C1C1E; }
   #print-go-btn { width:100%; text-align:center; margin-top:18px; }
 
@@ -160,7 +169,7 @@
   }
   #receipt-photo-preview { display:block; width:100%; max-height:160px; object-fit:cover; border-radius:12px; margin-bottom:16px; }
   #receipt-processing-bar-wrap { width:100%; height:6px; border-radius:3px; background:#F2F2F7; margin-top:16px; overflow:hidden; }
-  #receipt-processing-bar { width:30%; height:100%; background:#D98A1F; border-radius:3px; animation: receipt-progress 1.2s ease-in-out infinite; }
+  #receipt-processing-bar { width:30%; height:100%; background:var(--accent); border-radius:3px; animation: receipt-progress 1.2s ease-in-out infinite; }
   @keyframes receipt-progress { 0%{transform:translateX(-100%);} 100%{transform:translateX(333%);} }
   .contact-row { display:flex; align-items:center; justify-content:space-between; font-size:13px; color:#1C1C1E; background:#F2F2F7; padding:7px 10px; border-radius:9px; }
   .contact-row button { background:none; border:none; color:#B5493D; cursor:pointer; font-size:13px; }
@@ -168,8 +177,8 @@
   .contact-call-link i { font-size:11px; margin-right:2px; }
   .sky-btn { background: #F2F2F7; border: none; color: #274257; font-size: 13px; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-weight:500; }
   .sky-btn:hover { background: #E5E5EA; }
-  .sky-btn.primary { background:#D98A1F; border:none; color:#fff; font-weight:600; text-decoration:none; padding:8px 16px; border-radius:10px; }
-  .sky-btn.primary:hover { background:#C67D1C; }
+  .sky-btn.primary { background:var(--accent); border:none; color:#fff; font-weight:600; text-decoration:none; padding:8px 16px; border-radius:10px; }
+  .sky-btn.primary:hover { background:var(--accent-dark); }
   .sky-btn.danger { background:#FDEAE7; color:#B5493D; font-weight:600; }
 
   #ringing-banner {
@@ -205,16 +214,16 @@
   .note-block { position:relative; padding:12px 92px 12px 4px; font-size:15px; color:#1C1C1E; line-height:1.5; white-space:pre-wrap; border-bottom:1px solid rgba(60,60,67,0.1); animation:note-in .25s ease; }
   .note-block:last-child { border-bottom:none; }
   .note-block.disabled { opacity:.4; }
-  .note-number { font-size:12px; font-weight:700; color:#D98A1F; margin-right:6px; }
+  .note-number { font-size:12px; font-weight:700; color:var(--accent); margin-right:6px; }
   .note-block-actions { position:absolute; top:8px; right:0; display:flex; gap:2px; opacity:1; }
   .icon-btn { background:none; border:none; color:#AEAEB2; cursor:pointer; font-size:14px; padding:3px; min-width:26px; min-height:26px; display:inline-flex; align-items:center; justify-content:center; }
-  .icon-btn:hover { color:#D98A1F; }
+  .icon-btn:hover { color:var(--accent); }
   .icon-btn.danger:hover { color:#B5493D; }
   .icon-btn.bell-off { color:#B9CBD8; }
-  .icon-btn.bell-on { color:#D98A1F; }
+  .icon-btn.bell-on { color:var(--accent); }
 
   .cal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-  .cal-head button { background:#F2F2F7; border:none; cursor:pointer; padding:6px; border-radius:50%; color:#D98A1F; width:28px; height:28px; display:flex; align-items:center; justify-content:center; }
+  .cal-head button { background:#F2F2F7; border:none; cursor:pointer; padding:6px; border-radius:50%; color:var(--accent); width:28px; height:28px; display:flex; align-items:center; justify-content:center; }
   #cal-title { font-size:15px; font-weight:700; color:#1C1C1E; }
   #cal-weekdays, #cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
   #cal-weekdays { margin-bottom:4px; }
@@ -224,17 +233,21 @@
   .cal-cell:hover { background: #F2F2F7; }
   .cal-cell.empty { cursor:default; }
   .cal-cell.has-activity { background: #E7F7EE; }
-  .cal-cell.selected { box-shadow: inset 0 0 0 2px #D98A1F; }
-  .cal-cell.today { background:#FBE5C2; }
-  .cal-cell.today .cal-daynum { color:#B5730F; }
+  .cal-cell.selected { box-shadow: inset 0 0 0 2px var(--accent); }
+  .cal-cell.today { background:var(--accent-soft); }
+  .cal-cell.today .cal-daynum { color:var(--accent-darker); }
   .cal-daynum { font-weight:600; color:#1C1C1E; font-size:11px; }
   .cal-activity-icon { font-size:17px; color:#2FA360; }
   .cal-count { font-size:8px; font-weight:700; color:#2FA360; margin-top:1px; }
+  .cal-action-btn { border:none; background:#F2F2F7; font-size:16px; color:var(--accent); padding:0; }
+  .cal-action-btn:hover { background:#E5E5EA; }
+  #theme-color-swatch { width:16px; height:16px; border-radius:50%; background:var(--accent); border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,0.15); }
+  #theme-color-input { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
   .cal-mini-note { font-size:11px; padding:6px 8px; border-radius:9px; background:#F2F2F7; color:#1C1C1E; white-space:pre-wrap; }
   .legend { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; font-size:9px; color:#5F5F63; align-items:center; }
   .legend-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:3px; background:#2FA360; }
   #cal-selected-panel { margin-top:10px; display:none; }
-  #cal-selected-title { font-size:11px; font-weight:600; color:#D98A1F; margin-bottom:5px; }
+  #cal-selected-title { font-size:11px; font-weight:600; color:var(--accent); margin-bottom:5px; }
   .next-alarm-box { margin-top:16px; padding-top:14px; border-top:1px solid rgba(60,60,67,0.1); }
   .next-alarm-label { font-size:11px; font-weight:600; color:#5F5F63; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
   #next-alarm { font-size:13px; color:#1C1C1E; line-height:1.4; }
@@ -274,13 +287,13 @@
     .print-month-cell { border-right:1px solid #ccc; border-bottom:1px solid #ccc; padding:3px 4px; overflow:hidden; box-sizing:border-box; }
     .print-month-cell.empty { border-color:#eee; }
     .print-month-daynum { font-size:11px; font-weight:700; color:#1C1C1E; margin-bottom:2px; }
-    .print-month-cell.is-today .print-month-daynum { color:#B5730F; }
+    .print-month-cell.is-today .print-month-daynum { color:var(--accent-darker); }
     .print-month-note { font-size:8.5px; line-height:1.35; color:#1C1C1E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .print-month-more { font-size:8px; color:#5F5F63; font-style:italic; }
 
     .print-week-day { padding:8px 0; border-bottom:1px solid #ddd; page-break-inside: avoid; }
     .print-week-day-head { font-size:13px; font-weight:700; color:#1C1C1E; margin-bottom:4px; }
-    .print-week-day-head.is-today { color:#B5730F; }
+    .print-week-day-head.is-today { color:var(--accent-darker); }
     .print-week-note { font-size:11px; color:#1C1C1E; padding:2px 0 2px 6px; white-space:pre-wrap; }
     .print-week-empty { font-size:11px; color:#999; font-style:italic; padding:2px 0 2px 6px; }
   }
@@ -292,12 +305,12 @@
   <svg class="decor1" viewBox="0 0 200 200" aria-hidden="true">
     <defs>
       <radialGradient id="decorGlow" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#FFE0A3" stop-opacity="0.65"/>
-        <stop offset="70%" stop-color="#FFE0A3" stop-opacity="0"/>
+        <stop offset="0%" stop-color="var(--accent-glow)" stop-opacity="0.65"/>
+        <stop offset="70%" stop-color="var(--accent-glow)" stop-opacity="0"/>
       </radialGradient>
       <linearGradient id="decorBell" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#FFC968"/>
-        <stop offset="100%" stop-color="#D98A1F"/>
+        <stop offset="0%" stop-color="var(--accent-light)"/>
+        <stop offset="100%" stop-color="var(--accent)"/>
       </linearGradient>
     </defs>
     <circle cx="100" cy="100" r="95" fill="url(#decorGlow)"/>
@@ -318,15 +331,15 @@
     </g>
     <g transform="translate(100 84) scale(0.32) translate(-256 -150)">
       <path d="M256 96 c-64 0 -104 48 -104 128 v54 c0 22 -10 40 -30 56 h268 c-20 -16 -30 -34 -30 -56 v-54 c0 -80 -40 -128 -104 -128 z"
-            fill="url(#decorBell)" stroke="#A9600F" stroke-width="6" stroke-linejoin="round"/>
-      <circle cx="256" cy="88" r="20" fill="#D98A1F" stroke="#A9600F" stroke-width="6"/>
+            fill="url(#decorBell)" stroke="var(--accent-line)" stroke-width="6" stroke-linejoin="round"/>
+      <circle cx="256" cy="88" r="20" fill="var(--accent)" stroke="var(--accent-line)" stroke-width="6"/>
     </g>
   </svg>
   <div class="header">
     <svg class="header-bell" viewBox="110 55 290 290" aria-hidden="true">
       <path d="M256 96 c-64 0 -104 48 -104 128 v54 c0 22 -10 40 -30 56 h268 c-20 -16 -30 -34 -30 -56 v-54 c0 -80 -40 -128 -104 -128 z"
-            fill="url(#decorBell)" stroke="#A9600F" stroke-width="6" stroke-linejoin="round"/>
-      <circle cx="256" cy="88" r="20" fill="#D98A1F" stroke="#A9600F" stroke-width="6"/>
+            fill="url(#decorBell)" stroke="var(--accent-line)" stroke-width="6" stroke-linejoin="round"/>
+      <circle cx="256" cy="88" r="20" fill="var(--accent)" stroke="var(--accent-line)" stroke-width="6"/>
     </svg>
     <span id="header-title">Nudgy</span>
     <div id="lang-toggle">
@@ -363,7 +376,6 @@
           <button id="datecalc-btn" aria-label="Calculadora de fechas" title="Calculadora de fechas"><i class="ti ti-calculator" aria-hidden="true"></i></button>
           <button id="receipt-btn" aria-label="Foto de recibo" title="Foto de recibo"><i class="ti ti-receipt-2" aria-hidden="true"></i></button>
           <input type="file" id="receipt-file-input" accept="image/*" style="display:none">
-          <button id="print-btn" aria-label="Imprimir calendario" title="Imprimir calendario"><i class="ti ti-printer" aria-hidden="true"></i></button>
           <button id="auth-btn" aria-label="Iniciar sesion para sincronizar" title="Iniciar sesion para sincronizar"><i class="ti ti-cloud" aria-hidden="true"></i></button>
         </div>
       </div>
@@ -409,7 +421,11 @@
         <button id="cal-next"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
       </div>
       <div id="cal-weekdays"></div>
-      <div id="cal-grid"></div>
+      <div id="cal-grid">
+        <button id="print-btn" class="cal-cell cal-action-btn" aria-label="Imprimir calendario" title="Imprimir calendario"><i class="ti ti-printer" aria-hidden="true"></i></button>
+        <button id="theme-color-btn" class="cal-cell cal-action-btn" aria-label="Elegir color de acento" title="Elegir color de acento"><span id="theme-color-swatch"></span></button>
+      </div>
+      <input type="color" id="theme-color-input" value="#D98A1F" aria-hidden="true" tabindex="-1">
       <div class="legend">
         <span><i class="ti ti-cake" style="color:#128C4A;"></i> <span id="legend-birthday">Cumpleanos</span></span>
         <span><i class="ti ti-users" style="color:#128C4A;"></i> <span id="legend-meeting">Reunion</span></span>
@@ -677,6 +693,7 @@
       printModeWeek: 'Por semana',
       printGoBtn: 'Imprimir',
       printMore: 'mas',
+      themeColorBtnTitle: 'Elegir color de acento',
       searchPlaceholder: 'Buscar en tus notas...',
       noMatches: 'Sin coincidencias.',
       alarmTag: '\u23F0 Alarma',
@@ -769,6 +786,7 @@
       printModeWeek: 'By week',
       printGoBtn: 'Print',
       printMore: 'more',
+      themeColorBtnTitle: 'Choose accent color',
       searchPlaceholder: 'Search your notes...',
       noMatches: 'No matches.',
       alarmTag: '\u23F0 Alarm',
@@ -974,6 +992,7 @@
     datecalcBtn.title = t('datecalcBtnTitle'); datecalcBtn.setAttribute('aria-label', t('datecalcBtnTitle'));
     receiptBtn.title = t('receiptBtnTitle'); receiptBtn.setAttribute('aria-label', t('receiptBtnTitle'));
     printBtn.title = t('printBtnTitle'); printBtn.setAttribute('aria-label', t('printBtnTitle'));
+    themeColorBtn.title = t('themeColorBtnTitle'); themeColorBtn.setAttribute('aria-label', t('themeColorBtnTitle'));
     updateNotifBtn();
     updateAuthBtn();
     document.documentElement.lang = currentLang;
@@ -2202,7 +2221,7 @@
       var line = document.createElementNS(svgns, 'line');
       line.setAttribute('x1', p0.x * 100); line.setAttribute('y1', p0.y * 100);
       line.setAttribute('x2', p1.x * 100); line.setAttribute('y2', p1.y * 100);
-      line.setAttribute('stroke', '#D98A1F'); line.setAttribute('stroke-width', '0.4');
+      line.setAttribute('stroke', 'var(--accent)'); line.setAttribute('stroke-width', '0.4');
       line.setAttribute('vector-effect', 'non-scaling-stroke');
       scanOverlaySvg.appendChild(line);
     }
@@ -2825,6 +2844,8 @@
       }(key));
       calGrid.appendChild(cell);
     }
+    calGrid.appendChild(printBtn);
+    calGrid.appendChild(themeColorBtn);
   }
 
   function notesForDate(d){
@@ -3046,6 +3067,48 @@
     printArea.appendChild(content);
     vibrate(10);
     window.print();
+  });
+
+  // ---------- Accent color theming ----------
+  var ACCENT_KEY = 'mi_alarma_accent';
+  var DEFAULT_ACCENT = '#D98A1F';
+  var themeColorBtn = document.getElementById('theme-color-btn');
+  var themeColorInput = document.getElementById('theme-color-input');
+
+  function clampByte(v){ return Math.max(0, Math.min(255, Math.round(v))); }
+  function hexToRgb(hex){
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(function(c){ return c + c; }).join('');
+    var n = parseInt(hex, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function rgbToHex(r, g, b){
+    return '#' + [r, g, b].map(function(v){ var s = clampByte(v).toString(16); return s.length === 1 ? '0' + s : s; }).join('');
+  }
+  function mixColor(hex, targetHex, amount){
+    var c = hexToRgb(hex), tg = hexToRgb(targetHex);
+    return rgbToHex(c[0] + (tg[0] - c[0]) * amount, c[1] + (tg[1] - c[1]) * amount, c[2] + (tg[2] - c[2]) * amount);
+  }
+  function applyAccentColor(hex){
+    var root = document.documentElement.style;
+    root.setProperty('--accent', hex);
+    root.setProperty('--accent-dark', mixColor(hex, '#000000', 0.12));
+    root.setProperty('--accent-darker', mixColor(hex, '#000000', 0.28));
+    root.setProperty('--accent-line', mixColor(hex, '#000000', 0.35));
+    root.setProperty('--accent-light', mixColor(hex, '#ffffff', 0.35));
+    root.setProperty('--accent-soft', mixColor(hex, '#ffffff', 0.75));
+    root.setProperty('--accent-glow', mixColor(hex, '#ffffff', 0.55));
+  }
+  var savedAccent = null;
+  try { savedAccent = localStorage.getItem(ACCENT_KEY); } catch(e){}
+  themeColorInput.value = savedAccent || DEFAULT_ACCENT;
+  if (savedAccent) applyAccentColor(savedAccent);
+
+  themeColorBtn.addEventListener('click', function(){ vibrate(6); themeColorInput.click(); });
+  themeColorInput.addEventListener('input', function(){ applyAccentColor(themeColorInput.value); });
+  themeColorInput.addEventListener('change', function(){
+    try { localStorage.setItem(ACCENT_KEY, themeColorInput.value); } catch(e){}
+    vibrate(10); flashSaved();
   });
 
   // "cada N horas" fires several times a day, so it needs a real anchor moment to
