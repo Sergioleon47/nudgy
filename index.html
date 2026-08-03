@@ -1451,6 +1451,60 @@
     }
     return -1;
   }
+  // "desde el 1 de agosto al 15 de agosto" / "del 1 al 15 de agosto" / "from August 1 to 15" —
+  // a note describing a whole span of days (vacation, diet, trip) rather than a single date.
+  // Runs independently of the rest of parseNoteInput; the note keeps its normal single-date
+  // behavior, this just additionally paints the day range on the calendar.
+  var RANGE_DAY_TOKEN = '(\\d{1,2}|primero|primer|first)';
+  var RANGE_DAY_PREFIX = '(?:el\\s+)?(?:d[ií]a\\s+)?';
+  function dayTokenToNumber(s){
+    s = s.toLowerCase();
+    if (s === 'primero' || s === 'primer' || s === 'first') return 1;
+    return parseInt(s, 10);
+  }
+  function extractDateRange(text){
+    var re1 = new RegExp('\\b(?:desde\\s+' + RANGE_DAY_PREFIX + '|del\\s+' + RANGE_DAY_PREFIX + ')' + RANGE_DAY_TOKEN + '\\s*de\\s+([a-záéíóúñA-Z]+)\\s+(?:al|hasta|a)\\s+' + RANGE_DAY_PREFIX + RANGE_DAY_TOKEN + '\\s*de\\s+([a-záéíóúñA-Z]+)\\b', 'i');
+    var m = re1.exec(text);
+    if (m){
+      var day1 = dayTokenToNumber(m[1]);
+      var month1 = findMonthIndex(m[2].toLowerCase());
+      var day2 = dayTokenToNumber(m[3]);
+      var month2 = findMonthIndex(m[4].toLowerCase());
+      if (day1 >= 1 && day1 <= 31 && month1 !== -1 && day2 >= 1 && day2 <= 31 && month2 !== -1){
+        return { match: m[0], day1: day1, month1: month1, day2: day2, month2: month2 };
+      }
+    }
+    var re2 = new RegExp('\\b(?:desde\\s+' + RANGE_DAY_PREFIX + '|del\\s+' + RANGE_DAY_PREFIX + ')' + RANGE_DAY_TOKEN + '\\s+(?:al|hasta|a)\\s+' + RANGE_DAY_PREFIX + RANGE_DAY_TOKEN + '\\s*de\\s+([a-záéíóúñA-Z]+)\\b', 'i');
+    m = re2.exec(text);
+    if (m){
+      var d1 = dayTokenToNumber(m[1]);
+      var d2 = dayTokenToNumber(m[2]);
+      var mo = findMonthIndex(m[3].toLowerCase());
+      if (d1 >= 1 && d1 <= 31 && d2 >= 1 && d2 <= 31 && mo !== -1){
+        return { match: m[0], day1: d1, month1: mo, day2: d2, month2: mo };
+      }
+    }
+    var re3 = /\bfrom\s+([a-záéíóúñA-Z]+)\s+(\d{1,2})(?:st|nd|rd|th)?\s+to\s+(?:([a-záéíóúñA-Z]+)\s+)?(\d{1,2})(?:st|nd|rd|th)?\b/i;
+    m = re3.exec(text);
+    if (m){
+      var monthA = findMonthIndex(m[1].toLowerCase());
+      var dA = parseInt(m[2], 10);
+      var monthB = m[3] ? findMonthIndex(m[3].toLowerCase()) : monthA;
+      var dB = parseInt(m[4], 10);
+      if (monthA !== -1 && dA >= 1 && dA <= 31 && monthB !== -1 && dB >= 1 && dB <= 31){
+        return { match: m[0], day1: dA, month1: monthA, day2: dB, month2: monthB };
+      }
+    }
+    return null;
+  }
+  function resolveDateRange(range, anchor){
+    var year = anchor.getFullYear();
+    var start = new Date(year, range.month1, range.day1);
+    var year2 = year;
+    if (range.month2 < range.month1 || (range.month2 === range.month1 && range.day2 < range.day1)) year2 = year + 1;
+    var end = new Date(year2, range.month2, range.day2);
+    return { start: start, end: end };
+  }
   function extractBareDayOfMonth(text){
     var m = text.match(/\bon\s+the\s+(\d{1,2})(?:st|nd|rd|th)?\b/i);
     if (m){ var d1 = parseInt(m[1], 10); if (d1 >= 1 && d1 <= 31) return { match: m[0], day: d1 }; }
@@ -2805,6 +2859,7 @@
       delBtn.addEventListener('click', function(){
         vibrate([8,30,8]);
         notes = notes.filter(function(n){ return n.id !== note.id; });
+        removeNoteRangeHighlight(note.id);
         if (editingId === note.id) exitEditMode();
         renderAll();
       });
@@ -3119,6 +3174,55 @@
   function highlightColorForDate(d){
     return highlights[dateKey(d)] || null;
   }
+  var NOTE_HIGHLIGHT_MAP_KEY = 'mi_alarma_note_highlight_map';
+  var noteHighlightMap = {};
+  function loadNoteHighlightMap(){
+    try {
+      var raw = localStorage.getItem(NOTE_HIGHLIGHT_MAP_KEY);
+      if (raw) noteHighlightMap = JSON.parse(raw);
+    } catch(e){}
+  }
+  function saveNoteHighlightMap(){
+    try { localStorage.setItem(NOTE_HIGHLIGHT_MAP_KEY, JSON.stringify(noteHighlightMap)); } catch(e){}
+  }
+  function detachDayFromNotes(key){
+    Object.keys(noteHighlightMap).forEach(function(nid){
+      var idx = noteHighlightMap[nid].indexOf(key);
+      if (idx !== -1){
+        noteHighlightMap[nid].splice(idx, 1);
+        if (!noteHighlightMap[nid].length) delete noteHighlightMap[nid];
+      }
+    });
+    saveNoteHighlightMap();
+  }
+  function eachDateInRange(start, end, cb){
+    var d = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    var last = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    while (d <= last){
+      cb(new Date(d));
+      d.setDate(d.getDate() + 1);
+    }
+  }
+  function removeNoteRangeHighlight(noteId){
+    var keys = noteHighlightMap[noteId];
+    if (!keys) return;
+    keys.forEach(function(k){ delete highlights[k]; });
+    delete noteHighlightMap[noteId];
+    saveHighlights(); saveNoteHighlightMap();
+  }
+  function applyNoteRangeHighlight(noteId, start, end){
+    removeNoteRangeHighlight(noteId);
+    if (!start || !end) return;
+    var keys = [];
+    eachDateInRange(start, end, function(d){
+      var key = dateKey(d);
+      if (!highlights[key]){
+        highlights[key] = HIGHLIGHT_PALETTE[0];
+        keys.push(key);
+      }
+    });
+    if (keys.length){ noteHighlightMap[noteId] = keys; saveHighlights(); saveNoteHighlightMap(); }
+  }
   function renderPaintPalette(){
     paintPaletteSwatches.innerHTML = '';
     var isCustom = HIGHLIGHT_PALETTE.indexOf(currentPaintColor) === -1;
@@ -3161,6 +3265,7 @@
     }
   }
   function paintCellByKey(key, cellEl){
+    detachDayFromNotes(key);
     if (currentPaintColor){
       highlights[key] = currentPaintColor;
       cellEl.style.background = currentPaintColor;
@@ -3197,6 +3302,7 @@
     if (isPainting){ isPainting = false; saveHighlights(); vibrate(10); }
   });
   loadHighlights();
+  loadNoteHighlightMap();
 
   // "cada N horas" fires several times a day, so it needs a real anchor moment to
   // count from. If the user didn't give an explicit start time, anchor it to the
@@ -3216,11 +3322,17 @@
     var hasDateInfo = parsed.hour != null || parsed.dateOnly || parsed.recurring;
     var recurring = parsed.recurring;
     if (!hasDateInfo) recurring = { type: 'yearly', month: createdAt.getMonth(), day: createdAt.getDate() };
+    var newNoteId = idCounter++;
     notes.push({
-      id: idCounter++, raw: raw, hour: parsed.hour, minute: parsed.minute, target: parsed.target,
+      id: newNoteId, raw: raw, hour: parsed.hour, minute: parsed.minute, target: parsed.target,
       recurring: recurring, dateOnly: parsed.dateOnly, createdAt: createdAt, enabled: true, firedKey: null,
       image: image || null
     });
+    var dateRange = extractDateRange(raw);
+    if (dateRange){
+      var resolvedRange = resolveDateRange(dateRange, createdAt);
+      applyNoteRangeHighlight(newNoteId, resolvedRange.start, resolvedRange.end);
+    }
     var focusDate = parsed.target || parsed.dateOnly;
     if (focusDate){ calState.year = focusDate.getFullYear(); calState.month = focusDate.getMonth(); selectedDateKey = dateKey(focusDate); }
     else if (recurring && recurring.type === 'yearly'){ calState.month = recurring.month; selectedDateKey = calState.year + '-' + (recurring.month+1) + '-' + recurring.day; }
@@ -3240,6 +3352,13 @@
       if (hasDateInfo) notes[idx].recurring = parsed.recurring;
       else if (!notes[idx].recurring || notes[idx].recurring.type !== 'yearly')
         notes[idx].recurring = { type: 'yearly', month: notes[idx].createdAt.getMonth(), day: notes[idx].createdAt.getDate() };
+      var dateRange = extractDateRange(raw);
+      if (dateRange){
+        var resolvedRange = resolveDateRange(dateRange, notes[idx].createdAt);
+        applyNoteRangeHighlight(editingId, resolvedRange.start, resolvedRange.end);
+      } else {
+        removeNoteRangeHighlight(editingId);
+      }
     }
   }
 
