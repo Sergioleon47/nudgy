@@ -175,7 +175,7 @@
   .highlight-palette { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
   .highlight-swatch { width:30px; height:30px; border-radius:50%; border:none; cursor:pointer; box-shadow:0 0 0 1px rgba(0,0,0,0.12); padding:0; flex-shrink:0; }
   .highlight-swatch.selected { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent); }
-  .highlight-swatch-custom, .highlight-swatch-eraser { display:flex; align-items:center; justify-content:center; font-size:14px; background:#F2F2F7; color:#5F5F63; }
+  .highlight-swatch-custom { display:flex; align-items:center; justify-content:center; font-size:14px; background:#F2F2F7; color:#5F5F63; }
   .paint-palette-bar { margin-top:8px; padding:10px; background:#F7F7F9; border-radius:14px; }
   .paint-palette-hint { font-size:11px; color:#5F5F63; margin-bottom:8px; text-align:center; }
   .contact-row button { background:none; border:none; color:#B5493D; cursor:pointer; font-size:13px; }
@@ -198,6 +198,8 @@
   .ringing-actions { display:flex; gap:6px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
 
   #parse-preview { display:flex; align-items:center; gap:6px; font-size:12px; color:#2FA360; margin-top:6px; }
+  #pending-anchor-chip { display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--accent-soft); color:var(--accent-darker); font-size:12px; font-weight:600; padding:8px 10px; border-radius:10px; margin-bottom:8px; }
+  #pending-anchor-clear { background:none; border:none; color:var(--accent-darker); cursor:pointer; font-size:13px; padding:2px; flex-shrink:0; }
   #parse-preview i { font-size:13px; }
   .action-row { display:flex; align-items:center; gap:12px; margin-top:8px; min-height:22px; }
   #saved-flash { font-size:12px; color:#2FA360; opacity:0; transition:opacity .3s ease; }
@@ -248,7 +250,13 @@
   .cal-action-btn { border:none; background:#F2F2F7; font-size:16px; color:var(--accent); padding:0; }
   .cal-action-btn:hover { background:#E5E5EA; }
   .cal-action-btn.active { background:var(--accent); color:#fff; }
-  #cal-grid.paint-mode { touch-action:none; }
+  #cal-grid.paint-mode, #cal-grid.note-select-mode { touch-action:none; }
+  .highlight-btn-dots { position:relative; width:20px; height:14px; display:inline-block; }
+  .highlight-btn-dots span { position:absolute; width:11px; height:11px; border-radius:50%; border:1.5px solid #fff; top:1px; }
+  .highlight-btn-dots span:nth-child(1){ left:0; z-index:3; }
+  .highlight-btn-dots span:nth-child(2){ left:5px; z-index:2; top:4px; }
+  .highlight-btn-dots span:nth-child(3){ left:10px; z-index:1; }
+  .cal-cell.note-select-range { box-shadow: inset 0 0 0 2px var(--accent); }
   .cal-mini-note { font-size:11px; padding:6px 8px; border-radius:9px; background:#F2F2F7; color:#1C1C1E; white-space:pre-wrap; }
   .legend { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; font-size:9px; color:#5F5F63; align-items:center; }
   .legend-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:3px; background:#2FA360; }
@@ -395,6 +403,10 @@
         </div>
       </div>
 
+      <div id="pending-anchor-chip" style="display:none;">
+        <span id="pending-anchor-text"></span>
+        <button id="pending-anchor-clear" aria-label="Cancelar" title="Cancelar"><i class="ti ti-x" aria-hidden="true"></i></button>
+      </div>
       <textarea id="note-input" rows="5" autofocus></textarea>
       <div id="image-preview" style="display:none;">
         <img id="image-preview-img" alt="">
@@ -429,11 +441,17 @@
       <div id="cal-weekdays"></div>
       <div id="cal-grid">
         <button id="print-btn" class="cal-cell cal-action-btn" aria-label="Imprimir calendario" title="Imprimir calendario"><i class="ti ti-printer" aria-hidden="true"></i></button>
-        <button id="highlight-btn" class="cal-cell cal-action-btn" aria-label="Pintar fechas" title="Pintar fechas"><i class="ti ti-brush" aria-hidden="true"></i></button>
+        <button id="highlight-btn" class="cal-cell cal-action-btn" aria-label="Pintar fechas" title="Pintar fechas">
+          <span class="highlight-btn-dots"><span style="background:#E67C73;"></span><span style="background:#4DB6AC;"></span><span style="background:#9575CD;"></span></span>
+        </button>
+        <button id="note-select-btn" class="cal-cell cal-action-btn" aria-label="Empezar nota desde el calendario" title="Empezar nota desde el calendario"><i class="ti ti-square-plus" aria-hidden="true"></i></button>
       </div>
       <div id="paint-palette-bar" class="paint-palette-bar" style="display:none;">
         <div id="paint-palette-hint" class="paint-palette-hint">Desliza el dedo sobre los dias para pintarlos</div>
         <div id="paint-palette-swatches" class="highlight-palette"></div>
+      </div>
+      <div id="note-select-bar" class="paint-palette-bar" style="display:none;">
+        <div id="note-select-hint" class="paint-palette-hint">Desliza el dedo sobre los dias para tu nota</div>
       </div>
       <div class="legend">
         <span><i class="ti ti-cake" style="color:#128C4A;"></i> <span id="legend-birthday">Cumpleanos</span></span>
@@ -705,9 +723,11 @@
       printGoBtn: 'Imprimir',
       printMore: 'mas',
       highlightBtnTitle: 'Pintar fechas',
-      highlightHint: 'Desliza el dedo sobre los dias para pintarlos',
+      highlightHint: 'Desliza para pintar los dias. Toca un dia pintado para borrarlo.',
       highlightCustomColor: 'Personalizado',
-      highlightEraserTitle: 'Borrar color',
+      noteSelectBtnTitle: 'Empezar nota desde el calendario',
+      noteSelectHint: 'Desliza el dedo sobre los dias para tu nota',
+      pendingAnchorPrefix: 'Nota para el',
       searchPlaceholder: 'Buscar en tus notas...',
       noMatches: 'Sin coincidencias.',
       alarmTag: '\u23F0 Alarma',
@@ -801,9 +821,11 @@
       printGoBtn: 'Print',
       printMore: 'more',
       highlightBtnTitle: 'Paint dates',
-      highlightHint: 'Drag your finger over the days to paint them',
+      highlightHint: 'Drag to paint the days. Tap a painted day to erase it.',
       highlightCustomColor: 'Custom',
-      highlightEraserTitle: 'Erase color',
+      noteSelectBtnTitle: 'Start a note from the calendar',
+      noteSelectHint: 'Drag your finger over the days for your note',
+      pendingAnchorPrefix: 'Note for',
       searchPlaceholder: 'Search your notes...',
       noMatches: 'No matches.',
       alarmTag: '\u23F0 Alarm',
@@ -1010,6 +1032,8 @@
     receiptBtn.title = t('receiptBtnTitle'); receiptBtn.setAttribute('aria-label', t('receiptBtnTitle'));
     printBtn.title = t('printBtnTitle'); printBtn.setAttribute('aria-label', t('printBtnTitle'));
     highlightBtn.title = t('highlightBtnTitle'); highlightBtn.setAttribute('aria-label', t('highlightBtnTitle'));
+    noteSelectBtn.title = t('noteSelectBtnTitle'); noteSelectBtn.setAttribute('aria-label', t('noteSelectBtnTitle'));
+    if (pendingNoteAnchor) updatePendingAnchorChip();
     updateNotifBtn();
     updateAuthBtn();
     document.documentElement.lang = currentLang;
@@ -2912,7 +2936,7 @@
       }
       cell.addEventListener('click', function(k){
         return function(){
-          if (paintMode) return;
+          if (paintMode || noteSelectMode) return;
           vibrate(6);
           selectedDateKey = (selectedDateKey === k) ? null : k;
           renderCalendar(); renderSelectedPanel();
@@ -2922,6 +2946,7 @@
     }
     calGrid.appendChild(printBtn);
     calGrid.appendChild(highlightBtn);
+    calGrid.appendChild(noteSelectBtn);
   }
 
   function notesForDate(d){
@@ -3245,14 +3270,6 @@
     customSw.title = t('highlightCustomColor');
     customSw.addEventListener('click', function(){ vibrate(6); highlightColorInput.click(); });
     paintPaletteSwatches.appendChild(customSw);
-    var eraserSw = document.createElement('button');
-    eraserSw.type = 'button';
-    eraserSw.className = 'highlight-swatch highlight-swatch-eraser' + (currentPaintColor === null ? ' selected' : '');
-    eraserSw.innerHTML = '<i class="ti ti-eraser" aria-hidden="true"></i>';
-    eraserSw.setAttribute('aria-label', t('highlightEraserTitle'));
-    eraserSw.title = t('highlightEraserTitle');
-    eraserSw.addEventListener('click', function(){ vibrate(6); currentPaintColor = null; renderPaintPalette(); });
-    paintPaletteSwatches.appendChild(eraserSw);
   }
   function setPaintMode(on){
     paintMode = on;
@@ -3260,18 +3277,19 @@
     calGrid.classList.toggle('paint-mode', on);
     paintPaletteBar.style.display = on ? 'block' : 'none';
     if (on){
+      if (noteSelectMode) setNoteSelectMode(false);
       paintPaletteHint.textContent = t('highlightHint');
       renderPaintPalette();
     }
   }
-  function paintCellByKey(key, cellEl){
+  function paintCellByKey(key, cellEl, erase){
     detachDayFromNotes(key);
-    if (currentPaintColor){
-      highlights[key] = currentPaintColor;
-      cellEl.style.background = currentPaintColor;
-    } else {
+    if (erase){
       delete highlights[key];
       cellEl.style.background = '';
+    } else {
+      highlights[key] = currentPaintColor;
+      cellEl.style.background = currentPaintColor;
     }
   }
   highlightBtn.addEventListener('click', function(){
@@ -3283,26 +3301,116 @@
     currentPaintColor = highlightColorInput.value;
     renderPaintPalette();
   });
+  var paintEraseStroke = false;
   calGrid.addEventListener('pointerdown', function(e){
     if (!paintMode) return;
     var cell = e.target.closest('.cal-cell');
     if (!cell || !cell.dataset.dateKey) return;
     e.preventDefault();
     isPainting = true;
-    paintCellByKey(cell.dataset.dateKey, cell);
+    paintEraseStroke = !!highlights[cell.dataset.dateKey];
+    paintCellByKey(cell.dataset.dateKey, cell, paintEraseStroke);
   });
   calGrid.addEventListener('pointermove', function(e){
     if (!paintMode || !isPainting) return;
     var el = document.elementFromPoint(e.clientX, e.clientY);
     var cell = el ? el.closest('.cal-cell') : null;
     if (!cell || !cell.dataset.dateKey) return;
-    paintCellByKey(cell.dataset.dateKey, cell);
+    paintCellByKey(cell.dataset.dateKey, cell, paintEraseStroke);
   });
   document.addEventListener('pointerup', function(){
     if (isPainting){ isPainting = false; saveHighlights(); vibrate(10); }
+    if (isSelectingNoteRange){ isSelectingNoteRange = false; finishNoteRangeSelection(); }
   });
   loadHighlights();
   loadNoteHighlightMap();
+
+  // ---------- Start a note by selecting days on the calendar ----------
+  var noteSelectBtn = document.getElementById('note-select-btn');
+  var noteSelectBar = document.getElementById('note-select-bar');
+  var noteSelectHintEl = document.getElementById('note-select-hint');
+  var pendingAnchorChip = document.getElementById('pending-anchor-chip');
+  var pendingAnchorTextEl = document.getElementById('pending-anchor-text');
+  var pendingAnchorClearBtn = document.getElementById('pending-anchor-clear');
+  var noteSelectMode = false;
+  var isSelectingNoteRange = false;
+  var noteSelectStartDate = null;
+  var noteSelectCurrentDate = null;
+  var pendingNoteAnchor = null;
+
+  function noteSelectDateFromCell(cell){
+    var parts = cell.dataset.dateKey.split('-').map(Number);
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+  function markNoteSelectRange(a, b){
+    var lo = a <= b ? a : b, hi = a <= b ? b : a;
+    document.querySelectorAll('#cal-grid .cal-cell').forEach(function(c){
+      if (!c.dataset.dateKey){ c.classList.remove('note-select-range'); return; }
+      var d = noteSelectDateFromCell(c);
+      c.classList.toggle('note-select-range', d >= lo && d <= hi);
+    });
+  }
+  function clearNoteSelectMarks(){
+    document.querySelectorAll('#cal-grid .cal-cell.note-select-range').forEach(function(c){ c.classList.remove('note-select-range'); });
+  }
+  function setNoteSelectMode(on){
+    noteSelectMode = on;
+    noteSelectBtn.classList.toggle('active', on);
+    calGrid.classList.toggle('note-select-mode', on);
+    noteSelectBar.style.display = on ? 'block' : 'none';
+    if (on){
+      if (paintMode) setPaintMode(false);
+      noteSelectHintEl.textContent = t('noteSelectHint');
+    } else {
+      clearNoteSelectMarks();
+    }
+  }
+  function pendingAnchorLabel(anchor){
+    var sameDay = dateKey(anchor.start) === dateKey(anchor.end);
+    if (sameDay) return t('pendingAnchorPrefix') + ' ' + anchor.start.getDate() + ' ' + t('months')[anchor.start.getMonth()];
+    var sameMonth = anchor.start.getMonth() === anchor.end.getMonth();
+    if (sameMonth) return t('pendingAnchorPrefix') + ' ' + anchor.start.getDate() + ' - ' + anchor.end.getDate() + ' ' + t('months')[anchor.start.getMonth()];
+    return t('pendingAnchorPrefix') + ' ' + anchor.start.getDate() + ' ' + t('months')[anchor.start.getMonth()] + ' - ' + anchor.end.getDate() + ' ' + t('months')[anchor.end.getMonth()];
+  }
+  function updatePendingAnchorChip(){
+    if (!pendingNoteAnchor){ pendingAnchorChip.style.display = 'none'; return; }
+    pendingAnchorTextEl.textContent = pendingAnchorLabel(pendingNoteAnchor);
+    pendingAnchorChip.style.display = 'flex';
+  }
+  function finishNoteRangeSelection(){
+    pendingNoteAnchor = { start: noteSelectStartDate, end: noteSelectCurrentDate };
+    setNoteSelectMode(false);
+    updatePendingAnchorChip();
+    noteInput.focus();
+    vibrate(10);
+  }
+  pendingAnchorClearBtn.addEventListener('click', function(){
+    pendingNoteAnchor = null;
+    updatePendingAnchorChip();
+    vibrate(6);
+  });
+  noteSelectBtn.addEventListener('click', function(){
+    vibrate(8);
+    setNoteSelectMode(!noteSelectMode);
+  });
+  calGrid.addEventListener('pointerdown', function(e){
+    if (!noteSelectMode) return;
+    var cell = e.target.closest('.cal-cell');
+    if (!cell || !cell.dataset.dateKey) return;
+    e.preventDefault();
+    isSelectingNoteRange = true;
+    noteSelectStartDate = noteSelectDateFromCell(cell);
+    noteSelectCurrentDate = noteSelectStartDate;
+    markNoteSelectRange(noteSelectStartDate, noteSelectCurrentDate);
+  });
+  calGrid.addEventListener('pointermove', function(e){
+    if (!noteSelectMode || !isSelectingNoteRange) return;
+    var el = document.elementFromPoint(e.clientX, e.clientY);
+    var cell = el ? el.closest('.cal-cell') : null;
+    if (!cell || !cell.dataset.dateKey) return;
+    noteSelectCurrentDate = noteSelectDateFromCell(cell);
+    markNoteSelectRange(noteSelectStartDate, noteSelectCurrentDate);
+  });
 
   // "cada N horas" fires several times a day, so it needs a real anchor moment to
   // count from. If the user didn't give an explicit start time, anchor it to the
@@ -3321,19 +3429,35 @@
     applyEveryNHoursAnchor(parsed, createdAt);
     var hasDateInfo = parsed.hour != null || parsed.dateOnly || parsed.recurring;
     var recurring = parsed.recurring;
+    var dateOnly = parsed.dateOnly;
+    var target = parsed.target;
+    var anchorRange = null;
+    if (!hasDateInfo && pendingNoteAnchor){
+      if (parsed.hour != null){
+        target = new Date(pendingNoteAnchor.start);
+        target.setHours(parsed.hour, parsed.minute, 0, 0);
+      } else {
+        dateOnly = new Date(pendingNoteAnchor.start);
+      }
+      hasDateInfo = true;
+      if (dateKey(pendingNoteAnchor.start) !== dateKey(pendingNoteAnchor.end)) anchorRange = pendingNoteAnchor;
+    }
     if (!hasDateInfo) recurring = { type: 'yearly', month: createdAt.getMonth(), day: createdAt.getDate() };
     var newNoteId = idCounter++;
     notes.push({
-      id: newNoteId, raw: raw, hour: parsed.hour, minute: parsed.minute, target: parsed.target,
-      recurring: recurring, dateOnly: parsed.dateOnly, createdAt: createdAt, enabled: true, firedKey: null,
+      id: newNoteId, raw: raw, hour: parsed.hour, minute: parsed.minute, target: target,
+      recurring: recurring, dateOnly: dateOnly, createdAt: createdAt, enabled: true, firedKey: null,
       image: image || null
     });
     var dateRange = extractDateRange(raw);
     if (dateRange){
       var resolvedRange = resolveDateRange(dateRange, createdAt);
       applyNoteRangeHighlight(newNoteId, resolvedRange.start, resolvedRange.end);
+    } else if (anchorRange){
+      applyNoteRangeHighlight(newNoteId, anchorRange.start, anchorRange.end);
     }
-    var focusDate = parsed.target || parsed.dateOnly;
+    if (pendingNoteAnchor){ pendingNoteAnchor = null; updatePendingAnchorChip(); }
+    var focusDate = target || dateOnly;
     if (focusDate){ calState.year = focusDate.getFullYear(); calState.month = focusDate.getMonth(); selectedDateKey = dateKey(focusDate); }
     else if (recurring && recurring.type === 'yearly'){ calState.month = recurring.month; selectedDateKey = calState.year + '-' + (recurring.month+1) + '-' + recurring.day; }
     else if (recurring && (recurring.type === 'everyNDays' || recurring.type === 'everyNYears' || recurring.type === 'everyNMonths')){ calState.year = createdAt.getFullYear(); calState.month = createdAt.getMonth(); selectedDateKey = dateKey(createdAt); }
