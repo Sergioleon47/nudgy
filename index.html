@@ -51,6 +51,19 @@
   }
   .col-left { flex:1; min-width:300px; max-width:400px; min-height:480px; display:flex; flex-direction:column; }
   .col-right { flex:1; min-width:280px; max-width:360px; }
+  .panel-swap { display:none; justify-content:center; margin-bottom:12px; }
+  .panel-swap-track {
+    position:relative; width:96px; height:36px; background:#E5E5EA; border-radius:18px;
+    display:flex; align-items:center; justify-content:space-between; padding:0 10px;
+  }
+  .panel-swap-track i { font-size:16px; color:#5F5F63; z-index:1; }
+  .panel-swap-thumb {
+    position:absolute; top:3px; left:3px; width:30px; height:30px; border-radius:50%;
+    background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.25); cursor:grab; touch-action:none;
+    transition:left 0.2s ease;
+  }
+  .panel-swap-thumb.dragging { transition:none; }
+  .panel-swap-thumb.on-right { left:calc(100% - 33px); }
 
   #note-input, #note-input:focus {
     width:100%; box-sizing:border-box; resize:none; font-family:inherit; font-size:15px; color:#1C1C1E;
@@ -268,12 +281,20 @@
 
   .footer-note { text-align:center; font-size:11px; color:#5F5F63; margin-top:16px; }
 
+  .sheet-handle {
+    display:none; align-items:center; justify-content:center; flex-direction:column; gap:4px;
+    padding:2px 0 10px; margin:-4px -4px 4px; cursor:grab; touch-action:none;
+  }
+  .sheet-handle-bar { width:40px; height:5px; border-radius:3px; background:#D1D1D6; }
+  #sheet-handle-label { font-size:12px; color:#5F5F63; font-weight:600; }
   @media (max-width: 680px) {
     body { padding: 10px; }
+    .wrap { padding-bottom: 66px; }
     .header { margin-bottom: 10px; }
     .cols { gap: 10px; }
     .sky-panel { padding: 12px; }
     .col-left, .col-right { min-height: auto; max-width: none; }
+    .panel-swap { display:flex; }
     .col-right { order: -1; margin-top: 16px; }
     .top-row { margin-bottom: 6px; }
     #note-input { height: 60px; overflow-y: auto; }
@@ -284,6 +305,16 @@
     .legend { font-size: 8px; gap: 6px; margin-top: 6px; }
     .next-alarm-box { margin-top: 10px; padding-top: 10px; }
     .footer-note { margin-top: 10px; }
+
+    .as-sheet .sheet-handle { display:flex; }
+    .as-sheet {
+      position: fixed; left:10px; right:10px; bottom:10px; z-index:500; margin:0;
+      max-height: 82vh; overflow-y:auto;
+      transform: translateY(calc(100% - 54px));
+      transition: transform 0.28s ease;
+    }
+    .as-sheet.dragging { transition: none; }
+    .as-sheet.expanded { transform: translateY(0); }
   }
 
   #print-area { display:none; }
@@ -362,9 +393,22 @@
     </div>
   </div>
 
+  <div id="panel-swap" class="panel-swap">
+    <div class="panel-swap-track">
+      <i class="ti ti-notes" aria-hidden="true"></i>
+      <i class="ti ti-calendar" aria-hidden="true"></i>
+      <div id="panel-swap-thumb" class="panel-swap-thumb"></div>
+    </div>
+  </div>
+
   <div class="cols">
 
     <div class="sky-panel col-left">
+
+      <div id="sheet-handle" class="sheet-handle">
+        <div class="sheet-handle-bar"></div>
+        <span id="sheet-handle-label">Tus notas</span>
+      </div>
 
       <div id="ringing-banner">
         <div id="ringing-label">Alarma</div>
@@ -724,6 +768,7 @@
       highlightHint: 'Desliza para pintar los dias. Toca un dia pintado para borrarlo.',
       noteSelectBtnTitle: 'Empezar nota desde el calendario',
       noteSelectHint: 'Desliza el dedo sobre los dias para tu nota',
+      sheetHandleLabel: 'Tus notas',
       pendingAnchorPrefix: 'Nota para el',
       searchPlaceholder: 'Buscar en tus notas...',
       noMatches: 'Sin coincidencias.',
@@ -821,6 +866,7 @@
       highlightHint: 'Drag to paint the days. Tap a painted day to erase it.',
       noteSelectBtnTitle: 'Start a note from the calendar',
       noteSelectHint: 'Drag your finger over the days for your note',
+      sheetHandleLabel: 'Your notes',
       pendingAnchorPrefix: 'Note for',
       searchPlaceholder: 'Search your notes...',
       noMatches: 'No matches.',
@@ -2975,6 +3021,7 @@
 
   function renderAll(){
     renderNotes(); renderCalendar(); renderSelectedPanel(); renderNextAlarm(); saveToStorage();
+    updateSheetHandleLabel();
   }
 
   calPrev.addEventListener('click', function(){ vibrate(6); calState.month--; if (calState.month < 0){ calState.month = 11; calState.year--; } renderCalendar(); });
@@ -3399,6 +3446,106 @@
     if (!cell || !cell.dataset.dateKey) return;
     noteSelectCurrentDate = noteSelectDateFromCell(cell);
     markNoteSelectRange(noteSelectStartDate, noteSelectCurrentDate);
+  });
+
+  // ---------- Notes/calendar panel as a draggable sheet (mobile only) ----------
+  var colLeftEl = document.querySelector('.col-left');
+  var colRightEl = document.querySelector('.col-right');
+  var sheetHandle = document.getElementById('sheet-handle');
+  var sheetHandleLabel = document.getElementById('sheet-handle-label');
+  var sheetExpanded = false;
+  var isDraggingSheet = false;
+  var sheetDragStartY = 0;
+  var sheetCollapsedOffset = 0;
+
+  function isMobileLayout(){ return window.matchMedia('(max-width: 680px)').matches; }
+  function sheetTarget(){ return notesIsMain ? colRightEl : colLeftEl; }
+  function setSheetExpanded(on){
+    sheetExpanded = on;
+    sheetTarget().classList.toggle('expanded', on);
+  }
+  function updateSheetHandleLabel(){
+    sheetHandleLabel.textContent = t('sheetHandleLabel') + (notes.length ? ' (' + notes.length + ')' : '');
+  }
+  sheetHandle.addEventListener('click', function(){
+    if (!isMobileLayout() || isDraggingSheet) return;
+    vibrate(6);
+    setSheetExpanded(!sheetExpanded);
+  });
+  sheetHandle.addEventListener('pointerdown', function(e){
+    if (!isMobileLayout()) return;
+    isDraggingSheet = true;
+    sheetDragStartY = e.clientY;
+    sheetCollapsedOffset = sheetTarget().getBoundingClientRect().height - 54;
+    sheetTarget().classList.add('dragging');
+  });
+  document.addEventListener('pointermove', function(e){
+    if (!isDraggingSheet) return;
+    var dy = e.clientY - sheetDragStartY;
+    var base = sheetExpanded ? 0 : sheetCollapsedOffset;
+    var next = Math.min(sheetCollapsedOffset, Math.max(0, base + dy));
+    sheetTarget().style.transform = 'translateY(' + next + 'px)';
+  });
+  document.addEventListener('pointerup', function(e){
+    if (!isDraggingSheet) return;
+    isDraggingSheet = false;
+    sheetTarget().classList.remove('dragging');
+    sheetTarget().style.transform = '';
+    var dy = e.clientY - sheetDragStartY;
+    var threshold = 60;
+    if (sheetExpanded) setSheetExpanded(dy <= threshold);
+    else setSheetExpanded(dy < -threshold);
+  });
+
+  // ---------- Left/right switch: choose which panel is the main screen ----------
+  var PANEL_PREF_KEY = 'mi_alarma_panel_pref';
+  var notesIsMain = false;
+  var panelSwapTrack = document.querySelector('.panel-swap-track');
+  var panelSwapThumb = document.getElementById('panel-swap-thumb');
+  var isDraggingSwap = false;
+
+  function applyPanelPref(){
+    panelSwapThumb.classList.toggle('on-right', notesIsMain);
+    colLeftEl.classList.remove('expanded'); colLeftEl.style.transform = '';
+    colRightEl.classList.remove('expanded'); colRightEl.style.transform = '';
+    sheetExpanded = false;
+    colLeftEl.classList.toggle('as-sheet', !notesIsMain);
+    colRightEl.classList.toggle('as-sheet', notesIsMain);
+    sheetTarget().insertBefore(sheetHandle, sheetTarget().firstChild);
+  }
+  function setNotesIsMain(on){
+    notesIsMain = on;
+    try { localStorage.setItem(PANEL_PREF_KEY, on ? 'notes' : 'calendar'); } catch(e){}
+    applyPanelPref();
+  }
+  try { notesIsMain = localStorage.getItem(PANEL_PREF_KEY) === 'notes'; } catch(e){}
+  applyPanelPref();
+
+  panelSwapTrack.addEventListener('click', function(e){
+    if (isDraggingSwap) return;
+    var r = panelSwapTrack.getBoundingClientRect();
+    vibrate(6);
+    setNotesIsMain((e.clientX - r.left) > r.width / 2);
+  });
+  panelSwapThumb.addEventListener('pointerdown', function(e){
+    e.stopPropagation();
+    isDraggingSwap = true;
+    panelSwapThumb.classList.add('dragging');
+  });
+  document.addEventListener('pointermove', function(e){
+    if (!isDraggingSwap) return;
+    var r = panelSwapTrack.getBoundingClientRect();
+    var x = Math.min(r.width - 33, Math.max(3, e.clientX - r.left - 15));
+    panelSwapThumb.style.left = x + 'px';
+  });
+  document.addEventListener('pointerup', function(e){
+    if (!isDraggingSwap) return;
+    isDraggingSwap = false;
+    panelSwapThumb.classList.remove('dragging');
+    panelSwapThumb.style.left = '';
+    var r = panelSwapTrack.getBoundingClientRect();
+    vibrate(6);
+    setNotesIsMain((e.clientX - r.left) > r.width / 2);
   });
 
   // "cada N horas" fires several times a day, so it needs a real anchor moment to
