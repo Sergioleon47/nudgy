@@ -83,7 +83,7 @@
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
   }
   #contacts-btn.open { background:var(--accent); color:white; }
-  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn, #auth-btn {
+  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn, #upcoming-btn, #auth-btn {
     background: #F2F2F7; border: none; color: #274257;
     width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px;
@@ -232,9 +232,10 @@
   }
 
   @keyframes note-in { 0%{opacity:0; transform:translateY(-6px);} 100%{opacity:1; transform:translateY(0);} }
-  .note-block { position:relative; padding:12px 92px 12px 4px; font-size:15px; color:#1C1C1E; line-height:1.5; white-space:pre-wrap; border-bottom:1px solid rgba(60,60,67,0.1); animation:note-in .25s ease; }
+  .note-block { position:relative; padding:12px 92px 12px 4px; font-size:15px; color:#1C1C1E; line-height:1.5; white-space:pre-wrap; border-bottom:1px solid rgba(60,60,67,0.1); animation:note-in .25s ease; transition: background 0.2s ease; }
   .note-block:last-child { border-bottom:none; }
   .note-block.disabled { opacity:.4; }
+  .note-block:hover { background:#F7F7F9; }
   .note-number { font-size:12px; font-weight:700; color:var(--accent); margin-right:6px; }
   .note-block-actions { position:absolute; top:8px; right:0; display:flex; gap:2px; opacity:1; }
   .icon-btn { background:none; border:none; color:#AEAEB2; cursor:pointer; font-size:14px; padding:3px; min-width:26px; min-height:26px; display:inline-flex; align-items:center; justify-content:center; }
@@ -342,6 +343,26 @@
     .print-week-note { font-size:11px; color:#1C1C1E; padding:2px 0 2px 6px; white-space:pre-wrap; }
     .print-week-empty { font-size:11px; color:#999; font-style:italic; padding:2px 0 2px 6px; }
   }
+
+  #upcoming-modal {
+    display:none; position:fixed; inset:0; background:rgba(20,40,55,0.55); z-index:1000;
+    align-items:center; justify-content:center; padding:16px;
+  }
+  .upcoming-modal-inner {
+    background:#FFFFFF; border-radius:20px; padding:18px;
+    width:100%; max-width:420px; max-height:92vh; overflow-y:auto; box-shadow:0 20px 48px rgba(0,0,0,0.25);
+    animation: modal-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .upcoming-day-group { margin-bottom:16px; }
+  .upcoming-day-header { font-size:13px; font-weight:700; color:var(--accent-darker); margin-bottom:6px; padding-bottom:4px; border-bottom:1px solid rgba(60,60,67,0.08); }
+  .upcoming-item { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:10px; background:#F7F7F9; margin-bottom:4px; font-size:13px; color:#1C1C1E; line-height:1.4; transition: background 0.15s ease; }
+  .upcoming-item:hover { background:#F2F2F7; }
+  .upcoming-item-time { font-weight:700; color:var(--accent); font-size:12px; min-width:52px; flex-shrink:0; padding-top:1px; }
+  .upcoming-item-text { flex:1; white-space:pre-wrap; word-break:break-word; }
+  .upcoming-empty { text-align:center; color:#5F5F63; font-size:13px; padding:20px; }
+  @keyframes modal-in { 0%{opacity:0; transform:scale(0.95) translateY(10px);} 100%{opacity:1; transform:scale(1) translateY(0);} }
+  #export-btn:hover, #import-btn:hover, #photo-btn:hover, #scan-btn:hover, #datecalc-btn:hover, #receipt-btn:hover, #upcoming-btn:hover, #auth-btn:hover { background:#E5E5EA; }
+  #export-btn:active, #import-btn:active, #photo-btn:active, #scan-btn:active, #datecalc-btn:active, #receipt-btn:active, #upcoming-btn:active, #auth-btn:active { transform:scale(0.92); }
 </style>
 </head>
 <body>
@@ -434,6 +455,7 @@
           <button id="datecalc-btn" aria-label="Calculadora de fechas" title="Calculadora de fechas"><i class="ti ti-calculator" aria-hidden="true"></i></button>
           <button id="receipt-btn" aria-label="Foto de recibo" title="Foto de recibo"><i class="ti ti-receipt-2" aria-hidden="true"></i></button>
           <input type="file" id="receipt-file-input" accept="image/*" style="display:none">
+          <button id="upcoming-btn" aria-label="Proximas alarmas" title="Proximas alarmas"><i class="ti ti-calendar-event" aria-hidden="true"></i></button>
           <button id="auth-btn" aria-label="Iniciar sesion para sincronizar" title="Iniciar sesion para sincronizar"><i class="ti ti-cloud" aria-hidden="true"></i></button>
         </div>
       </div>
@@ -659,6 +681,16 @@
 </div>
 <div id="print-area"></div>
 
+<div id="upcoming-modal">
+  <div class="upcoming-modal-inner">
+    <div class="scan-modal-header">
+      <span id="upcoming-title">Proximas alarmas</span>
+      <button id="upcoming-close-btn" class="icon-btn" aria-label="Cerrar"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </div>
+    <div id="upcoming-list"></div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -773,6 +805,9 @@
       searchPlaceholder: 'Buscar en tus notas...',
       noMatches: 'Sin coincidencias.',
       alarmTag: '\u23F0 Alarma',
+      upcomingBtnTitle: 'Proximas alarmas',
+      upcomingTitle: 'Proximas alarmas',
+      upcomingEmpty: 'No hay alarmas en los proximos 30 dias',
       today: 'Hoy',
       tomorrow: 'Manana',
       days: ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'],
@@ -871,6 +906,9 @@
       searchPlaceholder: 'Search your notes...',
       noMatches: 'No matches.',
       alarmTag: '\u23F0 Alarm',
+      upcomingBtnTitle: 'Upcoming alarms',
+      upcomingTitle: 'Upcoming alarms',
+      upcomingEmpty: 'No alarms in the next 30 days',
       today: 'Today',
       tomorrow: 'Tomorrow',
       days: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
@@ -1078,6 +1116,7 @@
     if (pendingNoteAnchor) updatePendingAnchorChip();
     updateNotifBtn();
     updateAuthBtn();
+    if (typeof upcomingApplyLanguage === 'function') upcomingApplyLanguage();
     document.documentElement.lang = currentLang;
     updateParsePreview();
   }
@@ -2837,6 +2876,82 @@
     savedFlash.style.opacity = '1';
     setTimeout(function(){ savedFlash.style.opacity = '0'; }, 1200);
   }
+
+  // ---------- Upcoming alarms view ----------
+  var upcomingBtn = document.getElementById('upcoming-btn');
+  var upcomingModal = document.getElementById('upcoming-modal');
+  var upcomingCloseBtn = document.getElementById('upcoming-close-btn');
+  var upcomingTitleEl = document.getElementById('upcoming-title');
+  var upcomingList = document.getElementById('upcoming-list');
+
+  function upcomingApplyLanguage(){
+    if (!upcomingTitleEl) return;
+    upcomingTitleEl.textContent = t('upcomingTitle');
+    if (upcomingBtn){ upcomingBtn.title = t('upcomingBtnTitle'); upcomingBtn.setAttribute('aria-label', t('upcomingBtnTitle')); }
+  }
+  function upcomingCloseModal(){ upcomingModal.style.display = 'none'; }
+  function upcomingOpenModal(){
+    upcomingApplyLanguage();
+    upcomingPopulate();
+    upcomingModal.style.display = 'flex';
+  }
+  function upcomingPopulate(){
+    upcomingList.innerHTML = '';
+    var now = new Date();
+    var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var groups = {};
+    var groupKeys = [];
+    for (var i = 0; i < 30; i++){
+      var d = new Date(todayStart);
+      d.setDate(d.getDate() + i);
+      var dayNotes = notesForDate(d).filter(function(n){ return n.hour != null && n.enabled; });
+      if (dayNotes.length){
+        dayNotes.sort(function(a,b){ return (a.hour*60+a.minute) - (b.hour*60+b.minute); });
+        var key = dateKey(d);
+        groups[key] = dayNotes;
+        groupKeys.push(key);
+      }
+    }
+    if (!groupKeys.length){
+      var empty = document.createElement('div');
+      empty.className = 'upcoming-empty';
+      empty.textContent = t('upcomingEmpty');
+      upcomingList.appendChild(empty);
+      return;
+    }
+    groupKeys.forEach(function(key){
+      var parts = key.split('-');
+      var d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+      var group = document.createElement('div');
+      group.className = 'upcoming-day-group';
+      var header = document.createElement('div');
+      header.className = 'upcoming-day-header';
+      var diffDays = Math.round((d - todayStart) / 86400000);
+      var label;
+      if (diffDays === 0) label = t('today');
+      else if (diffDays === 1) label = t('tomorrow');
+      else label = t('days')[d.getDay()] + ' ' + d.getDate() + ' ' + t('months')[d.getMonth()];
+      header.textContent = label;
+      group.appendChild(header);
+      groups[key].forEach(function(n){
+        var item = document.createElement('div');
+        item.className = 'upcoming-item';
+        var time = document.createElement('div');
+        time.className = 'upcoming-item-time';
+        time.textContent = formatHM2(n.hour, n.minute);
+        item.appendChild(time);
+        var text = document.createElement('div');
+        text.className = 'upcoming-item-text';
+        renderNoteText(text, n.raw);
+        item.appendChild(text);
+        group.appendChild(item);
+      });
+      upcomingList.appendChild(group);
+    });
+  }
+  if (upcomingBtn) upcomingBtn.addEventListener('click', function(){ vibrate(8); upcomingOpenModal(); });
+  if (upcomingCloseBtn) upcomingCloseBtn.addEventListener('click', upcomingCloseModal);
+  if (upcomingModal) upcomingModal.addEventListener('click', function(e){ if (e.target === upcomingModal) upcomingCloseModal(); });
   function loadForEdit(note){
     editingId = note.id;
     noteInput.value = note.raw;
