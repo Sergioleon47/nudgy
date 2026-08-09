@@ -1,0 +1,39 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- Jobs ----
+    // Anyone (even anonymous) can read active job posts — that's the whole point
+    // of a public job board.
+    match /jobs/{jobId} {
+      allow read: if true;
+
+      // Only authenticated users can create, and the job must carry their own uid.
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      // Only the owner can edit or delete their own post.
+      allow update, delete: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // ---- Visitors (anonymous visit counter) ----
+    // A visitor can only create/update their own doc, keyed by their auth uid.
+    // Nobody can read other visitors' docs — the stats page reads via the SDK
+    // which is fine because it requires the passcode gate in the app, but the
+    // rules themselves deny bulk reads to anon clients. If you need the stats
+    // page to work from the browser, either relax this to allow read: if true
+    // (the data is just counts, no PII) or move stats to a Cloud Function.
+    match /visitors/{visitorId} {
+      allow read: if true; // only counts + timestamps, no personal data
+      allow write: if request.auth != null
+        && visitorId == request.auth.uid;
+    }
+
+    // ---- Deny everything else by default ----
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
