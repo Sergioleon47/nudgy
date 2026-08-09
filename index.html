@@ -263,6 +263,15 @@
   .note-block:last-child { border-bottom:none; }
   .note-block.disabled { opacity:.4; }
   .note-number { font-size:12px; font-weight:700; color:var(--accent); margin-right:6px; }
+  .note-body-checklist { display:block; margin-top:6px; }
+  .checklist-row { display:flex; align-items:flex-start; gap:8px; padding:3px 0; }
+  .checklist-box {
+    flex-shrink:0; width:18px; height:18px; margin-top:1px; border-radius:5px; border:1.5px solid #C7C7CC;
+    background:#fff; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff;
+  }
+  .checklist-box.checked { background:var(--accent); border-color:var(--accent); }
+  .checklist-text { flex:1; }
+  .checklist-text.checked { color:#8E8E93; text-decoration:line-through; }
   .note-block-actions { position:absolute; top:8px; right:0; display:flex; gap:2px; opacity:1; }
   .icon-btn { background:none; border:none; color:#AEAEB2; cursor:pointer; font-size:14px; padding:3px; min-width:26px; min-height:26px; display:inline-flex; align-items:center; justify-content:center; }
   .icon-btn:hover { color:var(--accent); }
@@ -753,6 +762,8 @@
       exportIcsTitle: 'Agregar al calendario (.ics)',
       editLabel: 'Editar',
       deleteLabel: 'Eliminar',
+      checklistCheck: 'Marcar como hecho',
+      checklistUncheck: 'Marcar como pendiente',
       alarmOffLabel: 'Apagar alarma',
       alarmOnLabel: 'Prender alarma',
       exportBtnTitle: 'Exportar notas',
@@ -863,6 +874,8 @@
       exportIcsTitle: 'Add to calendar (.ics)',
       editLabel: 'Edit',
       deleteLabel: 'Delete',
+      checklistCheck: 'Mark as done',
+      checklistUncheck: 'Mark as not done',
       alarmOffLabel: 'Turn alarm off',
       alarmOnLabel: 'Turn alarm on',
       exportBtnTitle: 'Export notes',
@@ -1244,6 +1257,59 @@
     if (lastIndex < rawText.length) container.appendChild(document.createTextNode(rawText.slice(lastIndex)));
   }
 
+  // A note becomes a checklist if any of its lines look like "- item" or "[ ] item" /
+  // "[x] item" — the marker is never written back into note.raw (that stays exactly as
+  // typed); checked state lives separately, keyed by the item's own text so edits that
+  // don't rename a line keep its checked state.
+  function parseChecklistLine(line){
+    var m = line.match(/^\s*\[( |x|X)\]\s*(.+)$/);
+    if (m) return { text: m[2], checkedInitial: /x/i.test(m[1]) };
+    var m2 = line.match(/^\s*[-*]\s+(.+)$/);
+    if (m2) return { text: m2[1], checkedInitial: false };
+    return null;
+  }
+  function noteHasChecklist(raw){
+    return raw.split('\n').some(function(l){ return parseChecklistLine(l) !== null; });
+  }
+  function renderNoteBody(container, note){
+    container.innerHTML = '';
+    var lines = note.raw.split('\n');
+    if (!noteHasChecklist(note.raw)){ renderNoteText(container, note.raw); return; }
+    if (!note.checklistDone) note.checklistDone = {};
+    lines.forEach(function(line){
+      var parsed = parseChecklistLine(line);
+      if (!parsed){
+        if (!line.trim()) return;
+        var lineEl = document.createElement('div');
+        renderNoteText(lineEl, line);
+        container.appendChild(lineEl);
+        return;
+      }
+      var key = parsed.text.trim();
+      if (!(key in note.checklistDone)) note.checklistDone[key] = parsed.checkedInitial;
+      var checked = note.checklistDone[key];
+      var row = document.createElement('div');
+      row.className = 'checklist-row';
+      var box = document.createElement('button');
+      box.type = 'button';
+      box.className = 'checklist-box' + (checked ? ' checked' : '');
+      box.innerHTML = checked ? '<i class="ti ti-check" aria-hidden="true"></i>' : '';
+      box.setAttribute('aria-label', checked ? t('checklistUncheck') : t('checklistCheck'));
+      box.addEventListener('click', function(e){
+        e.stopPropagation();
+        note.checklistDone[key] = !note.checklistDone[key];
+        saveToStorage();
+        renderNotes();
+      });
+      row.appendChild(box);
+      var textSpan = document.createElement('span');
+      textSpan.className = 'checklist-text' + (checked ? ' checked' : '');
+      renderNoteText(textSpan, parsed.text);
+      row.appendChild(textSpan);
+      container.appendChild(row);
+    });
+  }
+
   // ---------- Persistence ----------
   function serializeOneNote(n){
     return {
@@ -1251,7 +1317,8 @@
       target: n.target ? n.target.toISOString() : null,
       dateOnly: n.dateOnly ? n.dateOnly.toISOString() : null,
       recurring: n.recurring, createdAt: n.createdAt.toISOString(),
-      enabled: n.enabled, firedKey: n.firedKey, image: n.image || null
+      enabled: n.enabled, firedKey: n.firedKey, image: n.image || null,
+      checklistDone: n.checklistDone || {}
     };
   }
   function deserializeOneNote(n){
@@ -1260,7 +1327,8 @@
       target: n.target ? new Date(n.target) : null,
       dateOnly: n.dateOnly ? new Date(n.dateOnly) : null,
       recurring: n.recurring, createdAt: new Date(n.createdAt),
-      enabled: n.enabled, firedKey: n.firedKey, image: n.image || null
+      enabled: n.enabled, firedKey: n.firedKey, image: n.image || null,
+      checklistDone: n.checklistDone || {}
     };
   }
   function serializeNotes(){
@@ -3044,8 +3112,10 @@
       numSpan.textContent = (idx + 1) + '.';
       block.appendChild(numSpan);
 
-      var textEl = document.createElement('span');
-      renderNoteText(textEl, note.raw);
+      var isChecklist = noteHasChecklist(note.raw);
+      var textEl = document.createElement(isChecklist ? 'div' : 'span');
+      if (isChecklist) textEl.className = 'note-body-checklist';
+      renderNoteBody(textEl, note);
       block.appendChild(textEl);
 
       if (note.image){
