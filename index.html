@@ -354,12 +354,25 @@
     animation: modal-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .upcoming-day-group { margin-bottom:16px; }
-  .upcoming-day-header { font-size:13px; font-weight:700; color:var(--accent-darker); margin-bottom:6px; padding-bottom:4px; border-bottom:1px solid rgba(60,60,67,0.08); }
-  .upcoming-item { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:10px; background:#F7F7F9; margin-bottom:4px; font-size:13px; color:#1C1C1E; line-height:1.4; transition: background 0.15s ease; }
-  .upcoming-item:hover { background:#F2F2F7; }
+  .upcoming-day-header { font-size:13px; font-weight:700; color:var(--accent-darker); margin-bottom:6px; padding-bottom:4px; border-bottom:1px solid rgba(60,60,67,0.08); display:flex; align-items:baseline; gap:6px; }
+  .upcoming-day-header .upcoming-day-count { font-size:10px; font-weight:600; color:#5F5F63; }
+  .upcoming-item { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:10px; background:#F7F7F9; margin-bottom:4px; font-size:13px; color:#1C1C1E; line-height:1.4; transition: background 0.15s ease, transform 0.15s ease; animation: note-in .25s ease; }
+  .upcoming-item:hover { background:#F2F2F7; transform: translateX(2px); }
   .upcoming-item-time { font-weight:700; color:var(--accent); font-size:12px; min-width:52px; flex-shrink:0; padding-top:1px; }
   .upcoming-item-text { flex:1; white-space:pre-wrap; word-break:break-word; }
+  .upcoming-item-icon { font-size:15px; color:#2FA360; flex-shrink:0; padding-top:1px; }
   .upcoming-empty { text-align:center; color:#5F5F63; font-size:13px; padding:20px; }
+  .upcoming-next-card { background: linear-gradient(135deg, var(--accent-soft) 0%, #FFF7E8 100%); border-radius:14px; padding:14px 16px; margin-bottom:18px; border:1px solid rgba(217,138,31,0.18); animation: note-in .3s ease; }
+  .upcoming-next-label { font-size:10px; font-weight:700; color:var(--accent-darker); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:6px; display:flex; align-items:center; gap:4px; }
+  .upcoming-next-label i { font-size:12px; }
+  .upcoming-next-time { font-size:22px; font-weight:700; color:var(--accent-darker); line-height:1.1; margin-bottom:4px; }
+  .upcoming-next-relative { font-size:12px; color:var(--accent-darker); opacity:0.75; margin-bottom:8px; }
+  .upcoming-next-text { font-size:14px; color:#1C1C1E; line-height:1.45; white-space:pre-wrap; word-break:break-word; }
+  .upcoming-next-icon { font-size:18px; color:var(--accent); margin-right:4px; vertical-align:middle; }
+  #upcoming-btn { position:relative; }
+  .upcoming-badge { position:absolute; top:-4px; right:-4px; min-width:17px; height:17px; border-radius:9px; background:var(--accent); color:#fff; font-size:10px; font-weight:700; display:none; align-items:center; justify-content:center; padding:0 4px; box-shadow:0 1px 3px rgba(0,0,0,0.25); border:1.5px solid #fff; line-height:1; }
+  .upcoming-badge.visible { display:flex; animation: note-in .3s ease; }
+  .upcoming-summary { font-size:12px; color:#5F5F63; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(60,60,67,0.08); }
   @keyframes modal-in { 0%{opacity:0; transform:scale(0.95) translateY(10px);} 100%{opacity:1; transform:scale(1) translateY(0);} }
   #export-btn:hover, #import-btn:hover, #photo-btn:hover, #scan-btn:hover, #datecalc-btn:hover, #receipt-btn:hover, #upcoming-btn:hover, #auth-btn:hover { background:#E5E5EA; }
   #export-btn:active, #import-btn:active, #photo-btn:active, #scan-btn:active, #datecalc-btn:active, #receipt-btn:active, #upcoming-btn:active, #auth-btn:active { transform:scale(0.92); }
@@ -455,7 +468,7 @@
           <button id="datecalc-btn" aria-label="Calculadora de fechas" title="Calculadora de fechas"><i class="ti ti-calculator" aria-hidden="true"></i></button>
           <button id="receipt-btn" aria-label="Foto de recibo" title="Foto de recibo"><i class="ti ti-receipt-2" aria-hidden="true"></i></button>
           <input type="file" id="receipt-file-input" accept="image/*" style="display:none">
-          <button id="upcoming-btn" aria-label="Proximas alarmas" title="Proximas alarmas"><i class="ti ti-calendar-event" aria-hidden="true"></i></button>
+          <button id="upcoming-btn" aria-label="Proximas alarmas" title="Proximas alarmas"><i class="ti ti-calendar-event" aria-hidden="true"></i><span id="upcoming-badge" class="upcoming-badge"></span></button>
           <button id="auth-btn" aria-label="Iniciar sesion para sincronizar" title="Iniciar sesion para sincronizar"><i class="ti ti-cloud" aria-hidden="true"></i></button>
         </div>
       </div>
@@ -808,6 +821,16 @@
       upcomingBtnTitle: 'Proximas alarmas',
       upcomingTitle: 'Proximas alarmas',
       upcomingEmpty: 'No hay alarmas en los proximos 30 dias',
+      upcomingNextLabel: 'Proxima alarma',
+      upcomingSummary: '{n} alarmas en los proximos 30 dias',
+      upcomingSummaryOne: '1 alarma en los proximos 30 dias',
+      upcomingSummaryNone: 'No hay alarmas proximas',
+      upcomingRelativeNow: 'ahora',
+      upcomingRelativeMin: 'en {n} min',
+      upcomingRelativeHour: 'en {n} hora',
+      upcomingRelativeHours: 'en {n} horas',
+      upcomingRelativeDay: 'en {n} dia',
+      upcomingRelativeDays: 'en {n} dias',
       today: 'Hoy',
       tomorrow: 'Manana',
       days: ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'],
@@ -909,6 +932,16 @@
       upcomingBtnTitle: 'Upcoming alarms',
       upcomingTitle: 'Upcoming alarms',
       upcomingEmpty: 'No alarms in the next 30 days',
+      upcomingNextLabel: 'Next alarm',
+      upcomingSummary: '{n} alarms in the next 30 days',
+      upcomingSummaryOne: '1 alarm in the next 30 days',
+      upcomingSummaryNone: 'No upcoming alarms',
+      upcomingRelativeNow: 'now',
+      upcomingRelativeMin: 'in {n} min',
+      upcomingRelativeHour: 'in {n} hour',
+      upcomingRelativeHours: 'in {n} hours',
+      upcomingRelativeDay: 'in {n} day',
+      upcomingRelativeDays: 'in {n} days',
       today: 'Today',
       tomorrow: 'Tomorrow',
       days: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
@@ -2895,30 +2928,107 @@
     upcomingPopulate();
     upcomingModal.style.display = 'flex';
   }
+  function upcomingRelativeTime(target){
+    var now = new Date();
+    var diffMs = target - now;
+    if (diffMs < 60000) return t('upcomingRelativeNow');
+    var diffMin = Math.round(diffMs / 60000);
+    if (diffMin < 60) return t('upcomingRelativeMin').replace('{n}', diffMin);
+    var diffHr = Math.round(diffMin / 60);
+    if (diffHr < 24) return (diffHr === 1 ? t('upcomingRelativeHour') : t('upcomingRelativeHours')).replace('{n}', diffHr);
+    var diffDay = Math.round(diffHr / 24);
+    return (diffDay === 1 ? t('upcomingRelativeDay') : t('upcomingRelativeDays')).replace('{n}', diffDay);
+  }
+
+  function upcomingGetAll(){
+    var all = [];
+    notes.forEach(function(n){
+      var occ = nextOccurrence(n);
+      if (occ) all.push({ n: n, t: occ });
+    });
+    all.sort(function(a, b){ return a.t - b.t; });
+    return all;
+  }
+
+  function upcomingUpdateBadge(){
+    var badge = document.getElementById('upcoming-badge');
+    if (!badge) return;
+    var all = upcomingGetAll();
+    var now = new Date();
+    var limit = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    limit.setDate(limit.getDate() + 30);
+    var count = all.filter(function(x){ return x.t <= limit; }).length;
+    if (count > 0){
+      badge.textContent = count > 99 ? '99+' : String(count);
+      badge.classList.add('visible');
+    } else {
+      badge.classList.remove('visible');
+    }
+  }
+
   function upcomingPopulate(){
     upcomingList.innerHTML = '';
     var now = new Date();
     var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    var groups = {};
-    var groupKeys = [];
-    for (var i = 0; i < 30; i++){
-      var d = new Date(todayStart);
-      d.setDate(d.getDate() + i);
-      var dayNotes = notesForDate(d).filter(function(n){ return n.hour != null && n.enabled; });
-      if (dayNotes.length){
-        dayNotes.sort(function(a,b){ return (a.hour*60+a.minute) - (b.hour*60+b.minute); });
-        var key = dateKey(d);
-        groups[key] = dayNotes;
-        groupKeys.push(key);
-      }
-    }
-    if (!groupKeys.length){
+    var all = upcomingGetAll();
+    var limit = new Date(todayStart);
+    limit.setDate(limit.getDate() + 30);
+    var upcoming = all.filter(function(x){ return x.t <= limit; });
+
+    if (!upcoming.length){
       var empty = document.createElement('div');
       empty.className = 'upcoming-empty';
       empty.textContent = t('upcomingEmpty');
       upcomingList.appendChild(empty);
       return;
     }
+
+    // Next-up highlight card
+    var nextItem = upcoming[0];
+    var card = document.createElement('div');
+    card.className = 'upcoming-next-card';
+    var cardLabel = document.createElement('div');
+    cardLabel.className = 'upcoming-next-label';
+    cardLabel.innerHTML = '<i class="ti ti-bell-ringing" aria-hidden="true"></i> ' + t('upcomingNextLabel');
+    card.appendChild(cardLabel);
+    var cardTime = document.createElement('div');
+    cardTime.className = 'upcoming-next-time';
+    cardTime.textContent = relativeDayLabel(nextItem.t) + ' ' + formatHM(nextItem.t);
+    card.appendChild(cardTime);
+    var cardRel = document.createElement('div');
+    cardRel.className = 'upcoming-next-relative';
+    cardRel.textContent = upcomingRelativeTime(nextItem.t);
+    card.appendChild(cardRel);
+    var cardText = document.createElement('div');
+    cardText.className = 'upcoming-next-text';
+    var iconCls = pickActivityIcon(nextItem.n.raw);
+    if (iconCls){
+      var cardIcon = document.createElement('i');
+      cardIcon.className = 'ti ' + iconCls + ' upcoming-next-icon';
+      cardIcon.setAttribute('aria-hidden', 'true');
+      cardText.appendChild(cardIcon);
+    }
+    renderNoteText(cardText, nextItem.n.raw);
+    card.appendChild(cardText);
+    upcomingList.appendChild(card);
+
+    // Summary line
+    var summary = document.createElement('div');
+    summary.className = 'upcoming-summary';
+    var totalCount = upcoming.length;
+    summary.textContent = totalCount === 1 ? t('upcomingSummaryOne') : t('upcomingSummary').replace('{n}', totalCount);
+    upcomingList.appendChild(summary);
+
+    // Group remaining items by day (skip the first since it's in the card)
+    var groups = {};
+    var groupKeys = [];
+    upcoming.forEach(function(x, idx){
+      if (idx === 0) return;
+      var key = dateKey(x.t);
+      if (!groups[key]){ groups[key] = []; groupKeys.push(key); }
+      groups[key].push(x);
+    });
+
     groupKeys.forEach(function(key){
       var parts = key.split('-');
       var d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
@@ -2931,18 +3041,31 @@
       if (diffDays === 0) label = t('today');
       else if (diffDays === 1) label = t('tomorrow');
       else label = t('days')[d.getDay()] + ' ' + d.getDate() + ' ' + t('months')[d.getMonth()];
-      header.textContent = label;
+      var headerSpan = document.createElement('span');
+      headerSpan.textContent = label;
+      header.appendChild(headerSpan);
+      var countSpan = document.createElement('span');
+      countSpan.className = 'upcoming-day-count';
+      countSpan.textContent = groups[key].length;
+      header.appendChild(countSpan);
       group.appendChild(header);
-      groups[key].forEach(function(n){
+      groups[key].forEach(function(x){
         var item = document.createElement('div');
         item.className = 'upcoming-item';
+        var iconCls2 = pickActivityIcon(x.n.raw);
+        if (iconCls2){
+          var iconEl = document.createElement('i');
+          iconEl.className = 'ti ' + iconCls2 + ' upcoming-item-icon';
+          iconEl.setAttribute('aria-hidden', 'true');
+          item.appendChild(iconEl);
+        }
         var time = document.createElement('div');
         time.className = 'upcoming-item-time';
-        time.textContent = formatHM2(n.hour, n.minute);
+        time.textContent = formatHM2(x.t.getHours(), x.t.getMinutes());
         item.appendChild(time);
         var text = document.createElement('div');
         text.className = 'upcoming-item-text';
-        renderNoteText(text, n.raw);
+        renderNoteText(text, x.n.raw);
         item.appendChild(text);
         group.appendChild(item);
       });
@@ -3137,6 +3260,7 @@
   function renderAll(){
     renderNotes(); renderCalendar(); renderSelectedPanel(); renderNextAlarm(); saveToStorage();
     updateSheetHandleLabel();
+    if (typeof upcomingUpdateBadge === 'function') upcomingUpdateBadge();
   }
 
   calPrev.addEventListener('click', function(){ vibrate(6); calState.month--; if (calState.month < 0){ calState.month = 11; calState.year--; } renderCalendar(); });
