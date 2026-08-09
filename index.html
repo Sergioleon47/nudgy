@@ -310,20 +310,21 @@
   .footer-note { text-align:center; font-size:11px; color:#5F5F63; margin-top:16px; }
 
   .sheet-handle {
-    display:none; align-items:center; justify-content:center; flex-direction:column; gap:4px;
-    padding:2px 0 10px; margin:-4px -4px 4px; cursor:grab; touch-action:none;
+    display:none; align-items:center; gap:6px;
+    padding:0 0 10px; font-size:12px; color:#5F5F63; font-weight:600;
   }
-  .sheet-handle-bar { width:40px; height:5px; border-radius:3px; background:#D1D1D6; }
-  #sheet-handle-label { font-size:12px; color:#5F5F63; font-weight:600; }
+  .sheet-handle i { font-size:13px; }
   @media (max-width: 680px) {
     body { padding: 10px; }
-    .wrap { padding-bottom: 66px; }
     .header { margin-bottom: 10px; }
     .cols { gap: 10px; }
     .sky-panel { padding: 12px; }
-    .col-left, .col-right { min-height: auto; max-width: none; }
+    .col-left, .col-right { min-height: auto; max-width: none; order:0; }
     .panel-swap { display:flex; }
-    .col-right { order: -1; margin-top: 16px; }
+    .panel-primary { order: -1; }
+    .col-right { margin-top: 16px; }
+    .col-right.panel-primary { margin-top: 0; }
+    .col-left:not(.panel-primary) { margin-top: 16px; }
     .top-row { margin-bottom: 6px; }
     #note-input { height: 60px; overflow-y: auto; }
     #notes-list { max-height: 260px; margin-top: 8px; }
@@ -334,15 +335,7 @@
     .next-alarm-box { margin-top: 10px; padding-top: 10px; }
     .footer-note { margin-top: 10px; }
 
-    .as-sheet .sheet-handle { display:flex; }
-    .as-sheet {
-      position: fixed; left:10px; right:10px; bottom:10px; z-index:500; margin:0;
-      max-height: 82vh; overflow-y:auto;
-      transform: translateY(calc(100% - 54px));
-      transition: transform 0.48s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .as-sheet.dragging { transition: none; }
-    .as-sheet.expanded { transform: translateY(0); }
+    .col-left:not(.panel-primary) .sheet-handle { display:flex; }
   }
 
   #print-area { display:none; }
@@ -434,7 +427,7 @@
     <div class="sky-panel col-left">
 
       <div id="sheet-handle" class="sheet-handle">
-        <div class="sheet-handle-bar"></div>
+        <i class="ti ti-chevron-down" aria-hidden="true"></i>
         <span id="sheet-handle-label">Tus notas</span>
       </div>
 
@@ -3627,56 +3620,17 @@
     markNoteSelectRange(noteSelectStartDate, noteSelectCurrentDate);
   });
 
-  // ---------- Notes/calendar panel as a draggable sheet (mobile only) ----------
+  // ---------- Notes/calendar order (mobile: whichever is primary shows first, ----------
+  // ---------- the other sits right below it in normal flow -- just scroll to see it) ----------
   var colLeftEl = document.querySelector('.col-left');
   var colRightEl = document.querySelector('.col-right');
-  var sheetHandle = document.getElementById('sheet-handle');
   var sheetHandleLabel = document.getElementById('sheet-handle-label');
-  var sheetExpanded = false;
-  var isDraggingSheet = false;
-  var sheetDragStartY = 0;
-  var sheetCollapsedOffset = 0;
 
-  function isMobileLayout(){ return window.matchMedia('(max-width: 680px)').matches; }
-  function sheetTarget(){ return notesIsMain ? colRightEl : colLeftEl; }
-  function setSheetExpanded(on){
-    sheetExpanded = on;
-    sheetTarget().classList.toggle('expanded', on);
-  }
   function updateSheetHandleLabel(){
     sheetHandleLabel.textContent = t('sheetHandleLabel') + (notes.length ? ' (' + notes.length + ')' : '');
   }
-  sheetHandle.addEventListener('click', function(){
-    if (!isMobileLayout() || isDraggingSheet) return;
-    vibrate(6);
-    setSheetExpanded(!sheetExpanded);
-  });
-  sheetHandle.addEventListener('pointerdown', function(e){
-    if (!isMobileLayout()) return;
-    isDraggingSheet = true;
-    sheetDragStartY = e.clientY;
-    sheetCollapsedOffset = sheetTarget().getBoundingClientRect().height - 54;
-    sheetTarget().classList.add('dragging');
-  });
-  document.addEventListener('pointermove', function(e){
-    if (!isDraggingSheet) return;
-    var dy = e.clientY - sheetDragStartY;
-    var base = sheetExpanded ? 0 : sheetCollapsedOffset;
-    var next = Math.min(sheetCollapsedOffset, Math.max(0, base + dy));
-    sheetTarget().style.transform = 'translateY(' + next + 'px)';
-  });
-  document.addEventListener('pointerup', function(e){
-    if (!isDraggingSheet) return;
-    isDraggingSheet = false;
-    sheetTarget().classList.remove('dragging');
-    sheetTarget().style.transform = '';
-    var dy = e.clientY - sheetDragStartY;
-    var threshold = 60;
-    if (sheetExpanded) setSheetExpanded(dy <= threshold);
-    else setSheetExpanded(dy < -threshold);
-  });
 
-  // ---------- Left/right switch: choose which panel is the main screen ----------
+  // ---------- Left/right switch: choose which panel comes first ----------
   var PANEL_PREF_KEY = 'mi_alarma_panel_pref';
   var notesIsMain = false;
   var panelSwapTrack = document.querySelector('.panel-swap-track');
@@ -3685,12 +3639,8 @@
 
   function applyPanelPref(){
     panelSwapThumb.classList.toggle('on-right', notesIsMain);
-    colLeftEl.classList.remove('expanded'); colLeftEl.style.transform = '';
-    colRightEl.classList.remove('expanded'); colRightEl.style.transform = '';
-    sheetExpanded = false;
-    colLeftEl.classList.toggle('as-sheet', !notesIsMain);
-    colRightEl.classList.toggle('as-sheet', notesIsMain);
-    sheetTarget().insertBefore(sheetHandle, sheetTarget().firstChild);
+    colLeftEl.classList.toggle('panel-primary', notesIsMain);
+    colRightEl.classList.toggle('panel-primary', !notesIsMain);
   }
   function setNotesIsMain(on){
     notesIsMain = on;
