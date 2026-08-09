@@ -265,6 +265,7 @@
   .note-block:last-child { border-bottom:none; }
   .note-block.disabled { opacity:.4; }
   .note-number { font-size:12px; font-weight:700; color:var(--accent); margin-right:6px; }
+  .note-meta { display:none; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--accent-darker); margin-bottom:4px; }
   .note-body-checklist { display:block; margin-top:6px; }
   .checklist-row { display:flex; align-items:flex-start; gap:8px; padding:3px 0; }
   .checklist-box {
@@ -297,8 +298,8 @@
   .cal-cell.today { background:var(--accent-soft); }
   .cal-cell.today .cal-daynum { color:var(--accent-darker); }
   .cal-daynum { font-weight:600; color:#1C1C1E; font-size:11px; }
-  .cal-activity-icon { font-size:17px; color:#2FA360; }
-  .cal-count { font-size:8px; font-weight:700; color:#2FA360; margin-top:1px; }
+  .cal-activity-dot { width:4px; height:4px; border-radius:50%; margin-top:2px; background:#2FA360; }
+  .cal-cell.today .cal-activity-dot { background:var(--accent-darker); }
   .cal-action-btn { border:none; background:#F2F2F7; font-size:16px; color:var(--accent); padding:0; }
   .cal-action-btn:hover { background:#E5E5EA; }
   .cal-action-btn.active { background:var(--accent); color:#fff; }
@@ -310,8 +311,6 @@
   .highlight-btn-dots span:nth-child(3){ left:10px; z-index:1; }
   .cal-cell.note-select-range { box-shadow: inset 0 0 0 2px var(--accent); }
   .cal-mini-note { font-size:11px; padding:6px 8px; border-radius:9px; background:#F2F2F7; color:#1C1C1E; white-space:pre-wrap; }
-  .legend { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; font-size:9px; color:#5F5F63; align-items:center; }
-  .legend-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:3px; background:#2FA360; }
   #cal-selected-panel { margin-top:10px; display:none; }
   #cal-selected-title { font-size:11px; font-weight:600; color:var(--accent); margin-bottom:5px; }
   .next-alarm-box { margin-top:16px; padding-top:14px; border-top:1px solid rgba(60,60,67,0.1); }
@@ -325,6 +324,14 @@
     padding:0 0 10px; font-size:12px; color:#5F5F63; font-weight:600;
   }
   .sheet-handle i { font-size:13px; }
+  .fab-add-note {
+    display:none; position:fixed; bottom:22px; right:22px; z-index:600;
+    width:56px; height:56px; border-radius:50%; border:none;
+    background:linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%);
+    color:#fff; font-size:26px; box-shadow:0 6px 16px rgba(27,59,16,0.35);
+    align-items:center; justify-content:center; cursor:pointer;
+  }
+  .fab-add-note:active { transform:scale(0.94); }
   @media (max-width: 680px) {
     body { padding: 10px; }
     .header { margin-bottom: 10px; }
@@ -332,21 +339,57 @@
     .sky-panel { padding: 12px; }
     .col-left, .col-right { min-height: auto; max-width: none; order:0; }
     .panel-swap { display:flex; }
+    .fab-add-note { display:flex; }
     .panel-primary { order: -1; }
     .col-right { margin-top: 16px; }
     .col-right.panel-primary { margin-top: 0; }
     .col-left:not(.panel-primary) { margin-top: 16px; }
     .top-row { margin-bottom: 6px; }
     #note-input { height: 60px; overflow-y: auto; }
-    #notes-list { max-height: 260px; margin-top: 8px; }
-    .note-block { padding: 8px 84px 8px 4px; }
+    #notes-list { max-height: 260px; margin-top: 8px; gap:10px; }
+    .note-block {
+      padding: 12px 84px 12px 18px; border-bottom:none; border-radius:14px;
+      background:#fff; box-shadow:0 1px 2px rgba(35,77,22,0.06), 0 4px 14px rgba(35,77,22,0.08);
+      overflow:hidden;
+    }
+    .note-block::before {
+      content:''; position:absolute; top:0; left:0; bottom:0; width:5px;
+      background:linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 100%);
+    }
+    .note-block.disabled::before { background:#C7C7CC; }
+    .note-meta { display:flex; }
+    .note-number { display:none; }
     #cal-grid { grid-auto-rows: 30px; }
     .cal-cell { font-size: 9px; }
-    .legend { font-size: 8px; gap: 6px; margin-top: 6px; }
     .next-alarm-box { margin-top: 10px; padding-top: 10px; }
     .footer-note { margin-top: 10px; }
 
     .col-left:not(.panel-primary) .sheet-handle { display:flex; }
+
+    .col-right.panel-primary {
+      background: linear-gradient(160deg, var(--accent-dark) 0%, var(--accent) 55%, var(--accent-light) 100%);
+      box-shadow: 0 10px 28px rgba(27,59,16,0.28);
+    }
+    .col-right.panel-primary .cal-head button { background: rgba(255,255,255,0.2); color:#fff; }
+    .col-right.panel-primary #cal-title { color:#fff; }
+    .col-right.panel-primary .cal-wd { color: rgba(255,255,255,0.75); }
+    .col-right.panel-primary .cal-cell { background: transparent; box-shadow:none; }
+    .col-right.panel-primary .cal-cell:hover { background: rgba(255,255,255,0.12); }
+    .col-right.panel-primary .cal-cell.has-activity { background: transparent; }
+    .col-right.panel-primary .cal-daynum { color: rgba(255,255,255,0.92); }
+    .col-right.panel-primary .cal-activity-dot { background: #fff; }
+    .col-right.panel-primary .cal-cell.today { background:#fff; border-radius:50%; }
+    .col-right.panel-primary .cal-cell.today .cal-daynum { color: var(--accent-darker); }
+    .col-right.panel-primary .cal-cell.today .cal-activity-dot { background: var(--accent-darker); }
+    .col-right.panel-primary .cal-cell.selected { box-shadow: inset 0 0 0 2px #fff; }
+    .col-right.panel-primary .cal-action-btn { background: rgba(255,255,255,0.2); color:#fff; }
+    .col-right.panel-primary .cal-action-btn:hover { background: rgba(255,255,255,0.32); }
+    .col-right.panel-primary .cal-action-btn.active { background:#fff; color:var(--accent); }
+    .col-right.panel-primary .highlight-btn-dots span { border-color: rgba(255,255,255,0.6); }
+    .col-right.panel-primary .next-alarm-box { border-top-color: rgba(255,255,255,0.25); }
+    .col-right.panel-primary .next-alarm-label { color: rgba(255,255,255,0.75); }
+    .col-right.panel-primary #next-alarm { color:#fff; }
+    .col-right.panel-primary #cal-selected-title { color:#fff; }
   }
 
   #print-area { display:none; }
@@ -529,12 +572,6 @@
       <div id="note-select-bar" class="paint-palette-bar" style="display:none;">
         <div id="note-select-hint" class="paint-palette-hint">Desliza el dedo sobre los dias para tu nota</div>
       </div>
-      <div class="legend">
-        <span><i class="ti ti-cake" style="color:#128C4A;"></i> <span id="legend-birthday">Cumpleanos</span></span>
-        <span><i class="ti ti-users" style="color:#128C4A;"></i> <span id="legend-meeting">Reunion</span></span>
-        <span><i class="ti ti-phone" style="color:#128C4A;"></i> <span id="legend-call">Llamada</span></span>
-        <span><span class="legend-dot"></span><span id="legend-other">Otro</span></span>
-      </div>
       <div id="cal-selected-panel">
         <div id="cal-selected-title"></div>
         <div id="cal-selected-notes" style="display:flex; flex-direction:column; gap:5px;"></div>
@@ -549,6 +586,8 @@
 
   <div class="footer-note" id="footer-note">Tus notas se guardan en este navegador y este dispositivo.</div>
 </div>
+
+<button id="fab-add-note" class="fab-add-note" aria-label="Nueva nota" title="Nueva nota"><i class="ti ti-plus" aria-hidden="true"></i></button>
 
 <div id="image-lightbox"><img id="image-lightbox-img" src="" alt=""></div>
 
@@ -752,10 +791,6 @@
       snooze5: '+5 min',
       remind15: '+15 min',
       dismissAll: 'Apagar del todo',
-      legendBirthday: 'Cumpleanos',
-      legendMeeting: 'Reunion',
-      legendCall: 'Llamada',
-      legendOther: 'Otro',
       nextAlarmLabel: 'Proxima alarma',
       nextAlarmNone: 'No tienes alarmas activas.',
       footerNote: 'Tus notas se guardan en este navegador y este dispositivo.',
@@ -873,10 +908,6 @@
       snooze5: '+5 min',
       remind15: '+15 min',
       dismissAll: 'Turn off completely',
-      legendBirthday: 'Birthday',
-      legendMeeting: 'Meeting',
-      legendCall: 'Call',
-      legendOther: 'Other',
       nextAlarmLabel: 'Next alarm',
       nextAlarmNone: 'You have no active alarms.',
       footerNote: 'Your notes are saved in this browser and device.',
@@ -1116,10 +1147,6 @@
   var nextAlarmLabelEl = document.getElementById('next-alarm-label');
   var footerNoteEl = document.getElementById('footer-note');
   var searchInput = document.getElementById('search-input');
-  var legendBirthdayEl = document.getElementById('legend-birthday');
-  var legendMeetingEl = document.getElementById('legend-meeting');
-  var legendCallEl = document.getElementById('legend-call');
-  var legendOtherEl = document.getElementById('legend-other');
 
   var calTitle = document.getElementById('cal-title');
   var calWeekdays = document.getElementById('cal-weekdays');
@@ -1173,10 +1200,6 @@
     snoozeBtn.textContent = t('snooze5');
     remindLaterBtn.textContent = t('remind15');
     dismissBtn.textContent = t('dismissAll');
-    legendBirthdayEl.textContent = t('legendBirthday');
-    legendMeetingEl.textContent = t('legendMeeting');
-    legendCallEl.textContent = t('legendCall');
-    legendOtherEl.textContent = t('legendOther');
     nextAlarmLabelEl.textContent = t('nextAlarmLabel');
     footerNoteEl.textContent = t('footerNote');
     searchInput.placeholder = t('searchPlaceholder');
@@ -1628,13 +1651,6 @@
     if (/pagar|pago|payment|factura|bill\b/.test(tt)) return 'ti-credit-card';
     if (/doctor|m[eé]dico|cita|appointment|endocrin/.test(tt)) return 'ti-stethoscope';
     if (/viaje|vuelo|flight|trip\b/.test(tt)) return 'ti-plane';
-    return null;
-  }
-  function dayActivityIcon(dayNotes){
-    for (var i = 0; i < dayNotes.length; i++){
-      var icon = pickActivityIcon(dayNotes[i].raw);
-      if (icon) return icon;
-    }
     return null;
   }
 
@@ -3281,6 +3297,24 @@
       var block = document.createElement('div');
       block.className = 'note-block' + (note.hour != null && !note.enabled ? ' disabled' : '');
 
+      var noteIcon = pickActivityIcon(note.raw);
+      if (note.hour != null || noteIcon){
+        var meta = document.createElement('div');
+        meta.className = 'note-meta';
+        if (noteIcon){
+          var metaIcon = document.createElement('i');
+          metaIcon.className = 'ti ' + noteIcon;
+          metaIcon.setAttribute('aria-hidden', 'true');
+          meta.appendChild(metaIcon);
+        }
+        if (note.hour != null){
+          var metaTime = document.createElement('span');
+          metaTime.textContent = formatHM2(note.hour, note.minute);
+          meta.appendChild(metaTime);
+        }
+        block.appendChild(meta);
+      }
+
       var numSpan = document.createElement('span');
       numSpan.className = 'note-number';
       numSpan.textContent = (idx + 1) + '.';
@@ -3378,22 +3412,14 @@
       if (key === dateKey(today)) cell.classList.add('today');
       if (key === selectedDateKey) cell.classList.add('selected');
       var dayNotes = notesForDate(cellDate);
-      var icon = dayNotes.length ? dayActivityIcon(dayNotes) : null;
       if (dayNotes.length) cell.classList.add('has-activity');
       var hColor = highlightColorForDate(cellDate);
       if (hColor) cell.style.background = hColor;
-      if (icon){
-        var iconEl = document.createElement('i');
-        iconEl.className = 'ti ' + icon + ' cal-activity-icon';
-        iconEl.setAttribute('aria-hidden', 'true');
-        cell.appendChild(iconEl);
-      } else {
-        var num = document.createElement('div'); num.className = 'cal-daynum'; num.textContent = day;
-        cell.appendChild(num);
-      }
-      if (dayNotes.length > 1){
-        var countEl = document.createElement('div'); countEl.className = 'cal-count'; countEl.textContent = dayNotes.length;
-        cell.appendChild(countEl);
+      var num = document.createElement('div'); num.className = 'cal-daynum'; num.textContent = day;
+      cell.appendChild(num);
+      if (dayNotes.length){
+        var dot = document.createElement('div'); dot.className = 'cal-activity-dot';
+        cell.appendChild(dot);
       }
       cell.addEventListener('click', function(k){
         return function(){
@@ -3917,6 +3943,12 @@
     var r = panelSwapTrack.getBoundingClientRect();
     vibrate(6);
     setNotesIsMain((e.clientX - r.left) > r.width / 2);
+  });
+
+  document.getElementById('fab-add-note').addEventListener('click', function(){
+    vibrate(8);
+    noteInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    noteInput.focus();
   });
 
   // "cada N horas" fires several times a day, so it needs a real anchor moment to
