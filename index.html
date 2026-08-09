@@ -351,20 +351,19 @@
   @media print {
     @page { margin: 10mm; }
     body * { visibility: hidden; }
-    #print-area, #print-area * { visibility: visible; }
+    #print-area, #print-area * { visibility: visible; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     #print-area { display:block; position:absolute; top:0; left:0; width:100%; margin:0; padding:0; }
 
     .print-page-title { font-size:20px; font-weight:700; color:#1C1C1E; margin-bottom:10px; text-align:center; }
 
     .print-month-wd-row { display:grid; grid-template-columns:repeat(7,1fr); }
     .print-month-wd { font-size:11px; font-weight:700; text-align:center; color:#5F5F63; padding:0 0 4px; }
-    .print-month-grid { display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:2.6cm; border-left:1px solid #ccc; border-top:1px solid #ccc; }
-    .print-month-cell { border-right:1px solid #ccc; border-bottom:1px solid #ccc; padding:3px 4px; overflow:hidden; box-sizing:border-box; }
+    .print-month-grid { display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:minmax(2.6cm, auto); border-left:1px solid #ccc; border-top:1px solid #ccc; }
+    .print-month-cell { border-right:1px solid #ccc; border-bottom:1px solid #ccc; padding:3px 4px; box-sizing:border-box; }
     .print-month-cell.empty { border-color:#eee; }
     .print-month-daynum { font-size:11px; font-weight:700; color:#1C1C1E; margin-bottom:2px; }
     .print-month-cell.is-today .print-month-daynum { color:var(--accent-darker); }
     .print-month-note { font-size:8.5px; line-height:1.35; color:#1C1C1E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .print-month-more { font-size:8px; color:#5F5F63; font-style:italic; }
 
     .print-week-day { padding:8px 0; border-bottom:1px solid #ddd; page-break-inside: avoid; }
     .print-week-day-head { font-size:13px; font-weight:700; color:#1C1C1E; margin-bottom:4px; }
@@ -380,12 +379,12 @@
   <svg class="decor1" viewBox="0 0 200 200" aria-hidden="true">
     <defs>
       <radialGradient id="decorGlow" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="var(--accent-glow)" stop-opacity="0.65"/>
-        <stop offset="70%" stop-color="var(--accent-glow)" stop-opacity="0"/>
+        <stop offset="0%" stop-color="#FFE0A3" stop-opacity="0.65"/>
+        <stop offset="70%" stop-color="#FFE0A3" stop-opacity="0"/>
       </radialGradient>
       <linearGradient id="decorBell" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="var(--accent-light)"/>
-        <stop offset="100%" stop-color="var(--accent)"/>
+        <stop offset="0%" stop-color="#FFC968"/>
+        <stop offset="100%" stop-color="#D98A1F"/>
       </linearGradient>
     </defs>
     <circle cx="100" cy="100" r="95" fill="url(#decorGlow)"/>
@@ -406,15 +405,15 @@
     </g>
     <g transform="translate(100 84) scale(0.32) translate(-256 -150)">
       <path d="M256 96 c-64 0 -104 48 -104 128 v54 c0 22 -10 40 -30 56 h268 c-20 -16 -30 -34 -30 -56 v-54 c0 -80 -40 -128 -104 -128 z"
-            fill="url(#decorBell)" stroke="var(--accent-line)" stroke-width="6" stroke-linejoin="round"/>
-      <circle cx="256" cy="88" r="20" fill="var(--accent)" stroke="var(--accent-line)" stroke-width="6"/>
+            fill="url(#decorBell)" stroke="#A9600F" stroke-width="6" stroke-linejoin="round"/>
+      <circle cx="256" cy="88" r="20" fill="#D98A1F" stroke="#A9600F" stroke-width="6"/>
     </g>
   </svg>
   <div class="header">
     <svg class="header-bell" viewBox="110 55 290 290" aria-hidden="true">
       <path d="M256 96 c-64 0 -104 48 -104 128 v54 c0 22 -10 40 -30 56 h268 c-20 -16 -30 -34 -30 -56 v-54 c0 -80 -40 -128 -104 -128 z"
-            fill="url(#decorBell)" stroke="var(--accent-line)" stroke-width="6" stroke-linejoin="round"/>
-      <circle cx="256" cy="88" r="20" fill="var(--accent)" stroke="var(--accent-line)" stroke-width="6"/>
+            fill="url(#decorBell)" stroke="#A9600F" stroke-width="6" stroke-linejoin="round"/>
+      <circle cx="256" cy="88" r="20" fill="#D98A1F" stroke="#A9600F" stroke-width="6"/>
     </svg>
     <span id="header-title">Nudgy</span>
     <div id="lang-toggle">
@@ -712,7 +711,7 @@
     messagingSenderId: "803567703829",
     appId: "1:803567703829:web:0afcd26967b485062a7b1c"
   };
-  firebase.initializeApp(firebaseConfig);
+  if (window.firebase) { firebase.initializeApp(firebaseConfig); }
 </script>
 <script>
 (function(){
@@ -731,6 +730,12 @@
       saved: 'Guardado ✓',
       saveChanges: 'Guardar cambios',
       cancel: 'Cancelar',
+      storageFullWarning: 'No se pudo guardar: el almacenamiento del navegador esta lleno. Borra fotos de notas viejas o exporta un respaldo y borra algunas notas.',
+      contactNamePlaceholder: 'Nombre (ej. Mama)',
+      contactPhonePlaceholder: 'Numero',
+      contactAddBtn: 'Agregar',
+      noContactsYet: 'No tienes contactos todavia.',
+      deleteContactLabel: 'Borrar contacto',
       empty: 'No tienes notas todavia.',
       ringingSub: 'Si no la apagas del todo, te la recordare cada ' + REMIND_AGAIN_MINUTES + ' min',
       snooze5: '+5 min',
@@ -806,7 +811,6 @@
       printModeMonth: 'Mes completo',
       printModeWeek: 'Por semana',
       printGoBtn: 'Imprimir',
-      printMore: 'mas',
       highlightBtnTitle: 'Pintar fechas',
       highlightHint: 'Desliza para pintar los dias. Toca un dia pintado para borrarlo.',
       noteSelectBtnTitle: 'Empezar nota desde el calendario',
@@ -843,6 +847,12 @@
       saved: 'Saved ✓',
       saveChanges: 'Save changes',
       cancel: 'Cancel',
+      storageFullWarning: "Couldn't save: your browser storage is full. Delete photos from old notes or export a backup and remove some notes.",
+      contactNamePlaceholder: 'Name (e.g. Mom)',
+      contactPhonePlaceholder: 'Number',
+      contactAddBtn: 'Add',
+      noContactsYet: 'No contacts yet.',
+      deleteContactLabel: 'Delete contact',
       empty: "You don't have any notes yet.",
       ringingSub: "If you don't turn it off, I'll remind you every " + REMIND_AGAIN_MINUTES + ' min',
       snooze5: '+5 min',
@@ -918,7 +928,6 @@
       printModeMonth: 'Full month',
       printModeWeek: 'By week',
       printGoBtn: 'Print',
-      printMore: 'more',
       highlightBtnTitle: 'Paint dates',
       highlightHint: 'Drag to paint the days. Tap a painted day to erase it.',
       noteSelectBtnTitle: 'Start a note from the calendar',
@@ -951,6 +960,22 @@
   var currentLang = 'es';
   try { currentLang = localStorage.getItem(LANG_KEY) || 'es'; } catch(e){}
   function t(key){ return T[currentLang][key]; }
+
+  // localStorage.setItem throws when the quota (~5MB, easy to hit with photo
+  // notes) is full. Used only for the writes where silently losing the data
+  // would actually hurt (notes/contacts/highlights) — low-stakes prefs like
+  // language or panel choice still fail silently, that's an acceptable no-op.
+  var storageWarnedThisSession = false;
+  function saveOrWarn(key, value){
+    try { localStorage.setItem(key, value); return true; }
+    catch (e){
+      if (!storageWarnedThisSession){
+        storageWarnedThisSession = true;
+        alert(t('storageFullWarning'));
+      }
+      return false;
+    }
+  }
 
   function vibrate(ms){ try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e){} }
 
@@ -1137,6 +1162,10 @@
     exportBtn.title = t('exportBtnTitle'); exportBtn.setAttribute('aria-label', t('exportBtnTitle'));
     importBtn.title = t('importBtnTitle'); importBtn.setAttribute('aria-label', t('importBtnTitle'));
     contactsBtn.title = t('contactsBtnTitle'); contactsBtn.setAttribute('aria-label', t('contactsBtnTitle'));
+    contactNameInput.placeholder = t('contactNamePlaceholder');
+    contactPhoneInput.placeholder = t('contactPhonePlaceholder');
+    contactAddBtn.textContent = t('contactAddBtn');
+    if (contactsPanel.style.display === 'block') renderContacts();
     photoBtn.title = t('photoBtnTitle'); photoBtn.setAttribute('aria-label', t('photoBtnTitle'));
     scanBtn.title = t('scanBtnTitle'); scanBtn.setAttribute('aria-label', t('scanBtnTitle'));
     datecalcBtn.title = t('datecalcBtnTitle'); datecalcBtn.setAttribute('aria-label', t('datecalcBtnTitle'));
@@ -1170,7 +1199,7 @@
   var contactAddBtn = document.getElementById('contact-add-btn');
 
   function saveContacts(){
-    try { localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts)); } catch(e){}
+    saveOrWarn(CONTACTS_KEY, JSON.stringify(contacts));
     if (currentUser && !applyingRemoteSnapshot) scheduleContactsSync();
   }
   function loadContacts(){
@@ -1186,7 +1215,7 @@
     if (!contacts.length){
       var none = document.createElement('div');
       none.style.cssText = 'font-size:12px; color:#5B7B94;';
-      none.textContent = currentLang === 'en' ? 'No contacts yet.' : 'No tienes contactos todavia.';
+      none.textContent = t('noContactsYet');
       contactsList.appendChild(none);
       return;
     }
@@ -1198,7 +1227,7 @@
       row.appendChild(label);
       var delBtn = document.createElement('button');
       delBtn.innerHTML = '<i class="ti ti-trash" aria-hidden="true"></i>';
-      delBtn.setAttribute('aria-label', 'Delete contact');
+      delBtn.setAttribute('aria-label', t('deleteContactLabel'));
       delBtn.addEventListener('click', function(){
         contacts = contacts.filter(function(x){ return x.id !== c.id; });
         saveContacts(); renderContacts(); renderAll();
@@ -1335,7 +1364,7 @@
     return notes.map(serializeOneNote);
   }
   function saveToStorage(){
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeNotes())); } catch(e){}
+    saveOrWarn(STORAGE_KEY, JSON.stringify(serializeNotes()));
     if (currentUser && !applyingRemoteSnapshot) scheduleNotesSync();
   }
   function loadFromStorage(){
@@ -1707,9 +1736,17 @@
   }
   function resolveBareDay(day){
     var now = new Date();
-    var candidate = new Date(now.getFullYear(), now.getMonth(), day);
+    // A day number can overflow past the end of a short month (e.g. day 30 built
+    // into a February Date) — JS silently rolls that into March instead of
+    // clamping, so each candidate month's real day count is capped explicitly.
+    var daysInThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    var candidate = new Date(now.getFullYear(), now.getMonth(), Math.min(day, daysInThisMonth));
     var todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    if (candidate < todayOnly) candidate.setMonth(candidate.getMonth() + 1);
+    if (candidate < todayOnly) {
+      var nextMonth = now.getMonth() + 1;
+      var daysInNextMonth = new Date(now.getFullYear(), nextMonth + 1, 0).getDate();
+      candidate = new Date(now.getFullYear(), nextMonth, Math.min(day, daysInNextMonth));
+    }
     return candidate;
   }
   function extractWeekdayRange(text){
@@ -2101,7 +2138,7 @@
   function nextOccurrence(note){
     if (note.hour == null || !note.enabled) return null;
     var now = new Date();
-    if (!note.recurring) return note.target;
+    if (!note.recurring) return (note.target && note.target > now) ? note.target : null;
     var until = note.recurring.until ? new Date(note.recurring.until) : null;
     var result = null;
     if (note.recurring.type === 'daily'){
@@ -2702,6 +2739,7 @@
   scanCloseBtn1.addEventListener('click', scanCloseModal);
   scanCloseBtn2.addEventListener('click', scanCloseModal);
   scanCloseBtn3.addEventListener('click', scanCloseModal);
+  scanModal.addEventListener('click', function(e){ if (e.target === scanModal) scanCloseModal(); });
 
   function scanGetGray(imgData, x, y){
     x = Math.max(0, Math.min(imgData.width - 1, Math.round(x)));
@@ -2956,7 +2994,7 @@
     if (tesseractLoadPromise) return tesseractLoadPromise;
     tesseractLoadPromise = new Promise(function(resolve, reject){
       var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
       s.onload = function(){ resolve(); };
       s.onerror = function(){ reject(new Error('load-failed')); };
       document.head.appendChild(s);
@@ -3092,6 +3130,11 @@
     updateParsePreview();
     clearPendingImage();
   }
+  // Tapping Cancel blurs the textarea before its own click fires, and the blur
+  // handler below autosaves in-progress edits — without this flag, Cancel would
+  // trigger that autosave first and commit the exact edit it's meant to discard.
+  var cancellingEdit = false;
+  cancelEditBtn.addEventListener('pointerdown', function(){ cancellingEdit = true; });
   cancelEditBtn.addEventListener('click', exitEditMode);
 
   function renderNotes(){
@@ -3132,7 +3175,11 @@
       var actions = document.createElement('div');
       actions.className = 'note-block-actions';
 
-      var hasAlarmCapability = note.hour != null || (note.recurring && (note.recurring.type === 'yearly' || note.recurring.type === 'everyNYears' || note.recurring.type === 'everyNMonths'));
+      // A note with no hour (e.g. a dateless birthday, anchored yearly with no
+      // time set) can never actually ring — see the `note.hour == null` guard in
+      // the ticking loop below — so the bell toggle is hidden rather than shown
+      // as a control that looks real but does nothing.
+      var hasAlarmCapability = note.hour != null;
       if (hasAlarmCapability){
         var bellBtn = document.createElement('button');
         bellBtn.className = 'icon-btn ' + (note.enabled ? 'bell-on' : 'bell-off');
@@ -3326,7 +3373,6 @@
     var startOffset = firstDay.getDay();
     var daysInMonth = new Date(year, month + 1, 0).getDate();
     var todayKey = dateKey(today);
-    var maxLines = 3;
     for (var i = 0; i < startOffset; i++){
       var blank = document.createElement('div'); blank.className = 'print-month-cell empty';
       grid.appendChild(blank);
@@ -3340,18 +3386,13 @@
       var num = document.createElement('div'); num.className = 'print-month-daynum'; num.textContent = day;
       cell.appendChild(num);
       var dayNotes = printSortDayNotes(notesForDate(cellDate));
-      dayNotes.slice(0, maxLines).forEach(function(n){
+      dayNotes.forEach(function(n){
         var line = document.createElement('div');
         line.className = 'print-month-note';
         var prefix = n.hour != null ? (formatHM2(n.hour, n.minute) + ' ') : '';
         line.textContent = prefix + n.raw;
         cell.appendChild(line);
       });
-      if (dayNotes.length > maxLines){
-        var more = document.createElement('div'); more.className = 'print-month-more';
-        more.textContent = '+' + (dayNotes.length - maxLines) + ' ' + t('printMore');
-        cell.appendChild(more);
-      }
       grid.appendChild(cell);
     }
     var totalCells = startOffset + daysInMonth;
@@ -3478,7 +3519,7 @@
     } catch(e){}
   }
   function saveHighlights(){
-    try { localStorage.setItem(HIGHLIGHTS_KEY, JSON.stringify(highlights)); } catch(e){}
+    saveOrWarn(HIGHLIGHTS_KEY, JSON.stringify(highlights));
   }
   function highlightColorForDate(d){
     return highlights[dateKey(d)] || null;
@@ -3492,7 +3533,7 @@
     } catch(e){}
   }
   function saveNoteHighlightMap(){
-    try { localStorage.setItem(NOTE_HIGHLIGHT_MAP_KEY, JSON.stringify(noteHighlightMap)); } catch(e){}
+    saveOrWarn(NOTE_HIGHLIGHT_MAP_KEY, JSON.stringify(noteHighlightMap));
   }
   function detachDayFromNotes(key){
     Object.keys(noteHighlightMap).forEach(function(nid){
@@ -3836,6 +3877,7 @@
     updateParsePreview();
   });
   noteInput.addEventListener('blur', function(){
+    if (cancellingEdit) { cancellingEdit = false; return; }
     var value = noteInput.value.trim();
     if (!value) return;
     if (editingId != null){ saveEditedNote(value); exitEditMode(); }
@@ -3880,17 +3922,28 @@
   });
   remindLaterBtn.addEventListener('click', function(){
     vibrate(10);
-    if (currentRinging && !currentRinging.recurring && currentRinging.hour != null){
+    if (currentRinging && currentRinging.hour != null){
       var t2 = new Date(); t2.setMinutes(t2.getMinutes() + REMIND_AGAIN_MINUTES);
-      currentRinging.target = t2; currentRinging.hour = t2.getHours(); currentRinging.minute = t2.getMinutes(); currentRinging.firedKey = null;
+      if (currentRinging.recurring){
+        // Recurring notes keep hour/minute as their permanent daily schedule —
+        // overwriting them would push every future occurrence later, not just
+        // today's. A separate snoozeUntil re-rings this one time without touching it.
+        currentRinging.snoozeUntil = t2;
+      } else {
+        currentRinging.target = t2; currentRinging.hour = t2.getHours(); currentRinging.minute = t2.getMinutes(); currentRinging.firedKey = null;
+      }
     }
     stopRinging(); renderAll();
   });
   snoozeBtn.addEventListener('click', function(){
     vibrate(10);
-    if (currentRinging && !currentRinging.recurring){
+    if (currentRinging){
       var t3 = new Date(); t3.setMinutes(t3.getMinutes() + 5);
-      currentRinging.target = t3; currentRinging.hour = t3.getHours(); currentRinging.minute = t3.getMinutes(); currentRinging.firedKey = null;
+      if (currentRinging.recurring){
+        currentRinging.snoozeUntil = t3;
+      } else {
+        currentRinging.target = t3; currentRinging.hour = t3.getHours(); currentRinging.minute = t3.getMinutes(); currentRinging.firedKey = null;
+      }
     }
     stopRinging(); renderAll();
   });
@@ -3902,6 +3955,17 @@
       if (note.hour == null || !note.enabled) return;
       if (note === currentRinging) return;
       if (ringQueue.indexOf(note) !== -1) return;
+
+      // A recurring note that was snoozed rings once more here, independent of
+      // its normal daily/yearly schedule, then clears the snooze without
+      // touching firedKey — today's regular occurrence bookkeeping is untouched.
+      if (note.snoozeUntil){
+        if (now >= new Date(note.snoozeUntil)){
+          note.snoozeUntil = null;
+          if (currentRinging) ringQueue.push(note); else startRinging(note);
+        }
+        return;
+      }
 
       // "cada N horas" can fire several times in one day, so it needs its own
       // per-occurrence dedup key instead of the once-a-day `todayKey`.
@@ -3937,6 +4001,18 @@
     renderNextAlarm();
   }, 1000);
 
+  // Escape closes whichever overlay is currently open. Checked in a fixed order
+  // since only one of these is ever visible at a time in normal use.
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Escape') return;
+    if (imageLightbox.style.display !== 'none'){ imageLightbox.style.display = 'none'; imageLightboxImg.src = ''; return; }
+    if (upcomingModal.style.display !== 'none'){ upcomingCloseModal(); return; }
+    if (scanModal.style.display !== 'none'){ scanCloseModal(); return; }
+    if (datecalcModal.style.display !== 'none'){ datecalcCloseModal(); return; }
+    if (receiptModal.style.display !== 'none'){ receiptCloseModal(); return; }
+    if (printModal.style.display !== 'none'){ printCloseModal(); return; }
+  });
+
   // ---------- Init ----------
   loadFromStorage();
   loadContacts();
@@ -3967,15 +4043,13 @@
       var note = notes.find(function(n){ return n.id === id; });
       if (!note) return;
       if (data.action === 'snooze5'){
-        if (!note.recurring){
-          var ts = new Date(); ts.setMinutes(ts.getMinutes() + 5);
-          note.target = ts; note.hour = ts.getHours(); note.minute = ts.getMinutes(); note.firedKey = null;
-        }
+        var ts = new Date(); ts.setMinutes(ts.getMinutes() + 5);
+        if (note.recurring){ note.snoozeUntil = ts; }
+        else { note.target = ts; note.hour = ts.getHours(); note.minute = ts.getMinutes(); note.firedKey = null; }
       } else if (data.action === 'remind15'){
-        if (!note.recurring && note.hour != null){
-          var tr = new Date(); tr.setMinutes(tr.getMinutes() + REMIND_AGAIN_MINUTES);
-          note.target = tr; note.hour = tr.getHours(); note.minute = tr.getMinutes(); note.firedKey = null;
-        }
+        var tr = new Date(); tr.setMinutes(tr.getMinutes() + REMIND_AGAIN_MINUTES);
+        if (note.recurring){ note.snoozeUntil = tr; }
+        else { note.target = tr; note.hour = tr.getHours(); note.minute = tr.getMinutes(); note.firedKey = null; }
       } else {
         note.enabled = false;
       }
@@ -3988,7 +4062,12 @@
   var importFileInput = document.getElementById('import-file-input');
 
   exportBtn.addEventListener('click', function(){
-    var data = JSON.stringify(serializeNotes(), null, 2);
+    var data = JSON.stringify({
+      notes: serializeNotes(),
+      contacts: contacts,
+      highlights: highlights,
+      noteHighlightMap: noteHighlightMap
+    }, null, 2);
     var blob = new Blob([data], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
@@ -4008,8 +4087,22 @@
     var reader = new FileReader();
     reader.onload = function(ev){
       try {
-        var arr = JSON.parse(ev.target.result);
-        arr.forEach(function(n){
+        var parsed = JSON.parse(ev.target.result);
+        // Backups from before contacts/highlights were included are a bare
+        // array of notes — still accepted so old backup files keep working.
+        var importedNotes = Array.isArray(parsed) ? parsed : (parsed.notes || []);
+
+        // Re-importing the same file (or one that overlaps an existing backup)
+        // used to duplicate every note — dedup by text+creation time, the
+        // closest thing to a stable identity a note actually has.
+        var existingNoteKeys = {};
+        notes.forEach(function(n){
+          existingNoteKeys[n.raw + '|' + (n.createdAt ? n.createdAt.getTime() : '')] = true;
+        });
+        importedNotes.forEach(function(n){
+          var key = n.raw + '|' + (n.createdAt ? new Date(n.createdAt).getTime() : '');
+          if (existingNoteKeys[key]) return;
+          existingNoteKeys[key] = true;
           notes.push({
             id: idCounter++,
             raw: n.raw,
@@ -4021,9 +4114,32 @@
             createdAt: n.createdAt ? new Date(n.createdAt) : new Date(),
             enabled: n.enabled !== false,
             firedKey: null,
-            image: n.image || null
+            image: n.image || null,
+            checklistDone: n.checklistDone || {}
           });
         });
+
+        if (!Array.isArray(parsed)){
+          if (Array.isArray(parsed.contacts)){
+            var existingPhones = {};
+            contacts.forEach(function(c){ existingPhones[c.phone] = true; });
+            parsed.contacts.forEach(function(c){
+              if (c.phone && existingPhones[c.phone]) return;
+              if (c.phone) existingPhones[c.phone] = true;
+              contacts.push({ id: contactIdCounter++, name: c.name, phone: c.phone });
+            });
+            saveContacts();
+          }
+          if (parsed.highlights){
+            for (var hk in parsed.highlights){ if (!(hk in highlights)) highlights[hk] = parsed.highlights[hk]; }
+            saveHighlights();
+          }
+          if (parsed.noteHighlightMap){
+            for (var mk in parsed.noteHighlightMap){ if (!(mk in noteHighlightMap)) noteHighlightMap[mk] = parsed.noteHighlightMap[mk]; }
+            saveNoteHighlightMap();
+          }
+        }
+
         renderAll();
         flashSaved();
         vibrate(20);
