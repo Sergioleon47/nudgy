@@ -210,6 +210,8 @@
   #receipt-photo-preview { display:block; width:100%; max-height:160px; object-fit:cover; border-radius:12px; margin-bottom:16px; }
   #receipt-processing-bar-wrap { width:100%; height:6px; border-radius:3px; background:#F2F2F7; margin-top:16px; overflow:hidden; }
   #receipt-processing-bar { width:30%; height:100%; background:var(--accent); border-radius:3px; animation: receipt-progress 1.2s ease-in-out infinite; }
+  #scan-ocr-bar-wrap { width:100%; height:6px; border-radius:3px; background:#F2F2F7; margin-top:16px; overflow:hidden; }
+  #scan-ocr-bar { width:30%; height:100%; background:var(--accent); border-radius:3px; animation: receipt-progress 1.2s ease-in-out infinite; }
   @keyframes receipt-progress { 0%{transform:translateX(-100%);} 100%{transform:translateX(333%);} }
   .contact-row { display:flex; align-items:center; justify-content:space-between; font-size:13px; color:#1C1C1E; background:#F2F2F7; padding:7px 10px; border-radius:9px; }
   .highlight-palette { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
@@ -584,6 +586,15 @@
       <button id="scan-create-btn" class="sky-btn primary">Crear notas</button>
     </div>
 
+    <div id="scan-step-ocr" class="scan-step" style="display:none;">
+      <div class="scan-modal-header">
+        <span id="scan-title-ocr">Leyendo tu letra...</span>
+        <button id="scan-close-btn-ocr" class="icon-btn" aria-label="Cerrar"><i class="ti ti-x" aria-hidden="true"></i></button>
+      </div>
+      <div id="scan-ocr-hint" class="scan-hint">Esto puede tardar unos segundos.</div>
+      <div id="scan-ocr-bar-wrap"><div id="scan-ocr-bar"></div></div>
+    </div>
+
     <div id="scan-step-wizard" class="scan-step" style="display:none;">
       <div class="scan-modal-header">
         <span id="scan-wizard-progress"></span>
@@ -782,6 +793,8 @@
       scanDetectBtn: 'Detectar marcas',
       scanReviewHint: 'Marca los dias que tienen algo escrito. Puedes corregir lo que la app detecto.',
       scanCreateBtn: 'Crear notas',
+      scanTitleOcr: 'Leyendo tu letra...',
+      scanOcrHint: 'Esto puede tardar unos segundos. Despues vas a poder corregir lo que se leyo en cada dia.',
       scanWizardPlaceholder: 'Que anotaste ese dia?',
       scanWizardSkip: 'Omitir',
       scanWizardNext: 'Guardar y siguiente',
@@ -899,6 +912,8 @@
       scanDetectBtn: 'Detect marks',
       scanReviewHint: 'Check the days that have something written. You can correct what the app detected.',
       scanCreateBtn: 'Create notes',
+      scanTitleOcr: 'Reading your handwriting...',
+      scanOcrHint: 'This can take a few seconds. Afterward you can correct what was read for each day.',
       scanWizardPlaceholder: 'What did you write that day?',
       scanWizardSkip: 'Skip',
       scanWizardNext: 'Save and next',
@@ -1037,7 +1052,11 @@
   var scanModal = document.getElementById('scan-modal');
   var scanStepSetup = document.getElementById('scan-step-setup');
   var scanStepReview = document.getElementById('scan-step-review');
+  var scanStepOcr = document.getElementById('scan-step-ocr');
   var scanStepWizard = document.getElementById('scan-step-wizard');
+  var scanTitleOcr = document.getElementById('scan-title-ocr');
+  var scanOcrHint = document.getElementById('scan-ocr-hint');
+  var scanCloseBtnOcr = document.getElementById('scan-close-btn-ocr');
   var scanMonthSelect = document.getElementById('scan-month-select');
   var scanYearSelect = document.getElementById('scan-year-select');
   var scanCanvasWrap = document.getElementById('scan-canvas-wrap');
@@ -1070,6 +1089,8 @@
   var scanWizardQueue = [];
   var scanWizardIndex = 0;
   var scanWizardCurrentDate = null;
+  var scanOcrTextByDay = {};
+  var scanOcrAborted = false;
   var addBtn = document.getElementById('add-btn');
   var cancelEditBtn = document.getElementById('cancel-edit-btn');
   var savedFlash = document.getElementById('saved-flash');
@@ -2689,6 +2710,7 @@
   function scanShowStep(n){
     scanStepSetup.style.display = n === 1 ? 'block' : 'none';
     scanStepReview.style.display = n === 2 ? 'block' : 'none';
+    scanStepOcr.style.display = n === 2.5 ? 'block' : 'none';
     scanStepWizard.style.display = n === 3 ? 'block' : 'none';
   }
   function scanApplyLanguage(){
@@ -2698,6 +2720,8 @@
     scanDetectBtn.textContent = t('scanDetectBtn');
     scanReviewHintEl.textContent = t('scanReviewHint');
     scanCreateBtn.textContent = t('scanCreateBtn');
+    scanTitleOcr.textContent = t('scanTitleOcr');
+    scanOcrHint.textContent = t('scanOcrHint');
     scanWizardInput.placeholder = t('scanWizardPlaceholder');
     scanWizardSkipBtn.textContent = t('scanWizardSkip');
     scanWizardNextBtn.textContent = t('scanWizardNext');
@@ -2739,6 +2763,7 @@
   scanCloseBtn1.addEventListener('click', scanCloseModal);
   scanCloseBtn2.addEventListener('click', scanCloseModal);
   scanCloseBtn3.addEventListener('click', scanCloseModal);
+  scanCloseBtnOcr.addEventListener('click', function(){ scanOcrAborted = true; scanCloseModal(); });
   scanModal.addEventListener('click', function(e){ if (e.target === scanModal) scanCloseModal(); });
 
   function scanGetGray(imgData, x, y){
@@ -2746,6 +2771,103 @@
     y = Math.max(0, Math.min(imgData.height - 1, Math.round(y)));
     var idx = (y * imgData.width + x) * 4;
     return 0.299 * imgData.data[idx] + 0.587 * imgData.data[idx + 1] + 0.114 * imgData.data[idx + 2];
+  }
+  function scanBilinearColorSample(imgData, x, y){
+    var w = imgData.width, h = imgData.height;
+    var x0 = Math.max(0, Math.min(w - 1, Math.floor(x)));
+    var y0 = Math.max(0, Math.min(h - 1, Math.floor(y)));
+    var x1 = Math.min(w - 1, x0 + 1), y1 = Math.min(h - 1, y0 + 1);
+    var fx = Math.max(0, Math.min(1, x - x0)), fy = Math.max(0, Math.min(1, y - y0));
+    function px(xx, yy){ var i = (yy * w + xx) * 4; return [imgData.data[i], imgData.data[i+1], imgData.data[i+2]]; }
+    var c00 = px(x0,y0), c10 = px(x1,y0), c01 = px(x0,y1), c11 = px(x1,y1);
+    var out = [0,0,0];
+    for (var k = 0; k < 3; k++){
+      var top = c00[k] * (1-fx) + c10[k] * fx;
+      var bot = c01[k] * (1-fx) + c11[k] * fx;
+      out[k] = top * (1-fy) + bot * fy;
+    }
+    return out;
+  }
+  // "Endereza" la foto entera de la cuadricula (perspectiva corregida con las mismas 4
+  // esquinas que ajusto el usuario) en un canvas rectangular, para poder recortar cada
+  // dia como un rectangulo simple despues, en vez de lidiar con la inclinacion de la foto.
+  function scanRectifyGrid(){
+    var info = scanDetectedInfo;
+    var srcCanvas = document.createElement('canvas');
+    var maxDim = 1600;
+    var scale = Math.min(1, maxDim / Math.max(scanImageNaturalW, scanImageNaturalH));
+    srcCanvas.width = Math.round(scanImageNaturalW * scale);
+    srcCanvas.height = Math.round(scanImageNaturalH * scale);
+    var sctx = srcCanvas.getContext('2d');
+    sctx.drawImage(scanPhotoImg, 0, 0, srcCanvas.width, srcCanvas.height);
+    var srcData = sctx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
+
+    var cellW = 140, cellH = 100;
+    var outCanvas = document.createElement('canvas');
+    outCanvas.width = cellW * 7;
+    outCanvas.height = cellH * info.rows;
+    var octx = outCanvas.getContext('2d');
+    var outData = octx.createImageData(outCanvas.width, outCanvas.height);
+    for (var oy = 0; oy < outCanvas.height; oy++){
+      var v = oy / outCanvas.height;
+      for (var ox = 0; ox < outCanvas.width; ox++){
+        var u = ox / outCanvas.width;
+        var frac = scanBilinear(scanCorners, u, v);
+        var rgb = scanBilinearColorSample(srcData, frac.x * srcCanvas.width, frac.y * srcCanvas.height);
+        var di = (oy * outCanvas.width + ox) * 4;
+        outData.data[di] = rgb[0]; outData.data[di+1] = rgb[1]; outData.data[di+2] = rgb[2]; outData.data[di+3] = 255;
+      }
+    }
+    octx.putImageData(outData, 0, 0);
+    return { canvas: outCanvas, cellW: cellW, cellH: cellH, info: info };
+  }
+  function scanCropCellImage(rectified, day){
+    var info = rectified.info;
+    var idx = day - 1 + info.startOffset;
+    var r = Math.floor(idx / 7), c = idx % 7;
+    var cw = rectified.cellW, ch = rectified.cellH;
+    var out = document.createElement('canvas');
+    out.width = cw; out.height = ch;
+    out.getContext('2d').drawImage(rectified.canvas, c * cw, r * ch, cw, ch, 0, 0, cw, ch);
+    return out.toDataURL('image/jpeg', 0.85);
+  }
+  // Le manda a la Netlify Function las celdas de los dias marcados para que Claude lea
+  // la letra a mano de cada una. Si algo falla (sin internet, error del servidor), sigue
+  // igual al asistente manual de siempre, solo que sin el texto pre-llenado.
+  function scanRunCalendarOcr(){
+    scanOcrAborted = false;
+    scanShowStep(2.5);
+    var rectified;
+    try{
+      rectified = scanRectifyGrid();
+    }catch(e){
+      scanShowStep(3); scanAdvanceWizard(); return;
+    }
+    var info = scanDetectedInfo;
+    var cells = scanWizardQueue.map(function(day){
+      var dataUrl = scanCropCellImage(rectified, day);
+      return { day: day, base64: dataUrl.split(',')[1], mediaType: 'image/jpeg' };
+    });
+    fetch('/.netlify/functions/extract-calendar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cells: cells, month: t('months')[info.month], year: info.year })
+    }).then(function(res){ return res.json(); }).then(function(data){
+      if (scanOcrAborted) return;
+      if (data && Array.isArray(data.items)){
+        data.items.forEach(function(it){
+          if (it && typeof it.day === 'number' && typeof it.text === 'string' && it.text.trim()){
+            scanOcrTextByDay[it.day] = it.text.trim();
+          }
+        });
+      }
+      scanShowStep(3);
+      scanAdvanceWizard();
+    }).catch(function(){
+      if (scanOcrAborted) return;
+      scanShowStep(3);
+      scanAdvanceWizard();
+    });
   }
   function scanRunDetection(){
     var info = scanGridInfo();
@@ -2867,15 +2989,16 @@
     scanWizardCurrentDate = new Date(info.year, info.month, day);
     scanWizardDate.textContent = t('months')[info.month] + ' ' + day + ', ' + info.year;
     scanWizardProgress.textContent = (scanWizardIndex + 1) + ' / ' + scanWizardQueue.length;
-    scanWizardInput.value = '';
+    scanWizardInput.value = scanOcrTextByDay[day] || '';
     scanWizardInput.focus();
+    if (scanWizardInput.value) scanWizardInput.select();
   }
   scanCreateBtn.addEventListener('click', function(){
     scanWizardQueue = scanReviewDays.filter(function(d){ return d.checked; }).map(function(d){ return d.day; });
     scanWizardIndex = 0;
+    scanOcrTextByDay = {};
     if (!scanWizardQueue.length){ scanCloseModal(); return; }
-    scanShowStep(3);
-    scanAdvanceWizard();
+    scanRunCalendarOcr();
   });
   scanWizardNextBtn.addEventListener('click', function(){
     var text = scanWizardInput.value.trim();
