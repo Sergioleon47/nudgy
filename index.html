@@ -775,6 +775,8 @@
       unitHour: 'hora',
       unitMonths: 'meses',
       unitMonth: 'mes',
+      unitYear: 'ano',
+      unitYears: 'anos',
       exportIcsTitle: 'Agregar al calendario (.ics)',
       editLabel: 'Editar',
       deleteLabel: 'Eliminar',
@@ -894,6 +896,8 @@
       unitHour: 'hour',
       unitMonths: 'months',
       unitMonth: 'month',
+      unitYear: 'year',
+      unitYears: 'years',
       exportIcsTitle: 'Add to calendar (.ics)',
       editLabel: 'Edit',
       deleteLabel: 'Delete',
@@ -1848,10 +1852,14 @@
   function extractEveryNYears(text){
     var m = text.match(new RegExp('\\bcada\\s+(' + NUM_TOKEN_SRC + ')\\s*a[ñn]os\\b', 'i')) ||
             text.match(new RegExp('\\bevery\\s+(' + NUM_TOKEN_SRC + ')\\s*years\\b', 'i'));
-    if (!m) return null;
-    var n = parseNumberToken(m[1]);
-    if (n == null || n < 2) return null;
-    return { match: m[0], n: n };
+    if (m){
+      var n = parseNumberToken(m[1]);
+      if (n == null || n < 2) return null;
+      return { match: m[0], n: n };
+    }
+    var m2 = text.match(/\bcada\s+a[ñn]o\b/i) || text.match(/\bevery\s+year\b/i);
+    if (m2) return { match: m2[0], n: 1 };
+    return null;
   }
   // "cada mes" / "cada 2 meses" / "cada dos meses" / "every month" / "every 2 months" —
   // monthly recurrence, for bills and check-ins that repeat once a month (rent, credit
@@ -2544,7 +2552,7 @@
         var names = r.weekdays.map(function(w){ return t('days')[w]; }).join(', ');
         base = t('previewWeekly') + ' ' + names;
       } else if (r.type === 'everyNDays') base = t('previewEveryNDays') + ' ' + r.n + ' ' + t('datecalcUnitDays');
-      else if (r.type === 'everyNYears') base = t('previewEveryNYears') + ' ' + r.n + ' ' + t('datecalcUnitYears');
+      else if (r.type === 'everyNYears') base = t('previewEveryNYears') + ' ' + r.n + ' ' + (r.n === 1 ? t('unitYear') : t('unitYears'));
       else if (r.type === 'everyNMonths') base = t('previewEveryNMonths') + ' ' + r.n + ' ' + (r.n === 1 ? t('unitMonth') : t('unitMonths'));
       else if (r.type === 'everyNHours') base = t('previewEveryNHours') + ' ' + r.n + ' ' + (r.n === 1 ? t('unitHour') : t('unitHours'));
       if (base == null) return null;
@@ -2561,7 +2569,7 @@
   function updateParsePreview(){
     var text = buildParsePreviewText(noteInput.value);
     if (text){ parsePreviewText.textContent = text; parsePreview.style.display = 'flex'; }
-    else parsePreview.style.display = 'none';
+    else { parsePreviewText.textContent = ''; parsePreview.style.display = 'none'; }
   }
 
   // ---------- Photo attachment ----------
