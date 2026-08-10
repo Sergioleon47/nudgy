@@ -83,7 +83,7 @@
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
   }
   #contacts-btn.open { background:var(--accent); color:white; }
-  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn, #upcoming-btn, #timeformat-btn, #auth-btn {
+  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn, #upcoming-btn, #timeformat-btn, #household-btn, #auth-btn {
     background: #F2F2F7; border: none; color: #274257;
     width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px;
@@ -97,6 +97,14 @@
   .upcoming-badge.visible { display:flex; }
   #auth-btn.synced { color: #2FA360; background:#E7F7EE; }
   #timeformat-btn.active { color: var(--accent); background:var(--accent-soft); }
+  #household-btn.active { color: #2FA360; background:#E7F7EE; }
+  .household-code { font-size:28px; font-weight:800; letter-spacing:4px; text-align:center; color:var(--accent-darker); background:var(--accent-soft); border-radius:12px; padding:14px 8px; margin-bottom:6px; }
+  .household-hint { font-size:12px; color:#5F5F63; text-align:center; margin-bottom:16px; }
+  .household-members { display:flex; flex-direction:column; gap:6px; margin-bottom:18px; }
+  .household-member-row { display:flex; align-items:center; gap:8px; font-size:13px; color:#1C1C1E; background:#F2F2F7; padding:7px 10px; border-radius:9px; }
+  .household-member-row i { font-size:13px; color:var(--accent); }
+  .household-join-row { display:flex; gap:6px; margin-top:10px; }
+  #household-join-input { flex:1; font-size:15px; letter-spacing:2px; text-transform:uppercase; text-align:center; padding:8px 9px; border-radius:9px; border:none; background:#F2F2F7; color:#1C1C1E; font-family:inherit; }
   #auth-btn.loading { opacity:0.5; pointer-events:none; }
     #darkmode-btn {
     background: #F2F2F7; border: none; color: #274257;
@@ -201,7 +209,7 @@
   .upcoming-item-text { flex:1; color:#1C1C1E; white-space:pre-wrap; word-break:break-word; }
   .upcoming-item-icon { font-size:14px; color:#2FA360; flex-shrink:0; padding-top:1px; }
 
-  #print-modal, #upcoming-modal {
+  #print-modal, #upcoming-modal, #household-modal {
     display:none; position:fixed; inset:0; background:rgba(20,40,55,0.55); z-index:1000;
     align-items:center; justify-content:center; padding:16px;
   }
@@ -287,6 +295,8 @@
   .note-block.disabled { opacity:.4; }
   .note-number { font-size:12px; font-weight:700; color:var(--accent); margin-right:6px; }
   .note-meta { display:none; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--accent-darker); margin-bottom:4px; }
+  .note-author-badge { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:700; color:var(--accent-darker); background:var(--accent-soft); border-radius:8px; padding:2px 7px; margin-right:6px; vertical-align:middle; }
+  .note-author-badge i { font-size:10px; }
   .note-body-checklist { display:block; margin-top:6px; }
   .checklist-row { display:flex; align-items:flex-start; gap:8px; padding:3px 0; }
   .checklist-box {
@@ -662,6 +672,7 @@
           <input type="file" id="receipt-file-input" accept="image/*" style="display:none">
           <button id="upcoming-btn" aria-label="Proximas alarmas" title="Proximas alarmas"><i class="ti ti-bell-ringing" aria-hidden="true"></i><span id="upcoming-badge" class="upcoming-badge"></span></button>
           <button id="timeformat-btn" aria-label="Cambiar a formato 24 horas" title="Cambiar a formato 24 horas"><i class="ti ti-clock" aria-hidden="true"></i></button>
+          <button id="household-btn" aria-label="Hogar compartido" title="Hogar compartido"><i class="ti ti-users" aria-hidden="true"></i></button>
           <button id="auth-btn" aria-label="Iniciar sesion para sincronizar" title="Iniciar sesion para sincronizar"><i class="ti ti-cloud" aria-hidden="true"></i></button>
         </div>
       </div>
@@ -913,6 +924,33 @@
   </div>
 </div>
 
+<div id="household-modal" role="dialog" aria-modal="true" aria-labelledby="household-title">
+  <div class="datecalc-modal-inner">
+    <div class="scan-modal-header">
+      <span id="household-title">Hogar compartido</span>
+      <button id="household-close-btn" class="icon-btn" aria-label="Cerrar"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </div>
+
+    <div id="household-signed-out-msg" class="household-hint" style="display:none;">Inicia sesion primero para usar un hogar compartido.</div>
+
+    <div id="household-state-none" style="display:none;">
+      <div class="household-hint" id="household-intro-text">Un hogar compartido junta las notas de todos sus miembros en un solo calendario. Cada nota muestra quien la escribio.</div>
+      <button id="household-create-btn" class="sky-btn primary" style="width:100%;">Crear hogar</button>
+      <div class="household-join-row">
+        <input type="text" id="household-join-input" maxlength="6" placeholder="CODIGO">
+        <button id="household-join-btn" class="sky-btn">Unirme</button>
+      </div>
+    </div>
+
+    <div id="household-state-active" style="display:none;">
+      <div id="household-code-display" class="household-code"></div>
+      <div class="household-hint" id="household-share-hint">Comparti este codigo para que otros se unan a tu hogar.</div>
+      <div id="household-members-list" class="household-members"></div>
+      <button id="household-leave-btn" class="sky-btn danger" style="width:100%;">Salir del hogar</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // Firebase (~200KB+ across the 3 SDKs) is loaded lazily, only once the user
   // actually taps the cloud-sync button — everything above works fully
@@ -1017,6 +1055,21 @@
       datecalcTitle: 'Calculadora de fechas',
       datecalcLabelUntil: 'Cuantos dias faltan para...',
       datecalcLabelOffset: 'Que dia sera...',
+      householdBtnTitle: 'Hogar compartido',
+      householdTitle: 'Hogar compartido',
+      householdSignedOutMsg: 'Inicia sesion primero para usar un hogar compartido.',
+      householdIntro: 'Un hogar compartido junta las notas de todos sus miembros en un solo calendario. Cada nota muestra quien la escribio.',
+      householdCreateBtn: 'Crear hogar',
+      householdJoinPlaceholder: 'CODIGO',
+      householdJoinBtn: 'Unirme',
+      householdShareHint: 'Comparti este codigo para que otros se unan a tu hogar.',
+      householdLeaveBtn: 'Salir del hogar',
+      householdYouSuffix: ' (vos)',
+      householdSignInFirst: 'Inicia sesion primero para usar un hogar compartido.',
+      householdCreateError: 'No se pudo crear el hogar. Intenta de nuevo.',
+      householdJoinNotFound: 'No existe ningun hogar con ese codigo.',
+      householdJoinError: 'No se pudo unir al hogar. Intenta de nuevo.',
+      householdLeaveConfirm: 'Salir de este hogar? Sus notas se quedan en el hogar, no vuelven con vos.',
       datecalcToday: 'Es hoy',
       datecalcInDays: 'Faltan {n} dias',
       datecalcAgoDays: 'Fue hace {n} dias',
@@ -1140,6 +1193,21 @@
       scanWizardNext: 'Save and next',
       datecalcBtnTitle: 'Date calculator',
       datecalcTitle: 'Date calculator',
+      householdBtnTitle: 'Shared household',
+      householdTitle: 'Shared household',
+      householdSignedOutMsg: 'Sign in first to use a shared household.',
+      householdIntro: 'A shared household combines every member’s notes into one calendar. Each note shows who wrote it.',
+      householdCreateBtn: 'Create household',
+      householdJoinPlaceholder: 'CODE',
+      householdJoinBtn: 'Join',
+      householdShareHint: 'Share this code so others can join your household.',
+      householdLeaveBtn: 'Leave household',
+      householdYouSuffix: ' (you)',
+      householdSignInFirst: 'Sign in first to use a shared household.',
+      householdCreateError: 'Could not create the household. Try again.',
+      householdJoinNotFound: 'No household found with that code.',
+      householdJoinError: 'Could not join the household. Try again.',
+      householdLeaveConfirm: 'Leave this household? Its notes stay with the household, not with you.',
       datecalcLabelUntil: 'How many days until...',
       datecalcLabelOffset: 'What day will it be...',
       datecalcToday: "It's today",
@@ -1445,6 +1513,7 @@
     updateNotifBtn();
     updateAuthBtn();
     updateTimeformatBtn();
+    householdApplyLanguage();
     document.documentElement.lang = currentLang;
     updateParsePreview();
   }
@@ -1618,7 +1687,8 @@
       recurring: n.recurring, createdAt: n.createdAt.toISOString(),
       enabled: n.enabled, firedKey: n.firedKey, image: n.image || null,
       checklistDone: n.checklistDone || {},
-      snoozeUntil: n.snoozeUntil || null
+      snoozeUntil: n.snoozeUntil || null,
+      authorUid: n.authorUid || null, authorName: n.authorName || null
     };
   }
   function deserializeOneNote(n){
@@ -1629,7 +1699,8 @@
       recurring: n.recurring, createdAt: new Date(n.createdAt),
       enabled: n.enabled, firedKey: n.firedKey, image: n.image || null,
       checklistDone: n.checklistDone || {},
-      snoozeUntil: n.snoozeUntil || null
+      snoozeUntil: n.snoozeUntil || null,
+      authorUid: n.authorUid || null, authorName: n.authorName || null
     };
   }
   function serializeNotes(){
@@ -1650,8 +1721,34 @@
   }
 
   // ---------- Firebase sync (opt-in; everything above still works fully offline/signed-out) ----------
-  function firestoreNotesRef(uid){ return firebase.firestore().collection('users').doc(uid).collection('notes'); }
+  // Notes sync to whichever is active: the signed-in user's own personal space,
+  // or — once they've joined one — a shared household. Contacts are never
+  // shared and always stay under the user's own uid.
+  var currentHouseholdId = null;
+  function personalNotesRef(uid){ return firebase.firestore().collection('users').doc(uid).collection('notes'); }
   function firestoreContactsRef(uid){ return firebase.firestore().collection('users').doc(uid).collection('contacts'); }
+  function householdMetaRef(uid){ return firebase.firestore().collection('users').doc(uid).collection('meta').doc('household'); }
+  function householdRef(id){ return firebase.firestore().collection('households').doc(id); }
+  function householdNotesRef(id){ return householdRef(id).collection('notes'); }
+  function householdMembersRef(id){ return householdRef(id).collection('members'); }
+  function activeNotesRef(){
+    return currentHouseholdId ? householdNotesRef(currentHouseholdId) : personalNotesRef(currentUser.uid);
+  }
+  // Note ids are small integers assigned locally per-account (idCounter), never
+  // globally unique — fine as a Firestore doc id in personal space, but two
+  // household members could easily both have a note with id 0. In household
+  // mode the doc id is namespaced by author so different members' notes can
+  // never collide/overwrite each other.
+  function noteDocId(n){
+    return currentHouseholdId ? ((n.authorUid || currentUser.uid) + '_' + n.id) : String(n.id);
+  }
+  // Local-only uniqueness key (editingId, notification tags, the calendar
+  // highlight map) — unlike noteDocId this depends only on the note itself,
+  // not on whether a household is currently active, so it stays correct even
+  // right after leaving one (existing notes still carry their old authorUid).
+  function noteLocalKey(n){
+    return n.authorUid ? (n.authorUid + '_' + n.id) : String(n.id);
+  }
 
   // Set the moment a local change is queued to sync, cleared only once the
   // corresponding write is confirmed committed. While true, incoming remote
@@ -1680,16 +1777,16 @@
 
   function syncAllNotesToFirestore(){
     if (!currentUser) { notesDirtyLocally = false; return; }
-    var uid = currentUser.uid;
     var batch = firebase.firestore().batch();
-    var ref = firestoreNotesRef(uid);
+    var ref = activeNotesRef();
     var currentIds = {};
     notes.forEach(function(n){
-      currentIds[String(n.id)] = true;
+      var docId = noteDocId(n);
+      currentIds[docId] = true;
       // Strip any stray `undefined` field first — Firestore rejects the whole
       // batch write if even one note has one, which would silently stop every
       // other note from syncing too.
-      batch.set(ref.doc(String(n.id)), JSON.parse(JSON.stringify(serializeOneNote(n))));
+      batch.set(ref.doc(docId), JSON.parse(JSON.stringify(serializeOneNote(n))));
     });
     if (lastKnownRemoteNoteIds){
       lastKnownRemoteNoteIds.forEach(function(id){
@@ -1739,8 +1836,13 @@
     applyingRemoteSnapshot = false;
   }
 
+  function switchNotesListener(){
+    if (unsubNotesSnapshot) unsubNotesSnapshot();
+    lastKnownRemoteNoteIds = null;
+    unsubNotesSnapshot = activeNotesRef().onSnapshot(applyRemoteNotesSnapshot, function(){});
+  }
   function attachFirestoreListeners(uid){
-    unsubNotesSnapshot = firestoreNotesRef(uid).onSnapshot(applyRemoteNotesSnapshot, function(){});
+    switchNotesListener();
     unsubContactsSnapshot = firestoreContactsRef(uid).onSnapshot(applyRemoteContactsSnapshot, function(){});
   }
   function detachFirestoreListeners(){
@@ -1762,14 +1864,24 @@
   function runFirstSignInMigrationIfNeeded(uid, localNotes, localContacts){
     var migratedFlagKey = 'mi_alarma_migrated_' + uid;
     try { if (localStorage.getItem(migratedFlagKey)) return; } catch(e){}
-    firestoreNotesRef(uid).get().then(function(notesSnapshot){
+    var notesRef = activeNotesRef();
+    if (currentHouseholdId){
+      localNotes.forEach(function(n){ n.authorUid = uid; n.authorName = currentDisplayName(); });
+    }
+    notesRef.get().then(function(notesSnapshot){
       if (notesSnapshot.empty){
         var batch = firebase.firestore().batch();
-        localNotes.forEach(function(n){ batch.set(firestoreNotesRef(uid).doc(String(n.id)), JSON.parse(JSON.stringify(serializeOneNote(n)))); });
+        localNotes.forEach(function(n){ batch.set(notesRef.doc(noteDocId(n)), JSON.parse(JSON.stringify(serializeOneNote(n)))); });
         localContacts.forEach(function(c){ batch.set(firestoreContactsRef(uid).doc(String(c.id)), JSON.parse(JSON.stringify(c))); });
         return batch.commit();
       }
-      var remoteNoteIds = notesSnapshot.docs.map(function(d){ return parseInt(d.id, 10); }).filter(function(n){ return !isNaN(n); });
+      // In household mode doc ids are "uid_localId" — only look at this uid's
+      // own notes to find the highest local id already taken, since ids from
+      // other members share the same collection but a different namespace.
+      var remoteNoteIds = notesSnapshot.docs
+        .filter(function(d){ return !currentHouseholdId || d.id.indexOf(uid + '_') === 0; })
+        .map(function(d){ return currentHouseholdId ? parseInt(d.id.slice((uid + '_').length), 10) : parseInt(d.id, 10); })
+        .filter(function(n){ return !isNaN(n); });
       var nextNoteId = (remoteNoteIds.length ? Math.max.apply(null, remoteNoteIds) : -1) + 1;
       return firestoreContactsRef(uid).get().then(function(contactsSnapshot){
         var remotePhones = {};
@@ -1781,7 +1893,7 @@
         var batch = firebase.firestore().batch();
         localNotes.forEach(function(n){
           n.id = nextNoteId++;
-          batch.set(firestoreNotesRef(uid).doc(String(n.id)), JSON.parse(JSON.stringify(serializeOneNote(n))));
+          batch.set(notesRef.doc(noteDocId(n)), JSON.parse(JSON.stringify(serializeOneNote(n))));
         });
         contactsToMerge.forEach(function(c){
           c.id = nextContactId++;
@@ -1855,10 +1967,22 @@
             // local state, not a copy that's already been replaced.
             var localNotesAtSignIn = notes.slice();
             var localContactsAtSignIn = contacts.slice();
-            attachFirestoreListeners(user.uid);
-            runFirstSignInMigrationIfNeeded(user.uid, localNotesAtSignIn, localContactsAtSignIn);
+            // Resolve which space is active (personal or a joined household)
+            // BEFORE attaching listeners/migrating, so both point at the right place.
+            householdMetaRef(user.uid).get().then(function(doc){
+              currentHouseholdId = (doc.exists && doc.data().householdId) || null;
+            }).catch(function(){ currentHouseholdId = null; }).then(function(){
+              attachFirestoreListeners(user.uid);
+              if (currentHouseholdId) attachHouseholdMembersListener();
+              updateHouseholdUI();
+              runFirstSignInMigrationIfNeeded(user.uid, localNotesAtSignIn, localContactsAtSignIn);
+            });
           } else {
             detachFirestoreListeners();
+            detachHouseholdMembersListener();
+            currentHouseholdId = null;
+            householdMembers = [];
+            updateHouseholdUI();
           }
         });
       });
@@ -1881,6 +2005,199 @@
       });
     });
   }
+
+  // ---------- Shared households ----------
+  var householdMembers = [];
+  var unsubHouseholdMembersSnapshot = null;
+
+  function currentDisplayName(){
+    if (!currentUser) return '?';
+    return currentUser.displayName || (currentUser.email || '').split('@')[0] || '?';
+  }
+  function generateInviteCode(){
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I — easy to misread out loud
+    var code = '';
+    for (var i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    return code;
+  }
+  // Copies every locally-known note into `toRef` (tagging who brought it in)
+  // then removes it from `fromRef` so it doesn't keep syncing to two places.
+  function migrateNotesTo(toRef, fromRef){
+    var batch = firebase.firestore().batch();
+    notes.forEach(function(n){
+      n.authorUid = currentUser.uid;
+      n.authorName = currentDisplayName();
+      // Namespaced by author (see noteDocId) — currentHouseholdId isn't set yet
+      // at this point (that happens right after this resolves), so the same
+      // uid_localId scheme is spelled out explicitly here instead.
+      var docId = currentUser.uid + '_' + n.id;
+      batch.set(toRef.doc(docId), JSON.parse(JSON.stringify(serializeOneNote(n))));
+      if (fromRef) batch.delete(fromRef.doc(String(n.id)));
+    });
+    return batch.commit();
+  }
+  function attachHouseholdMembersListener(){
+    if (unsubHouseholdMembersSnapshot) unsubHouseholdMembersSnapshot();
+    if (!currentHouseholdId) return;
+    unsubHouseholdMembersSnapshot = householdMembersRef(currentHouseholdId).onSnapshot(function(snapshot){
+      householdMembers = snapshot.docs.map(function(d){ return { uid: d.id, displayName: (d.data() || {}).displayName || '?' }; });
+      updateHouseholdUI();
+    }, function(){});
+  }
+  function detachHouseholdMembersListener(){
+    if (unsubHouseholdMembersSnapshot) unsubHouseholdMembersSnapshot();
+    unsubHouseholdMembersSnapshot = null;
+  }
+  function createHousehold(){
+    if (!currentUser) return Promise.reject(new Error('signed-out'));
+    var code = generateInviteCode();
+    var fromRef = personalNotesRef(currentUser.uid);
+    return householdRef(code).set({ createdBy: currentUser.uid, createdAt: new Date().toISOString() })
+      .then(function(){
+        return householdMembersRef(code).doc(currentUser.uid).set({
+          displayName: currentDisplayName(), email: currentUser.email || null, joinedAt: new Date().toISOString()
+        });
+      })
+      .then(function(){ return householdMetaRef(currentUser.uid).set({ householdId: code }); })
+      .then(function(){ return migrateNotesTo(householdNotesRef(code), fromRef); })
+      .then(function(){
+        currentHouseholdId = code;
+        switchNotesListener();
+        attachHouseholdMembersListener();
+        updateHouseholdUI();
+        return code;
+      });
+  }
+  function joinHousehold(rawCode){
+    if (!currentUser) return Promise.reject(new Error('signed-out'));
+    var code = (rawCode || '').trim().toUpperCase();
+    if (!code) return Promise.reject(new Error('empty-code'));
+    var fromRef = personalNotesRef(currentUser.uid);
+    return householdRef(code).get().then(function(doc){
+      if (!doc.exists) { var e = new Error('not-found'); e.code = 'not-found'; throw e; }
+      return householdMembersRef(code).doc(currentUser.uid).set({
+        displayName: currentDisplayName(), email: currentUser.email || null, joinedAt: new Date().toISOString()
+      });
+    }).then(function(){
+      return householdMetaRef(currentUser.uid).set({ householdId: code });
+    }).then(function(){
+      return migrateNotesTo(householdNotesRef(code), fromRef);
+    }).then(function(){
+      currentHouseholdId = code;
+      switchNotesListener();
+      attachHouseholdMembersListener();
+      updateHouseholdUI();
+      return code;
+    });
+  }
+  function leaveHousehold(){
+    if (!currentUser || !currentHouseholdId) return Promise.resolve();
+    var code = currentHouseholdId;
+    return householdMembersRef(code).doc(currentUser.uid).delete()
+      .then(function(){ return householdMetaRef(currentUser.uid).delete(); })
+      .then(function(){
+        currentHouseholdId = null;
+        householdMembers = [];
+        detachHouseholdMembersListener();
+        switchNotesListener();
+        updateHouseholdUI();
+      });
+  }
+
+  var householdBtn = document.getElementById('household-btn');
+  var householdModal = document.getElementById('household-modal');
+  var householdTitleEl = document.getElementById('household-title');
+  var householdCloseBtn = document.getElementById('household-close-btn');
+  var householdSignedOutMsg = document.getElementById('household-signed-out-msg');
+  var householdIntroTextEl = document.getElementById('household-intro-text');
+  var householdStateNone = document.getElementById('household-state-none');
+  var householdStateActive = document.getElementById('household-state-active');
+  var householdCreateBtn = document.getElementById('household-create-btn');
+  var householdJoinInput = document.getElementById('household-join-input');
+  var householdJoinBtn = document.getElementById('household-join-btn');
+  var householdShareHintEl = document.getElementById('household-share-hint');
+  var householdCodeDisplay = document.getElementById('household-code-display');
+  var householdMembersList = document.getElementById('household-members-list');
+  var householdLeaveBtn = document.getElementById('household-leave-btn');
+
+  function householdApplyLanguage(){
+    if (!householdBtn) return;
+    householdBtn.title = t('householdBtnTitle'); householdBtn.setAttribute('aria-label', t('householdBtnTitle'));
+    householdTitleEl.textContent = t('householdTitle');
+    householdSignedOutMsg.textContent = t('householdSignedOutMsg');
+    householdIntroTextEl.textContent = t('householdIntro');
+    householdCreateBtn.textContent = t('householdCreateBtn');
+    householdJoinInput.placeholder = t('householdJoinPlaceholder');
+    householdJoinBtn.textContent = t('householdJoinBtn');
+    householdShareHintEl.textContent = t('householdShareHint');
+    householdLeaveBtn.textContent = t('householdLeaveBtn');
+  }
+
+  function updateHouseholdUI(){
+    if (!householdBtn) return;
+    householdBtn.classList.toggle('active', !!currentHouseholdId);
+    if (!householdModal || householdModal.style.display === 'none') return;
+    renderHouseholdModal();
+  }
+  function renderHouseholdModal(){
+    var signedIn = !!currentUser;
+    householdSignedOutMsg.style.display = signedIn ? 'none' : 'block';
+    householdStateNone.style.display = (signedIn && !currentHouseholdId) ? 'block' : 'none';
+    householdStateActive.style.display = (signedIn && currentHouseholdId) ? 'block' : 'none';
+    if (signedIn && currentHouseholdId){
+      householdCodeDisplay.textContent = currentHouseholdId;
+      householdMembersList.innerHTML = '';
+      householdMembers.forEach(function(m){
+        var row = document.createElement('div');
+        row.className = 'household-member-row';
+        row.innerHTML = '<i class="ti ti-user" aria-hidden="true"></i>';
+        var nameSpan = document.createElement('span');
+        nameSpan.textContent = m.displayName + (m.uid === currentUser.uid ? t('householdYouSuffix') : '');
+        row.appendChild(nameSpan);
+        householdMembersList.appendChild(row);
+      });
+    }
+  }
+  if (householdBtn){
+    householdBtn.addEventListener('click', function(){
+      if (!currentUser){
+        alert(t('householdSignInFirst'));
+        return;
+      }
+      vibrate(6);
+      householdModal.style.display = 'flex';
+      renderHouseholdModal();
+      householdCloseBtn.focus();
+    });
+  }
+  if (householdCloseBtn) householdCloseBtn.addEventListener('click', function(){ householdModal.style.display = 'none'; });
+  if (householdCreateBtn) householdCreateBtn.addEventListener('click', function(){
+    householdCreateBtn.disabled = true;
+    createHousehold().catch(function(){
+      alert(t('householdCreateError'));
+    }).then(function(){
+      householdCreateBtn.disabled = false;
+      renderHouseholdModal();
+    });
+  });
+  if (householdJoinBtn) householdJoinBtn.addEventListener('click', function(){
+    householdJoinBtn.disabled = true;
+    joinHousehold(householdJoinInput.value).catch(function(err){
+      alert(err && err.code === 'not-found' ? t('householdJoinNotFound') : t('householdJoinError'));
+    }).then(function(){
+      householdJoinBtn.disabled = false;
+      householdJoinInput.value = '';
+      renderHouseholdModal();
+    });
+  });
+  if (householdLeaveBtn) householdLeaveBtn.addEventListener('click', function(){
+    if (!confirm(t('householdLeaveConfirm'))) return;
+    householdLeaveBtn.disabled = true;
+    leaveHousehold().catch(function(){}).then(function(){
+      householdLeaveBtn.disabled = false;
+      renderHouseholdModal();
+    });
+  });
 
   // ---------- Notifications ----------
   function updateNotifBtn(){
@@ -1910,7 +2227,7 @@
     navigator.serviceWorker.ready.then(function(reg){
       reg.showNotification(t('alarmTag'), {
         body: note.raw,
-        tag: 'alarm-' + note.id,
+        tag: 'alarm-' + noteLocalKey(note),
         actions: [
           { action: 'snooze5', title: t('snooze5') },
           { action: 'remind15', title: t('remind15') },
@@ -3586,7 +3903,7 @@
     var dateRange = extractDateRange(note.raw);
     if (dateRange){
       var resolvedRange = resolveDateRange(dateRange, note.createdAt);
-      applyNoteRangeHighlight(note.id, resolvedRange.start, resolvedRange.end);
+      applyNoteRangeHighlight(noteLocalKey(note), resolvedRange.start, resolvedRange.end);
     }
     if (undoToastTimer) clearTimeout(undoToastTimer);
     hideUndoToast();
@@ -3595,7 +3912,7 @@
   }
   undoToastBtn.addEventListener('click', undoLastDelete);
   function loadForEdit(note){
-    editingId = note.id;
+    editingId = noteLocalKey(note);
     noteInput.value = note.raw;
     noteInput.focus();
     addBtn.style.display = 'inline-block';
@@ -3652,6 +3969,16 @@
       numSpan.className = 'note-number';
       numSpan.textContent = (idx + 1) + '.';
       block.appendChild(numSpan);
+
+      if (note.authorName){
+        var authorBadge = document.createElement('span');
+        authorBadge.className = 'note-author-badge';
+        authorBadge.innerHTML = '<i class="ti ti-user" aria-hidden="true"></i>';
+        var authorNameSpan = document.createElement('span');
+        authorNameSpan.textContent = note.authorName;
+        authorBadge.appendChild(authorNameSpan);
+        block.appendChild(authorBadge);
+      }
 
       var isChecklist = noteHasChecklist(note.raw);
       var textEl = document.createElement(isChecklist ? 'div' : 'span');
@@ -3711,9 +4038,9 @@
       delBtn.addEventListener('click', function(){
         vibrate([8,30,8]);
         var noteIndex = notes.indexOf(note);
-        notes = notes.filter(function(n){ return n.id !== note.id; });
-        removeNoteRangeHighlight(note.id);
-        if (editingId === note.id) exitEditMode();
+        notes = notes.filter(function(n){ return n !== note; });
+        removeNoteRangeHighlight(noteLocalKey(note));
+        if (editingId === noteLocalKey(note)) exitEditMode();
         renderAll();
         showUndoToast(note, noteIndex);
       });
@@ -4337,17 +4664,20 @@
     }
     if (!hasDateInfo) recurring = { type: 'yearly', month: createdAt.getMonth(), day: createdAt.getDate() };
     var newNoteId = idCounter++;
-    notes.push({
+    var newNote = {
       id: newNoteId, raw: raw, hour: parsed.hour, minute: parsed.minute, target: target,
       recurring: recurring, dateOnly: dateOnly, createdAt: createdAt, enabled: true, firedKey: null,
-      image: image || null
-    });
+      image: image || null,
+      authorUid: currentHouseholdId ? currentUser.uid : null,
+      authorName: currentHouseholdId ? currentDisplayName() : null
+    };
+    notes.push(newNote);
     var dateRange = extractDateRange(raw);
     if (dateRange){
       var resolvedRange = resolveDateRange(dateRange, createdAt);
-      applyNoteRangeHighlight(newNoteId, resolvedRange.start, resolvedRange.end);
+      applyNoteRangeHighlight(noteLocalKey(newNote), resolvedRange.start, resolvedRange.end);
     } else if (anchorRange){
-      applyNoteRangeHighlight(newNoteId, anchorRange.start, anchorRange.end);
+      applyNoteRangeHighlight(noteLocalKey(newNote), anchorRange.start, anchorRange.end);
     }
     if (pendingNoteAnchor){ pendingNoteAnchor = null; updatePendingAnchorChip(); }
     var focusDate = target || dateOnly;
@@ -4358,7 +4688,7 @@
 
   function saveEditedNote(raw){
     raw = capitalizeFirst(raw);
-    var idx = notes.findIndex(function(n){ return n.id === editingId; });
+    var idx = notes.findIndex(function(n){ return noteLocalKey(n) === editingId; });
     if (idx !== -1){
       var parsed = parseNoteInput(raw);
       applyEveryNHoursAnchor(parsed, notes[idx].createdAt);
@@ -4535,6 +4865,7 @@
     if (datecalcModal.style.display !== 'none'){ datecalcCloseModal(); return; }
     if (receiptModal.style.display !== 'none'){ receiptCloseModal(); return; }
     if (printModal.style.display !== 'none'){ printCloseModal(); return; }
+    if (householdModal.style.display !== 'none'){ householdModal.style.display = 'none'; return; }
   });
 
   // ---------- Init ----------
@@ -4561,10 +4892,10 @@
     navigator.serviceWorker.addEventListener('message', function(event){
       var data = event.data;
       if (!data || data.type !== 'notif-action') return;
-      var idMatch = /alarm-(\d+)/.exec(data.tag || '');
+      var idMatch = /alarm-(.+)/.exec(data.tag || '');
       if (!idMatch) return;
-      var id = parseInt(idMatch[1], 10);
-      var note = notes.find(function(n){ return n.id === id; });
+      var key = idMatch[1];
+      var note = notes.find(function(n){ return noteLocalKey(n) === key; });
       if (!note) return;
       if (data.action === 'snooze5'){
         var ts = new Date(); ts.setMinutes(ts.getMinutes() + 5);
