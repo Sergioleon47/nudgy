@@ -309,7 +309,8 @@
   .cal-daynum { font-weight:600; color:#1C1C1E; font-size:11px; }
   .cal-activity-dot { width:4px; height:4px; border-radius:50%; margin-top:2px; background:#2FA360; }
   .cal-cell.today .cal-activity-dot { background:var(--accent-darker); }
-  .cal-action-btn { border:none; background:#F2F2F7; font-size:16px; color:var(--accent); padding:0; }
+  .cal-toolbar { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-bottom:8px; }
+  .cal-action-btn { border:none; background:#F2F2F7; font-size:16px; color:var(--accent); cursor:pointer; width:30px; height:30px; border-radius:50%; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .cal-action-btn:hover { background:#E5E5EA; }
   .cal-action-btn.active { background:var(--accent); color:#fff; }
   #cal-grid.paint-mode, #cal-grid.note-select-mode { touch-action:none; }
@@ -547,7 +548,7 @@
         <span id="pending-anchor-text"></span>
         <button id="pending-anchor-clear" aria-label="Cancelar" title="Cancelar"><i class="ti ti-x" aria-hidden="true"></i></button>
       </div>
-      <textarea id="note-input" rows="5" autofocus></textarea>
+      <textarea id="note-input" rows="5" autofocus maxlength="4000"></textarea>
       <div id="image-preview" style="display:none;">
         <img id="image-preview-img" alt="">
         <button id="image-preview-remove" aria-label="Quitar foto" title="Quitar foto"><i class="ti ti-x" aria-hidden="true"></i></button>
@@ -578,14 +579,15 @@
         <div id="cal-title">Mes</div>
         <button id="cal-next"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
       </div>
-      <div id="cal-weekdays"></div>
-      <div id="cal-grid">
-        <button id="print-btn" class="cal-cell cal-action-btn" aria-label="Imprimir calendario" title="Imprimir calendario"><i class="ti ti-printer" aria-hidden="true"></i></button>
-        <button id="highlight-btn" class="cal-cell cal-action-btn" aria-label="Pintar fechas" title="Pintar fechas">
+      <div class="cal-toolbar">
+        <button id="print-btn" class="cal-action-btn" aria-label="Imprimir calendario" title="Imprimir calendario"><i class="ti ti-printer" aria-hidden="true"></i></button>
+        <button id="highlight-btn" class="cal-action-btn" aria-label="Pintar fechas" title="Pintar fechas">
           <span class="highlight-btn-dots"><span style="background:#E67C73;"></span><span style="background:#4DB6AC;"></span><span style="background:#9575CD;"></span></span>
         </button>
-        <button id="note-select-btn" class="cal-cell cal-action-btn" aria-label="Empezar nota desde el calendario" title="Empezar nota desde el calendario"><i class="ti ti-square-plus" aria-hidden="true"></i></button>
+        <button id="note-select-btn" class="cal-action-btn" aria-label="Empezar nota desde el calendario" title="Empezar nota desde el calendario"><i class="ti ti-square-plus" aria-hidden="true"></i></button>
       </div>
+      <div id="cal-weekdays"></div>
+      <div id="cal-grid"></div>
       <div id="paint-palette-bar" class="paint-palette-bar" style="display:none;">
         <div id="paint-palette-hint" class="paint-palette-hint">Desliza el dedo sobre los dias para pintarlos</div>
         <div id="paint-palette-swatches" class="highlight-palette"></div>
@@ -610,9 +612,9 @@
 
 <button id="fab-add-note" class="fab-add-note" aria-label="Nueva nota" title="Nueva nota"><i class="ti ti-plus" aria-hidden="true"></i></button>
 
-<div id="image-lightbox"><img id="image-lightbox-img" src="" alt=""></div>
+<div id="image-lightbox" role="dialog" aria-modal="true" aria-label="Foto"><img id="image-lightbox-img" src="" alt=""></div>
 
-<div id="scan-modal">
+<div id="scan-modal" role="dialog" aria-modal="true" aria-label="Escanear calendario">
   <div class="scan-modal-inner">
 
     <div id="scan-step-setup" class="scan-step">
@@ -671,7 +673,7 @@
   </div>
 </div>
 
-<div id="datecalc-modal">
+<div id="datecalc-modal" role="dialog" aria-modal="true" aria-labelledby="datecalc-title">
   <div class="datecalc-modal-inner">
     <div class="scan-modal-header">
       <span id="datecalc-title">Calculadora de fechas</span>
@@ -699,7 +701,7 @@
   </div>
 </div>
 
-<div id="receipt-modal">
+<div id="receipt-modal" role="dialog" aria-modal="true" aria-labelledby="receipt-title">
   <div class="datecalc-modal-inner">
     <div class="scan-modal-header">
       <span id="receipt-title">Foto de recibo</span>
@@ -737,7 +739,7 @@
   </div>
 </div>
 
-<div id="print-modal">
+<div id="print-modal" role="dialog" aria-modal="true" aria-labelledby="print-title">
   <div class="datecalc-modal-inner">
     <div class="scan-modal-header">
       <span id="print-title">Imprimir calendario</span>
@@ -770,7 +772,7 @@
   <button id="undo-toast-btn"></button>
 </div>
 
-<div id="upcoming-modal">
+<div id="upcoming-modal" role="dialog" aria-modal="true" aria-labelledby="upcoming-title">
   <div class="datecalc-modal-inner">
     <div class="scan-modal-header">
       <span id="upcoming-title">Proximas alarmas</span>
@@ -848,6 +850,7 @@
       deleteLabel: 'Eliminar',
       noteDeletedToast: 'Nota eliminada',
       undoLabel: 'Deshacer',
+      photoErrorMsg: 'No se pudo cargar la foto. Intenta con otra imagen.',
       checklistCheck: 'Marcar como hecho',
       checklistUncheck: 'Marcar como pendiente',
       alarmOffLabel: 'Apagar alarma',
@@ -969,6 +972,7 @@
       deleteLabel: 'Delete',
       noteDeletedToast: 'Note deleted',
       undoLabel: 'Undo',
+      photoErrorMsg: "Couldn't load the photo. Try a different image.",
       checklistCheck: 'Mark as done',
       checklistUncheck: 'Mark as not done',
       alarmOffLabel: 'Turn alarm off',
@@ -1396,7 +1400,7 @@
     var lines = note.raw.split('\n');
     if (!noteHasChecklist(note.raw)){ renderNoteText(container, note.raw); return; }
     if (!note.checklistDone) note.checklistDone = {};
-    lines.forEach(function(line){
+    lines.forEach(function(line, lineIndex){
       var parsed = parseChecklistLine(line);
       if (!parsed){
         if (!line.trim()) return;
@@ -1405,7 +1409,9 @@
         container.appendChild(lineEl);
         return;
       }
-      var key = parsed.text.trim();
+      // Keyed by line position, not just text — two identical lines ("- call
+      // mom" twice) must not share one checkbox.
+      var key = lineIndex + '|' + parsed.text.trim();
       if (!(key in note.checklistDone)) note.checklistDone[key] = parsed.checkedInitial;
       var checked = note.checklistDone[key];
       var row = document.createElement('div');
@@ -2492,6 +2498,7 @@
     upcomingApplyLanguage();
     upcomingPopulate();
     upcomingModal.style.display = 'flex';
+    upcomingCloseBtn.focus();
   }
   function upcomingCloseModal(){ upcomingModal.style.display = 'none'; }
   upcomingBtn.addEventListener('click', function(){ vibrate(8); upcomingOpenModal(); });
@@ -2646,8 +2653,8 @@
   }
 
   // ---------- Photo attachment ----------
-  function processImageFile(file, cb){
-    if (!file || !/^image\//.test(file.type)) return;
+  function processImageFile(file, cb, onError){
+    if (!file || !/^image\//.test(file.type)) { if (onError) onError(); return; }
     var reader = new FileReader();
     reader.onload = function(e){
       var img = new Image();
@@ -2660,10 +2667,13 @@
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
         cb(canvas.toDataURL('image/jpeg', 0.72));
       };
+      img.onerror = function(){ if (onError) onError(); };
       img.src = e.target.result;
     };
+    reader.onerror = function(){ if (onError) onError(); };
     reader.readAsDataURL(file);
   }
+  function photoLoadFailed(){ alert(t('photoErrorMsg')); }
   function setPendingImage(dataUrl){
     pendingImage = dataUrl;
     imagePreviewImg.src = dataUrl;
@@ -2684,7 +2694,7 @@
     var file = e.target.files[0];
     photoFileInput.value = '';
     if (!file) return;
-    processImageFile(file, function(dataUrl){ setPendingImage(dataUrl); vibrate(10); });
+    processImageFile(file, function(dataUrl){ setPendingImage(dataUrl); vibrate(10); }, photoLoadFailed);
   });
   imagePreviewRemoveBtn.addEventListener('mousedown', function(e){ e.preventDefault(); });
   imagePreviewRemoveBtn.addEventListener('click', function(){ clearPendingImage(); vibrate(6); });
@@ -2702,7 +2712,7 @@
     for (var i = 0; i < cd.items.length; i++){
       if (cd.items[i].type.indexOf('image') !== -1){
         var file = cd.items[i].getAsFile();
-        processImageFile(file, function(dataUrl){ setPendingImage(dataUrl); vibrate(10); });
+        processImageFile(file, function(dataUrl){ setPendingImage(dataUrl); vibrate(10); }, photoLoadFailed);
         e.preventDefault();
         break;
       }
@@ -2825,6 +2835,7 @@
     scanPopulateMonthYear();
     scanShowStep(1);
     scanModal.style.display = 'flex';
+    scanCloseBtn1.focus();
     requestAnimationFrame(scanRedrawOverlay);
   }
   scanBtn.addEventListener('mousedown', function(e){ e.preventDefault(); });
@@ -2842,8 +2853,10 @@
         scanPhotoImg.src = ev.target.result;
         scanOpenModal();
       };
+      img.onerror = photoLoadFailed;
       img.src = ev.target.result;
     };
+    reader.onerror = photoLoadFailed;
     reader.readAsDataURL(file);
   });
   scanMonthSelect.addEventListener('change', scanRedrawOverlay);
@@ -3168,6 +3181,7 @@
     datecalcComputeUntil();
     datecalcComputeOffset();
     datecalcModal.style.display = 'flex';
+    datecalcCloseBtn.focus();
   }
   function datecalcCloseModal(){ datecalcModal.style.display = 'none'; }
   datecalcBtn.addEventListener('click', datecalcOpenModal);
@@ -3265,6 +3279,7 @@
     receiptApplyLanguage();
     receiptShowStep('processing');
     receiptModal.style.display = 'flex';
+    receiptCloseBtn.focus();
   }
   receiptBtn.addEventListener('mousedown', function(e){ e.preventDefault(); });
   receiptBtn.addEventListener('click', function(){ receiptFileInput.click(); });
@@ -3303,6 +3318,9 @@
         receiptUpdateRemindResult();
         receiptShowStep('confirm');
       });
+    }, function(){
+      receiptCloseModal();
+      photoLoadFailed();
     });
   });
   receiptCreateBtn.addEventListener('click', function(){
@@ -3528,9 +3546,6 @@
       }(key));
       calGrid.appendChild(cell);
     }
-    calGrid.appendChild(printBtn);
-    calGrid.appendChild(highlightBtn);
-    calGrid.appendChild(noteSelectBtn);
   }
 
   function notesForDate(d){
@@ -3737,6 +3752,7 @@
     printSetMode('month');
     printSetColorMode('color');
     printModal.style.display = 'flex';
+    printCloseBtn.focus();
   }
   function printCloseModal(){ printModal.style.display = 'none'; }
   printBtn.addEventListener('click', printOpenModal);
