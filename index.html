@@ -67,25 +67,20 @@
     box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 10px 28px rgba(0,0,0,0.07);
     box-sizing: border-box;
   }
-  .col-left { flex:1; min-width:300px; max-width:400px; min-height:480px; display:flex; flex-direction:column; }
-  .col-right { flex:1; min-width:280px; max-width:360px; }
-  /* Floats over the seam between whichever card is on top and the one below
-     it (repositioned in JS via repositionPanelSwap, since card heights vary
-     with content/month) instead of taking its own row at the top. */
-  .panel-swap { display:none; position:absolute; right:14px; z-index:20; margin:0; }
-  .panel-swap-track {
-    position:relative; width:96px; height:36px; background:#E5E5EA; border-radius:18px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.18);
-    display:flex; align-items:center; justify-content:space-between; padding:0 10px;
+  .col-left { flex:1; min-width:300px; max-width:400px; min-height:480px; display:flex; flex-direction:column; position:relative; }
+  .col-right { flex:1; min-width:280px; max-width:360px; position:relative; }
+  /* One small round button per card, sitting astride whichever edge of its
+     own card currently borders the seam (bottom when that card is on top,
+     top when it's underneath) — a pure-CSS flip off the existing
+     .panel-primary class, no JS measuring needed. */
+  #panel-swap-notes-btn, #panel-swap-cal-btn {
+    display:none; align-items:center; justify-content:center;
+    position:absolute; right:14px; width:34px; height:34px; border-radius:50%;
+    border:none; cursor:pointer; z-index:20; font-size:15px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.22);
   }
-  .panel-swap-track i { font-size:16px; color:#5F5F63; z-index:1; }
-  .panel-swap-thumb {
-    position:absolute; top:3px; left:3px; width:30px; height:30px; border-radius:50%;
-    background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.25); cursor:grab; touch-action:none;
-    transition:left 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .panel-swap-thumb.dragging { transition:none; }
-  .panel-swap-thumb.on-right { left:calc(100% - 33px); }
+  #panel-swap-notes-btn { background:#F2F2F7; color:#5F5F63; }
+  #panel-swap-cal-btn { background:rgba(255,255,255,0.25); color:#fff; }
 
   #note-input, #note-input:focus {
     width:100%; box-sizing:border-box; resize:none; font-family:inherit; font-size:15px; color:#1C1C1E;
@@ -392,7 +387,11 @@
     .cols { gap: 10px; }
     .sky-panel { padding: 12px; }
     .col-left, .col-right { min-height: auto; max-width: none; order:0; }
-    .panel-swap { display:flex; }
+    #panel-swap-notes-btn, #panel-swap-cal-btn { display:flex; }
+    .col-left.panel-primary #panel-swap-notes-btn { bottom:-15px; top:auto; }
+    .col-left:not(.panel-primary) #panel-swap-notes-btn { top:-15px; bottom:auto; }
+    .col-right.panel-primary #panel-swap-cal-btn { bottom:-15px; top:auto; }
+    .col-right:not(.panel-primary) #panel-swap-cal-btn { top:-15px; bottom:auto; }
     .fab-add-note { display:flex; }
     .panel-primary { order: -1; }
     .col-right { margin-top: 16px; }
@@ -707,6 +706,7 @@
         <div class="hint-line" id="hint-line-3">"Pagar la luz en 3 dias"</div>
       </div>
 
+      <button id="panel-swap-notes-btn" aria-label="Mostrar notas primero" title="Mostrar notas primero"><i class="ti ti-notes" aria-hidden="true"></i></button>
     </div>
 
     <div class="sky-panel col-right">
@@ -739,15 +739,9 @@
         <div class="next-alarm-label" id="next-alarm-label">Proxima alarma</div>
         <div id="next-alarm"></div>
       </div>
+      <button id="panel-swap-cal-btn" aria-label="Mostrar calendario primero" title="Mostrar calendario primero"><i class="ti ti-calendar" aria-hidden="true"></i></button>
     </div>
 
-    <div id="panel-swap" class="panel-swap">
-      <div class="panel-swap-track">
-        <i class="ti ti-notes" aria-hidden="true"></i>
-        <i class="ti ti-calendar" aria-hidden="true"></i>
-        <div id="panel-swap-thumb" class="panel-swap-thumb"></div>
-      </div>
-    </div>
 
   </div>
 
@@ -1123,6 +1117,8 @@
       highlightBtnTitle: 'Pintar fechas',
       highlightHint: 'Desliza para pintar los dias. Toca un dia pintado para borrarlo.',
       noteSelectBtnTitle: 'Empezar nota desde el calendario',
+      panelSwapNotesLabel: 'Mostrar notas primero',
+      panelSwapCalLabel: 'Mostrar calendario primero',
       noteSelectHint: 'Desliza el dedo sobre los dias para tu nota',
       sheetHandleLabel: 'Tus notas',
       upcomingBtnTitle: 'Proximas alarmas',
@@ -1270,6 +1266,8 @@
       highlightBtnTitle: 'Paint dates',
       highlightHint: 'Drag to paint the days. Tap a painted day to erase it.',
       noteSelectBtnTitle: 'Start a note from the calendar',
+      panelSwapNotesLabel: 'Show notes first',
+      panelSwapCalLabel: 'Show calendar first',
       noteSelectHint: 'Drag your finger over the days for your note',
       sheetHandleLabel: 'Your notes',
       upcomingBtnTitle: 'Upcoming alarms',
@@ -1542,6 +1540,8 @@
     highlightBtn.title = t('highlightBtnTitle'); highlightBtn.setAttribute('aria-label', t('highlightBtnTitle'));
     noteSelectBtn.title = t('noteSelectBtnTitle'); noteSelectBtn.setAttribute('aria-label', t('noteSelectBtnTitle'));
     upcomingBtn.title = t('upcomingBtnTitle'); upcomingBtn.setAttribute('aria-label', t('upcomingBtnTitle'));
+    panelSwapNotesBtn.title = t('panelSwapNotesLabel'); panelSwapNotesBtn.setAttribute('aria-label', t('panelSwapNotesLabel'));
+    panelSwapCalBtn.title = t('panelSwapCalLabel'); panelSwapCalBtn.setAttribute('aria-label', t('panelSwapCalLabel'));
     if (pendingNoteAnchor) updatePendingAnchorChip();
     updateNotifBtn();
     updateAuthBtn();
@@ -3296,7 +3296,7 @@
   // would otherwise blur the textarea first and auto-save the draft as a new
   // note before the button's own click even runs. preventDefault on mousedown
   // keeps focus (and the draft) untouched; the button's click still fires.
-  document.querySelectorAll('.top-row button, .cal-action-btn').forEach(function(btn){
+  document.querySelectorAll('.top-row button, .cal-action-btn, #panel-swap-notes-btn, #panel-swap-cal-btn').forEach(function(btn){
     btn.addEventListener('mousedown', function(e){ e.preventDefault(); });
   });
   imageLightbox.addEventListener('click', function(){ imageLightbox.style.display = 'none'; imageLightboxImg.src = ''; });
@@ -4154,7 +4154,6 @@
       }(key));
       calGrid.appendChild(cell);
     }
-    repositionPanelSwap();
   }
 
   function notesForDate(d){
@@ -4191,7 +4190,6 @@
     upcomingUpdateBadge();
     updateSharedNotesBadge();
     if (onSharedPage) renderSharedPanel();
-    repositionPanelSwap();
   }
 
   calPrev.addEventListener('click', function(){ vibrate(6); calState.month--; if (calState.month < 0){ calState.month = 11; calState.year--; } renderCalendar(); });
@@ -4645,28 +4643,17 @@
   }
 
   // ---------- Left/right switch: choose which panel comes first ----------
+  // One small round button lives on each card (notes card / calendar card);
+  // tapping either one brings that card to the front. Position (top edge vs
+  // bottom edge of its own card) flips via the .panel-primary class in CSS.
   var PANEL_PREF_KEY = 'mi_alarma_panel_pref';
   var notesIsMain = false;
-  var panelSwapEl = document.getElementById('panel-swap');
-  var panelSwapTrack = document.querySelector('.panel-swap-track');
-  var panelSwapThumb = document.getElementById('panel-swap-thumb');
-  var isDraggingSwap = false;
+  var panelSwapNotesBtn = document.getElementById('panel-swap-notes-btn');
+  var panelSwapCalBtn = document.getElementById('panel-swap-cal-btn');
 
   function applyPanelPref(){
-    panelSwapThumb.classList.toggle('on-right', notesIsMain);
     colLeftEl.classList.toggle('panel-primary', notesIsMain);
     colRightEl.classList.toggle('panel-primary', !notesIsMain);
-    repositionPanelSwap();
-  }
-  // The floating toggle sits astride the seam between whichever card is on
-  // top and the one below it. Card heights vary (a 5- vs 6-week month, note
-  // count, etc.), so this is measured, not a fixed CSS value.
-  function repositionPanelSwap(){
-    if (!panelSwapEl) return;
-    var primaryCard = notesIsMain ? colLeftEl : colRightEl;
-    if (!primaryCard) return;
-    // Centered exactly on the seam — half over the top card, half over the one below.
-    panelSwapEl.style.top = (primaryCard.offsetHeight - 18) + 'px';
   }
   function setNotesIsMain(on){
     if (on === notesIsMain) return;
@@ -4686,32 +4673,8 @@
   try { notesIsMain = localStorage.getItem(PANEL_PREF_KEY) === 'notes'; } catch(e){}
   applyPanelPref();
 
-  panelSwapTrack.addEventListener('click', function(e){
-    if (isDraggingSwap) return;
-    var r = panelSwapTrack.getBoundingClientRect();
-    vibrate(6);
-    setNotesIsMain((e.clientX - r.left) > r.width / 2);
-  });
-  panelSwapThumb.addEventListener('pointerdown', function(e){
-    e.stopPropagation();
-    isDraggingSwap = true;
-    panelSwapThumb.classList.add('dragging');
-  });
-  document.addEventListener('pointermove', function(e){
-    if (!isDraggingSwap) return;
-    var r = panelSwapTrack.getBoundingClientRect();
-    var x = Math.min(r.width - 33, Math.max(3, e.clientX - r.left - 15));
-    panelSwapThumb.style.left = x + 'px';
-  });
-  document.addEventListener('pointerup', function(e){
-    if (!isDraggingSwap) return;
-    isDraggingSwap = false;
-    panelSwapThumb.classList.remove('dragging');
-    panelSwapThumb.style.left = '';
-    var r = panelSwapTrack.getBoundingClientRect();
-    vibrate(6);
-    setNotesIsMain((e.clientX - r.left) > r.width / 2);
-  });
+  panelSwapNotesBtn.addEventListener('click', function(){ vibrate(6); setNotesIsMain(true); });
+  panelSwapCalBtn.addEventListener('click', function(){ vibrate(6); setNotesIsMain(false); });
 
   document.getElementById('fab-add-note').addEventListener('click', function(){
     vibrate(8);
@@ -5093,8 +5056,6 @@
     if (printModal.style.display !== 'none'){ printCloseModal(); return; }
     if (householdModal.style.display !== 'none'){ householdModal.style.display = 'none'; return; }
   });
-
-  window.addEventListener('resize', repositionPanelSwap);
 
   // ---------- Init ----------
   loadFromStorage();
