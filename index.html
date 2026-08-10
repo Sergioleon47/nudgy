@@ -4665,7 +4665,8 @@
     if (!panelSwapEl) return;
     var primaryCard = notesIsMain ? colLeftEl : colRightEl;
     if (!primaryCard) return;
-    panelSwapEl.style.top = (primaryCard.offsetHeight - 24) + 'px';
+    // Centered exactly on the seam — half over the top card, half over the one below.
+    panelSwapEl.style.top = (primaryCard.offsetHeight - 18) + 'px';
   }
   function setNotesIsMain(on){
     if (on === notesIsMain) return;
