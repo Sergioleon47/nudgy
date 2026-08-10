@@ -98,7 +98,15 @@
   #auth-btn.synced { color: #2FA360; background:#E7F7EE; }
   #timeformat-btn.active { color: var(--accent); background:var(--accent-soft); }
   #auth-btn.loading { opacity:0.5; pointer-events:none; }
-  #auth-btn.loading i { animation: auth-btn-spin 0.9s linear infinite; }
+    #darkmode-btn {
+    background: #F2F2F7; border: none; color: #274257;
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
+    position: absolute; right: 78px; top: -2px;
+  }
+  #darkmode-btn:hover { background: #E5E5EA; }
+  #darkmode-btn.active { color: #D98A1F; background: #FFF6E5; }
+#auth-btn.loading i { animation: auth-btn-spin 0.9s linear infinite; }
   @keyframes auth-btn-spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
   #image-preview { display:none; align-items:center; gap:8px; margin-top:8px; }
   #image-preview img { max-height:64px; max-width:96px; object-fit:cover; border-radius:8px; border:1px solid rgba(0,0,0,0.15); }
@@ -441,7 +449,124 @@
     .print-bw .print-month-cell.is-today .print-month-daynum,
     .print-bw .print-week-day-head.is-today { color:#000; }
     .print-bw .print-week-day-head.is-today { text-decoration:underline; }
+  }  /* ---------- Dark mode ---------- */
+  :root {
+    --dm-bg: #1a1c1e;
+    --dm-panel: #2c2c2e;
+    --dm-panel-2: #3a3a3c;
+    --dm-text: #f5f5f7;
+    --dm-text-2: #a1a1a6;
+    --dm-input-bg: #1c1c1e;
+    --dm-border: rgba(255,255,255,0.08);
   }
+  body.dark-mode {
+    background: linear-gradient(180deg, #1a1c1e 0%, #242426 45%, #2c2c2e 100%);
+  }
+  body.dark-mode .header span { color: var(--dm-text); }
+  body.dark-mode .sky-panel {
+    background: var(--dm-panel);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 10px 28px rgba(0,0,0,0.25);
+  }
+  body.dark-mode #note-input { color: var(--dm-text); caret-color: var(--accent-light); }
+  body.dark-mode .note-block { color: var(--dm-text); border-bottom-color: var(--dm-border); }
+  body.dark-mode .note-block::before { opacity: 0.85; }
+  body.dark-mode .note-number { color: var(--accent-light); }
+  body.dark-mode .note-meta { color: var(--accent-light); }
+  body.dark-mode #search-input { color: var(--dm-text); background: var(--dm-input-bg); }
+  body.dark-mode #search-input::placeholder { color: var(--dm-text-2); }
+  body.dark-mode #empty-msg { color: var(--dm-text-2); }
+  body.dark-mode #onboarding-hint .hint-line { color: var(--dm-text-2); }
+  body.dark-mode #notif-btn,
+  body.dark-mode #contacts-btn,
+  body.dark-mode #export-btn, body.dark-mode #import-btn,
+  body.dark-mode #photo-btn, body.dark-mode #scan-btn,
+  body.dark-mode #datecalc-btn, body.dark-mode #receipt-btn,
+  body.dark-mode #upcoming-btn, body.dark-mode #timeformat-btn,
+  body.dark-mode #auth-btn { background: var(--dm-panel-2); color: #c7c7cc; }
+  body.dark-mode #notif-btn.granted { color: #48d868; background: rgba(72,216,104,0.15); }
+  body.dark-mode #auth-btn.synced { color: #48d868; background: rgba(72,216,104,0.15); }
+  body.dark-mode .sky-btn { background: var(--dm-panel-2); color: #c7c7cc; }
+  body.dark-mode .sky-btn:hover { background: #48484a; }
+  body.dark-mode .sky-btn.primary { background: var(--accent); color: #fff; }
+  body.dark-mode .sky-btn.danger { background: rgba(181,73,61,0.2); color: #e07065; }
+  body.dark-mode .cal-head button { background: var(--dm-panel-2); color: var(--accent-light); }
+  body.dark-mode #cal-title { color: var(--dm-text); }
+  body.dark-mode .cal-wd { color: var(--dm-text-2); }
+  body.dark-mode .cal-cell { background: var(--dm-input-bg); box-shadow: none; }
+  body.dark-mode .cal-cell:hover { background: #3a3a3c; }
+  body.dark-mode .cal-cell.has-activity { background: rgba(91,155,58,0.2); }
+  body.dark-mode .cal-cell.today { background: rgba(91,155,58,0.3); }
+  body.dark-mode .cal-cell.today .cal-daynum { color: var(--accent-light); }
+  body.dark-mode .cal-daynum { color: var(--dm-text); }
+  body.dark-mode .cal-activity-dot { background: var(--accent-light); }
+  body.dark-mode .cal-action-btn { background: var(--dm-panel-2); color: var(--accent-light); }
+  body.dark-mode .cal-action-btn:hover { background: #48484a; }
+  body.dark-mode .next-alarm-box { border-top-color: var(--dm-border); }
+  body.dark-mode .next-alarm-label { color: var(--dm-text-2); }
+  body.dark-mode #next-alarm { color: var(--dm-text); }
+  body.dark-mode #cal-selected-title { color: var(--accent-light); }
+  body.dark-mode .cal-mini-note { background: var(--dm-input-bg); color: var(--dm-text); }
+  body.dark-mode .footer-note { color: var(--dm-text-2); }
+  body.dark-mode #ringing-banner { background: rgba(181,73,61,0.2); color: #e07065; }
+  body.dark-mode #ringing-sub { color: #c55a4f; }
+  body.dark-mode #parse-preview { color: #48d868; }
+  body.dark-mode #pending-anchor-chip { background: rgba(91,155,58,0.15); color: var(--accent-light); }
+  body.dark-mode #pending-anchor-clear { color: var(--accent-light); }
+  body.dark-mode #saved-flash { color: #48d868; }
+  body.dark-mode #undo-toast { background: #3a3a3c; color: var(--dm-text); }
+  body.dark-mode #undo-toast-btn { color: var(--accent-light); }
+  body.dark-mode #cancel-edit-btn { color: var(--dm-text-2); }
+  body.dark-mode #contacts-panel { background: var(--dm-input-bg); }
+  body.dark-mode #contact-name-input, body.dark-mode #contact-phone-input { background: var(--dm-panel-2); color: var(--dm-text); }
+  body.dark-mode .contact-row { background: var(--dm-panel-2); color: var(--dm-text); }
+  body.dark-mode .contact-row button { color: #e07065; }
+  body.dark-mode .scan-modal-inner,
+  body.dark-mode .datecalc-modal-inner { background: var(--dm-panel); }
+  body.dark-mode .scan-modal-header { color: var(--dm-text); }
+  body.dark-mode .scan-hint { color: var(--dm-text-2); }
+  body.dark-mode .scan-setup-row select,
+  body.dark-mode .scan-day-cell { background: var(--dm-panel-2); color: var(--dm-text); }
+  body.dark-mode #scan-wizard-input { background: var(--dm-panel-2); color: var(--dm-text); }
+  body.dark-mode #scan-wizard-date { color: var(--dm-text); }
+  body.dark-mode #scan-wizard-skip { color: var(--dm-text-2); }
+  body.dark-mode #datecalc-target-date,
+  body.dark-mode .datecalc-offset-row select,
+  body.dark-mode .datecalc-offset-row input { background: var(--dm-panel-2); color: var(--dm-text); }
+  body.dark-mode .datecalc-section-label { color: var(--dm-text); }
+  body.dark-mode #receipt-desc-input, body.dark-mode #receipt-date-input { background: var(--dm-panel-2); color: var(--dm-text); }
+  body.dark-mode .upcoming-summary { color: var(--dm-text-2); }
+  body.dark-mode .upcoming-empty { color: var(--dm-text-2); }
+  body.dark-mode .upcoming-day-header { color: var(--accent-light); }
+  body.dark-mode .upcoming-day-count { color: var(--dm-text-2); }
+  body.dark-mode .upcoming-item-text { color: var(--dm-text); }
+  body.dark-mode .upcoming-item { border-bottom-color: var(--dm-border); }
+  body.dark-mode .paint-palette-bar { background: var(--dm-input-bg); }
+  body.dark-mode .paint-palette-hint { color: var(--dm-text-2); }
+  body.dark-mode #panel-swap-track { background: var(--dm-panel-2); }
+  body.dark-mode #panel-swap-track i { color: var(--dm-text-2); }
+  body.dark-mode #panel-swap-thumb { background: var(--dm-panel); }
+  body.dark-mode #lang-toggle { background: var(--dm-panel-2); }
+  body.dark-mode #lang-toggle button { color: var(--dm-text-2); }
+  body.dark-mode #lang-toggle button.active { background: var(--dm-panel); color: var(--accent-light); }
+  body.dark-mode .icon-btn { color: #636366; }
+  body.dark-mode .icon-btn:hover { color: var(--accent-light); }
+  body.dark-mode .icon-btn.bell-on { color: var(--accent-light); }
+  body.dark-mode .icon-btn.danger:hover { color: #e07065; }
+  body.dark-mode .checklist-text.checked { color: #636366; }
+  body.dark-mode .note-thumb { border-color: var(--dm-border); }
+  body.dark-mode .highlight-swatch-custom { background: var(--dm-panel-2); color: var(--dm-text-2); }
+  body.dark-mode #darkmode-btn { background: var(--dm-panel-2); color: #c7c7cc; }
+  body.dark-mode #darkmode-btn.active { color: #ffc968; background: rgba(255,201,104,0.15); }
+  body.dark-mode #sheet-handle { color: var(--dm-text-2); }
+  body.dark-mode .fab-add-note { box-shadow: 0 6px 16px rgba(0,0,0,0.45); }
+  /* Mobile panel-primary dark overrides */
+   (max-width: 680px) {
+    body.dark-mode .note-block { background: var(--dm-panel); box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 4px 14px rgba(0,0,0,0.2); }
+    body.dark-mode .col-right.panel-primary {
+      background: linear-gradient(160deg, #1a2e12 0%, #244317 55%, #2f5423 100%);
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -487,6 +612,7 @@
       <circle cx="256" cy="88" r="20" fill="#D98A1F" stroke="#A9600F" stroke-width="6"/>
     </svg>
     <span id="header-title">Nudgy</span>
+    <button id="darkmode-btn" aria-label="Modo oscuro" title="Modo oscuro"><i class="ti ti-moon" aria-hidden="true"></i></button>
     <div id="lang-toggle">
       <button id="lang-es-btn">ES</button>
       <button id="lang-en-btn">EN</button>
@@ -580,9 +706,9 @@
 
     <div class="sky-panel col-right">
       <div class="cal-head">
-        <button id="cal-prev"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
+        <button id="cal-prev" aria-label="Mes anterior"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
         <div id="cal-title">Mes</div>
-        <button id="cal-next"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+        <button id="cal-next" aria-label="Mes siguiente"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
       </div>
       <div class="cal-toolbar">
         <button id="print-btn" class="cal-action-btn" aria-label="Imprimir calendario" title="Imprimir calendario"><i class="ti ti-printer" aria-hidden="true"></i></button>
@@ -762,9 +888,9 @@
     </div>
 
     <div class="cal-head">
-      <button id="print-nav-prev"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
+      <button id="print-nav-prev" aria-label="Mes anterior"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
       <div id="print-nav-label">Mes</div>
-      <button id="print-nav-next"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+      <button id="print-nav-next" aria-label="Mes siguiente"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
     </div>
 
     <button id="print-go-btn" class="sky-btn primary">Imprimir</button>
@@ -832,6 +958,7 @@
       nextAlarmNone: 'No tienes alarmas activas.',
       footerNote: 'Tus notas se guardan en este navegador y este dispositivo.',
       noNotesDay: 'Sin notas este dia.',
+      darkModeTitle: 'Modo oscuro',
       hint1: '"Llamar al doctor el lunes a las 3pm"',
       hint2: '"Cumpleanos de Ana el 15 de agosto"',
       hint3: '"Pagar la luz en 3 dias"',
@@ -956,6 +1083,7 @@
       nextAlarmNone: 'You have no active alarms.',
       footerNote: 'Your notes are saved in this browser and device.',
       noNotesDay: 'No notes this day.',
+      darkModeTitle: "Dark mode",
       hint1: '"Call the doctor Monday at 3pm"',
       hint2: '"Ana\u2019s birthday on August 15"',
       hint3: '"Pay the electric bill in 3 days"',
@@ -1064,6 +1192,9 @@
 
   var TIME_FORMAT_KEY = 'mi_alarma_use_24h';
   var use24h = false;
+  var DARK_MODE_KEY = "nudgy_dark_mode";
+  var darkMode = false;
+  try { darkMode = localStorage.getItem(DARK_MODE_KEY) === "1"; } catch(e){}
   try { use24h = localStorage.getItem(TIME_FORMAT_KEY) === '1'; } catch(e){}
 
   // localStorage.setItem throws when the quota (~5MB, easy to hit with photo
@@ -1121,6 +1252,7 @@
     return w.length > 1 && base.length > 1 && w[0] === base[1] && w[1] === base[0];
   }
 
+  var darkModeBtn = document.getElementById('darkmode-btn');
   var headerTitle = document.getElementById('header-title');
   var langEsBtn = document.getElementById('lang-es-btn');
   var langEnBtn = document.getElementById('lang-en-btn');
@@ -1247,8 +1379,27 @@
   var calState = { year: today.getFullYear(), month: today.getMonth() };
   var selectedDateKey = null;
 
+  function applyDarkMode(){
+    document.body.classList.toggle('dark-mode', darkMode);
+    darkModeBtn.classList.toggle('active', darkMode);
+    darkModeBtn.innerHTML = darkMode ? '<i class="ti ti-sun" aria-hidden="true"></i>' : '<i class="ti ti-moon" aria-hidden="true"></i>';
+    darkModeBtn.setAttribute('aria-label', t('darkModeTitle'));
+    darkModeBtn.title = t('darkModeTitle');
+    var themeColor = darkMode ? '#1a1c1e' : '#C8DAB5';
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', themeColor);
+  }
+  function toggleDarkMode(){
+    darkMode = !darkMode;
+    try { localStorage.setItem(DARK_MODE_KEY, darkMode ? '1' : '0'); } catch(e){}
+    applyDarkMode();
+    vibrate(8);
+  }
+  darkModeBtn.addEventListener('click', toggleDarkMode);
+
   // ---------- Apply language to static UI ----------
   function applyLanguage(){
+    applyDarkMode();
     headerTitle.textContent = t('headerTitle');
     langEsBtn.classList.toggle('active', currentLang === 'es');
     langEnBtn.classList.toggle('active', currentLang === 'en');

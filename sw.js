@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mi-alarma-v5';
+const CACHE_NAME = 'nudgy-v6';
 const FILES_TO_CACHE = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', (event) => {
