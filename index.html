@@ -69,9 +69,13 @@
   }
   .col-left { flex:1; min-width:300px; max-width:400px; min-height:480px; display:flex; flex-direction:column; }
   .col-right { flex:1; min-width:280px; max-width:360px; }
-  .panel-swap { display:none; justify-content:center; margin-bottom:12px; }
+  /* Floats over the seam between whichever card is on top and the one below
+     it (repositioned in JS via repositionPanelSwap, since card heights vary
+     with content/month) instead of taking its own row at the top. */
+  .panel-swap { display:none; position:absolute; right:14px; z-index:20; margin:0; }
   .panel-swap-track {
     position:relative; width:96px; height:36px; background:#E5E5EA; border-radius:18px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.18);
     display:flex; align-items:center; justify-content:space-between; padding:0 10px;
   }
   .panel-swap-track i { font-size:16px; color:#5F5F63; z-index:1; }
@@ -626,14 +630,6 @@
   <div id="app-pager" class="app-pager">
   <div id="page-main" class="app-page">
 
-  <div id="panel-swap" class="panel-swap">
-    <div class="panel-swap-track">
-      <i class="ti ti-notes" aria-hidden="true"></i>
-      <i class="ti ti-calendar" aria-hidden="true"></i>
-      <div id="panel-swap-thumb" class="panel-swap-thumb"></div>
-    </div>
-  </div>
-
   <div class="cols">
 
     <div class="sky-panel col-left">
@@ -742,6 +738,14 @@
       <div class="next-alarm-box">
         <div class="next-alarm-label" id="next-alarm-label">Proxima alarma</div>
         <div id="next-alarm"></div>
+      </div>
+    </div>
+
+    <div id="panel-swap" class="panel-swap">
+      <div class="panel-swap-track">
+        <i class="ti ti-notes" aria-hidden="true"></i>
+        <i class="ti ti-calendar" aria-hidden="true"></i>
+        <div id="panel-swap-thumb" class="panel-swap-thumb"></div>
       </div>
     </div>
 
@@ -4150,6 +4154,7 @@
       }(key));
       calGrid.appendChild(cell);
     }
+    repositionPanelSwap();
   }
 
   function notesForDate(d){
@@ -4186,6 +4191,7 @@
     upcomingUpdateBadge();
     updateSharedNotesBadge();
     if (onSharedPage) renderSharedPanel();
+    repositionPanelSwap();
   }
 
   calPrev.addEventListener('click', function(){ vibrate(6); calState.month--; if (calState.month < 0){ calState.month = 11; calState.year--; } renderCalendar(); });
@@ -4641,6 +4647,7 @@
   // ---------- Left/right switch: choose which panel comes first ----------
   var PANEL_PREF_KEY = 'mi_alarma_panel_pref';
   var notesIsMain = false;
+  var panelSwapEl = document.getElementById('panel-swap');
   var panelSwapTrack = document.querySelector('.panel-swap-track');
   var panelSwapThumb = document.getElementById('panel-swap-thumb');
   var isDraggingSwap = false;
@@ -4649,6 +4656,16 @@
     panelSwapThumb.classList.toggle('on-right', notesIsMain);
     colLeftEl.classList.toggle('panel-primary', notesIsMain);
     colRightEl.classList.toggle('panel-primary', !notesIsMain);
+    repositionPanelSwap();
+  }
+  // The floating toggle sits astride the seam between whichever card is on
+  // top and the one below it. Card heights vary (a 5- vs 6-week month, note
+  // count, etc.), so this is measured, not a fixed CSS value.
+  function repositionPanelSwap(){
+    if (!panelSwapEl) return;
+    var primaryCard = notesIsMain ? colLeftEl : colRightEl;
+    if (!primaryCard) return;
+    panelSwapEl.style.top = (primaryCard.offsetHeight - 24) + 'px';
   }
   function setNotesIsMain(on){
     if (on === notesIsMain) return;
@@ -5075,6 +5092,8 @@
     if (printModal.style.display !== 'none'){ printCloseModal(); return; }
     if (householdModal.style.display !== 'none'){ householdModal.style.display = 'none'; return; }
   });
+
+  window.addEventListener('resize', repositionPanelSwap);
 
   // ---------- Init ----------
   loadFromStorage();
