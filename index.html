@@ -389,9 +389,13 @@
     .col-left, .col-right { min-height: auto; max-width: none; order:0; }
     #panel-swap-notes-btn, #panel-swap-cal-btn { display:flex; }
     .col-left.panel-primary #panel-swap-notes-btn { bottom:-15px; top:auto; }
-    .col-left:not(.panel-primary) #panel-swap-notes-btn { top:-15px; bottom:auto; }
+    /* When notes/calendar sit second (their own top edge), a straddling
+       position would land on top of that card's own header content (the
+       "Tus notas" label, the month prev/next arrows) — so it tucks fully
+       inside instead of straddling, clearing that row. */
+    .col-left:not(.panel-primary) #panel-swap-notes-btn { top:44px; bottom:auto; }
     .col-right.panel-primary #panel-swap-cal-btn { bottom:-15px; top:auto; }
-    .col-right:not(.panel-primary) #panel-swap-cal-btn { top:-15px; bottom:auto; }
+    .col-right:not(.panel-primary) #panel-swap-cal-btn { top:44px; bottom:auto; }
     .fab-add-note { display:flex; }
     .panel-primary { order: -1; }
     .col-right { margin-top: 16px; }
@@ -4729,7 +4733,11 @@
   // controls) so it can't steal their pointer events.
   var pagerDrag = null;
   appPager.addEventListener('pointerdown', function(e){
-    if (e.target.closest('#panel-swap, .cal-action-btn, #cal-grid, .scan-handle, .checklist-box, input, textarea, select, button, a')) return;
+    if (e.target.closest('.cal-action-btn, .scan-handle, .checklist-box, input, textarea, select, button, a')) return;
+    // The calendar only has its own competing drag gesture while actively
+    // painting or selecting a date range — otherwise a tap there is just a
+    // tap, so the grid (most of the visible screen) stays swipeable too.
+    if (e.target.closest('#cal-grid') && (paintMode || noteSelectMode)) return;
     pagerDrag = { startX: e.clientX, startY: e.clientY, committed: null, pointerId: e.pointerId };
   });
   appPager.addEventListener('pointermove', function(e){
