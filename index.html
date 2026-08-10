@@ -67,20 +67,8 @@
     box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 10px 28px rgba(0,0,0,0.07);
     box-sizing: border-box;
   }
-  .col-left { flex:1; min-width:300px; max-width:400px; min-height:480px; display:flex; flex-direction:column; position:relative; }
-  .col-right { flex:1; min-width:280px; max-width:360px; position:relative; }
-  /* One small round button per card, sitting astride whichever edge of its
-     own card currently borders the seam (bottom when that card is on top,
-     top when it's underneath) — a pure-CSS flip off the existing
-     .panel-primary class, no JS measuring needed. */
-  #panel-swap-notes-btn, #panel-swap-cal-btn {
-    display:none; align-items:center; justify-content:center;
-    position:absolute; right:14px; width:34px; height:34px; border-radius:50%;
-    border:none; cursor:pointer; z-index:20; font-size:15px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.22);
-  }
-  #panel-swap-notes-btn { background:#F2F2F7; color:#5F5F63; }
-  #panel-swap-cal-btn { background:rgba(255,255,255,0.25); color:#fff; }
+  .col-left { flex:1; min-width:300px; max-width:400px; min-height:480px; display:flex; flex-direction:column; }
+  .col-right { flex:1; min-width:280px; max-width:360px; }
 
   #note-input, #note-input:focus {
     width:100%; box-sizing:border-box; resize:none; font-family:inherit; font-size:15px; color:#1C1C1E;
@@ -386,23 +374,11 @@
     .header { margin-bottom: 10px; }
     .cols { gap: 10px; }
     .sky-panel { padding: 12px; }
-    .col-left, .col-right { min-height: auto; max-width: none; order:0; }
-    #panel-swap-notes-btn, #panel-swap-cal-btn { display:flex; }
-    .col-left.panel-primary #panel-swap-notes-btn { bottom:-15px; top:auto; }
-    /* When notes/calendar sit second (their own top edge), a straddling
-       position would land on top of that card's own header content (the
-       "Tus notas" label, the month prev/next arrows) — so it tucks fully
-       inside instead of straddling, clearing that row. */
-    .col-left:not(.panel-primary) #panel-swap-notes-btn { top:44px; bottom:auto; }
-    .col-right.panel-primary #panel-swap-cal-btn { bottom:-15px; top:auto; }
-    .col-right:not(.panel-primary) #panel-swap-cal-btn { top:44px; bottom:auto; }
+    .col-left, .col-right { min-height: auto; max-width: none; }
     .fab-add-note { display:flex; }
-    .panel-primary { order: -1; }
-    .col-right { margin-top: 16px; }
-    .col-right.panel-primary { margin-top: 0; }
-    .col-left:not(.panel-primary) { margin-top: 16px; }
-    .col-left, .col-right { transition: opacity .22s ease; }
-    .col-left.panel-swap-fade, .col-right.panel-swap-fade { opacity: 0; }
+    /* Fixed order on mobile: calendar first, notes below. */
+    .col-right { order:-1; margin-top: 0; }
+    .col-left { order:0; margin-top: 16px; }
     .top-row { margin-bottom: 6px; }
     #note-input { height: 60px; overflow-y: auto; }
     #notes-list { max-height: 260px; margin-top: 8px; gap:10px; }
@@ -423,7 +399,7 @@
     .next-alarm-box { margin-top: 10px; padding-top: 10px; }
     .footer-note { margin-top: 10px; }
 
-    .col-left:not(.panel-primary) .sheet-handle { display:flex; }
+    .sheet-handle { display:flex; }
 
     .col-right {
       background: linear-gradient(160deg, var(--accent-dark) 0%, var(--accent) 55%, var(--accent-light) 100%);
@@ -579,9 +555,6 @@
   body.dark-mode .upcoming-item { border-bottom-color: var(--dm-border); }
   body.dark-mode .paint-palette-bar { background: var(--dm-input-bg); }
   body.dark-mode .paint-palette-hint { color: var(--dm-text-2); }
-  body.dark-mode #panel-swap-track { background: var(--dm-panel-2); }
-  body.dark-mode #panel-swap-track i { color: var(--dm-text-2); }
-  body.dark-mode #panel-swap-thumb { background: var(--dm-panel); }
   body.dark-mode #lang-toggle { background: var(--dm-panel-2); }
   body.dark-mode #lang-toggle button { color: var(--dm-text-2); }
   body.dark-mode #lang-toggle button.active { background: var(--dm-panel); color: var(--accent-light); }
@@ -596,10 +569,10 @@
   body.dark-mode #darkmode-btn.active { color: #ffc968; background: rgba(255,201,104,0.15); }
   body.dark-mode #sheet-handle { color: var(--dm-text-2); }
   body.dark-mode .fab-add-note { box-shadow: 0 6px 16px rgba(0,0,0,0.45); }
-  /* Mobile panel-primary dark overrides */
+  /* Mobile dark overrides */
    (max-width: 680px) {
     body.dark-mode .note-block { background: var(--dm-panel); box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 4px 14px rgba(0,0,0,0.2); }
-    body.dark-mode .col-right.panel-primary {
+    body.dark-mode .col-right {
       background: linear-gradient(160deg, #1a2e12 0%, #244317 55%, #2f5423 100%);
     }
   }
@@ -710,7 +683,6 @@
         <div class="hint-line" id="hint-line-3">"Pagar la luz en 3 dias"</div>
       </div>
 
-      <button id="panel-swap-notes-btn" aria-label="Mostrar notas primero" title="Mostrar notas primero"><i class="ti ti-notes" aria-hidden="true"></i></button>
     </div>
 
     <div class="sky-panel col-right">
@@ -743,7 +715,6 @@
         <div class="next-alarm-label" id="next-alarm-label">Proxima alarma</div>
         <div id="next-alarm"></div>
       </div>
-      <button id="panel-swap-cal-btn" aria-label="Mostrar calendario primero" title="Mostrar calendario primero"><i class="ti ti-calendar" aria-hidden="true"></i></button>
     </div>
 
 
@@ -1121,8 +1092,6 @@
       highlightBtnTitle: 'Pintar fechas',
       highlightHint: 'Desliza para pintar los dias. Toca un dia pintado para borrarlo.',
       noteSelectBtnTitle: 'Empezar nota desde el calendario',
-      panelSwapNotesLabel: 'Mostrar notas primero',
-      panelSwapCalLabel: 'Mostrar calendario primero',
       noteSelectHint: 'Desliza el dedo sobre los dias para tu nota',
       sheetHandleLabel: 'Tus notas',
       upcomingBtnTitle: 'Proximas alarmas',
@@ -1270,8 +1239,6 @@
       highlightBtnTitle: 'Paint dates',
       highlightHint: 'Drag to paint the days. Tap a painted day to erase it.',
       noteSelectBtnTitle: 'Start a note from the calendar',
-      panelSwapNotesLabel: 'Show notes first',
-      panelSwapCalLabel: 'Show calendar first',
       noteSelectHint: 'Drag your finger over the days for your note',
       sheetHandleLabel: 'Your notes',
       upcomingBtnTitle: 'Upcoming alarms',
@@ -1544,8 +1511,6 @@
     highlightBtn.title = t('highlightBtnTitle'); highlightBtn.setAttribute('aria-label', t('highlightBtnTitle'));
     noteSelectBtn.title = t('noteSelectBtnTitle'); noteSelectBtn.setAttribute('aria-label', t('noteSelectBtnTitle'));
     upcomingBtn.title = t('upcomingBtnTitle'); upcomingBtn.setAttribute('aria-label', t('upcomingBtnTitle'));
-    panelSwapNotesBtn.title = t('panelSwapNotesLabel'); panelSwapNotesBtn.setAttribute('aria-label', t('panelSwapNotesLabel'));
-    panelSwapCalBtn.title = t('panelSwapCalLabel'); panelSwapCalBtn.setAttribute('aria-label', t('panelSwapCalLabel'));
     if (pendingNoteAnchor) updatePendingAnchorChip();
     updateNotifBtn();
     updateAuthBtn();
@@ -3300,7 +3265,7 @@
   // would otherwise blur the textarea first and auto-save the draft as a new
   // note before the button's own click even runs. preventDefault on mousedown
   // keeps focus (and the draft) untouched; the button's click still fires.
-  document.querySelectorAll('.top-row button, .cal-action-btn, #panel-swap-notes-btn, #panel-swap-cal-btn').forEach(function(btn){
+  document.querySelectorAll('.top-row button, .cal-action-btn').forEach(function(btn){
     btn.addEventListener('mousedown', function(e){ e.preventDefault(); });
   });
   imageLightbox.addEventListener('click', function(){ imageLightbox.style.display = 'none'; imageLightboxImg.src = ''; });
@@ -4636,49 +4601,12 @@
     markNoteSelectRange(noteSelectStartDate, noteSelectCurrentDate);
   });
 
-  // ---------- Notes/calendar order (mobile: whichever is primary shows first, ----------
-  // ---------- the other sits right below it in normal flow -- just scroll to see it) ----------
-  var colLeftEl = document.querySelector('.col-left');
-  var colRightEl = document.querySelector('.col-right');
+  // ---------- Notes/calendar order (fixed: calendar first, notes below) ----------
   var sheetHandleLabel = document.getElementById('sheet-handle-label');
 
   function updateSheetHandleLabel(){
     sheetHandleLabel.textContent = t('sheetHandleLabel') + (notes.length ? ' (' + notes.length + ')' : '');
   }
-
-  // ---------- Left/right switch: choose which panel comes first ----------
-  // One small round button lives on each card (notes card / calendar card);
-  // tapping either one brings that card to the front. Position (top edge vs
-  // bottom edge of its own card) flips via the .panel-primary class in CSS.
-  var PANEL_PREF_KEY = 'mi_alarma_panel_pref';
-  var notesIsMain = false;
-  var panelSwapNotesBtn = document.getElementById('panel-swap-notes-btn');
-  var panelSwapCalBtn = document.getElementById('panel-swap-cal-btn');
-
-  function applyPanelPref(){
-    colLeftEl.classList.toggle('panel-primary', notesIsMain);
-    colRightEl.classList.toggle('panel-primary', !notesIsMain);
-  }
-  function setNotesIsMain(on){
-    if (on === notesIsMain) return;
-    notesIsMain = on;
-    try { localStorage.setItem(PANEL_PREF_KEY, on ? 'notes' : 'calendar'); } catch(e){}
-    // Cross-fade the swap instead of an instant jump — CSS `order` itself
-    // can't be transitioned, so this fades both panels out, reorders them
-    // while invisible, then fades back in.
-    colLeftEl.classList.add('panel-swap-fade');
-    colRightEl.classList.add('panel-swap-fade');
-    setTimeout(function(){
-      applyPanelPref();
-      colLeftEl.classList.remove('panel-swap-fade');
-      colRightEl.classList.remove('panel-swap-fade');
-    }, 220);
-  }
-  try { notesIsMain = localStorage.getItem(PANEL_PREF_KEY) === 'notes'; } catch(e){}
-  applyPanelPref();
-
-  panelSwapNotesBtn.addEventListener('click', function(){ vibrate(6); setNotesIsMain(true); });
-  panelSwapCalBtn.addEventListener('click', function(){ vibrate(6); setNotesIsMain(false); });
 
   document.getElementById('fab-add-note').addEventListener('click', function(){
     vibrate(8);
@@ -4729,8 +4657,8 @@
   // Doesn't commit to a horizontal page-swipe until the gesture is clearly
   // more horizontal than vertical, so it never fights normal page/list
   // scrolling — and skips entirely inside other draggable surfaces (the
-  // panel-swap slider, the calendar in paint/select mode, scan handles, form
-  // controls) so it can't steal their pointer events.
+  // calendar in paint/select mode, scan handles, form controls) so it can't
+  // steal their pointer events.
   var pagerDrag = null;
   appPager.addEventListener('pointerdown', function(e){
     if (e.target.closest('.cal-action-btn, .scan-handle, .checklist-box, input, textarea, select, button, a')) return;
