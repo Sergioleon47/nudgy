@@ -96,6 +96,9 @@
   }
   .upcoming-badge.visible { display:flex; }
   #auth-btn.synced { color: #2FA360; background:#E7F7EE; }
+  #auth-btn.loading { opacity:0.5; pointer-events:none; }
+  #auth-btn.loading i { animation: auth-btn-spin 0.9s linear infinite; }
+  @keyframes auth-btn-spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
   #image-preview { display:none; align-items:center; gap:8px; margin-top:8px; }
   #image-preview img { max-height:64px; max-width:96px; object-fit:cover; border-radius:8px; border:1px solid rgba(0,0,0,0.15); }
   #image-preview-remove {
@@ -548,7 +551,7 @@
         <span id="pending-anchor-text"></span>
         <button id="pending-anchor-clear" aria-label="Cancelar" title="Cancelar"><i class="ti ti-x" aria-hidden="true"></i></button>
       </div>
-      <textarea id="note-input" rows="5" autofocus maxlength="4000"></textarea>
+      <textarea id="note-input" rows="5" maxlength="4000"></textarea>
       <div id="image-preview" style="display:none;">
         <img id="image-preview-img" alt="">
         <button id="image-preview-remove" aria-label="Quitar foto" title="Quitar foto"><i class="ti ti-x" aria-hidden="true"></i></button>
@@ -782,10 +785,10 @@
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
+  // Firebase (~200KB+ across the 3 SDKs) is loaded lazily, only once the user
+  // actually taps the cloud-sync button — everything above works fully
+  // offline/signed-out without ever paying for this download.
   var firebaseConfig = {
     apiKey: "AIzaSyD_v2PMTGFYczqMQKfCV88HJ8acFX9Mpzc",
     authDomain: "nudgyapp.firebaseapp.com",
@@ -794,7 +797,6 @@
     messagingSenderId: "803567703829",
     appId: "1:803567703829:web:0afcd26967b485062a7b1c"
   };
-  if (window.firebase) { firebase.initializeApp(firebaseConfig); }
 </script>
 <script>
 (function(){
@@ -1636,34 +1638,59 @@
     }
   }
 
+  // ---------- Lazy Firebase load: the 3 SDK scripts only download once the ----------
+  // ---------- user actually taps the cloud-sync button. ----------
+  var firebaseLoadPromise = null;
+  function loadExternalScript(src){
+    return new Promise(function(resolve, reject){
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = function(){ resolve(); };
+      s.onerror = function(){ reject(new Error('load failed: ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+  function ensureFirebaseReady(){
+    if (firebaseLoadPromise) return firebaseLoadPromise;
+    firebaseLoadPromise = loadExternalScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js')
+      .then(function(){ return loadExternalScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js'); })
+      .then(function(){ return loadExternalScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js'); })
+      .then(function(){
+        firebase.initializeApp(firebaseConfig);
+        firebase.auth().onAuthStateChanged(function(user){
+          currentUser = user;
+          updateAuthBtn();
+          if (user){
+            // Snapshot this device's local notes/contacts before the listener below
+            // has a chance to overwrite `notes`/`contacts` with whatever the account
+            // already has remotely — the migration merge needs the true pre-sync
+            // local state, not a copy that's already been replaced.
+            var localNotesAtSignIn = notes.slice();
+            var localContactsAtSignIn = contacts.slice();
+            attachFirestoreListeners(user.uid);
+            runFirstSignInMigrationIfNeeded(user.uid, localNotesAtSignIn, localContactsAtSignIn);
+          } else {
+            detachFirestoreListeners();
+          }
+        });
+      });
+    firebaseLoadPromise.catch(function(){ firebaseLoadPromise = null; });
+    return firebaseLoadPromise;
+  }
+
   var authBtn = document.getElementById('auth-btn');
   if (authBtn){
     authBtn.addEventListener('click', function(){
-      if (!window.firebase || !firebase.apps || !firebase.apps.length) return;
       if (currentUser){
         firebase.auth().signOut();
-      } else {
-        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function(){});
+        return;
       }
-    });
-  }
-
-  if (window.firebase && firebase.apps && firebase.apps.length){
-    firebase.auth().onAuthStateChanged(function(user){
-      currentUser = user;
-      updateAuthBtn();
-      if (user){
-        // Snapshot this device's local notes/contacts before the listener below
-        // has a chance to overwrite `notes`/`contacts` with whatever the account
-        // already has remotely — the migration merge needs the true pre-sync
-        // local state, not a copy that's already been replaced.
-        var localNotesAtSignIn = notes.slice();
-        var localContactsAtSignIn = contacts.slice();
-        attachFirestoreListeners(user.uid);
-        runFirstSignInMigrationIfNeeded(user.uid, localNotesAtSignIn, localContactsAtSignIn);
-      } else {
-        detachFirestoreListeners();
-      }
+      authBtn.classList.add('loading');
+      ensureFirebaseReady().then(function(){
+        return firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
+      }).catch(function(){}).then(function(){
+        authBtn.classList.remove('loading');
+      });
     });
   }
 
