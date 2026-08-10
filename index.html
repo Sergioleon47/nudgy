@@ -58,6 +58,26 @@
   .shared-note-actions { display:flex; gap:8px; }
   .shared-note-actions button { flex:1; }
 
+  #date-action-menu {
+    display:none; position:fixed; z-index:900; background:#FFFFFF; border-radius:14px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.25); padding:8px; min-width:180px;
+  }
+  #date-action-menu-title { font-size:11px; font-weight:700; color:#5F5F63; padding:6px 10px 4px; text-transform:uppercase; letter-spacing:0.3px; }
+  .date-action-item {
+    display:flex; align-items:center; gap:10px; width:100%; background:none; border:none;
+    padding:9px 10px; border-radius:9px; cursor:pointer; font-size:14px; color:#1C1C1E; text-align:left;
+  }
+  .date-action-item:hover { background:#F2F2F7; }
+  .date-action-item i { font-size:16px; color:var(--accent); flex-shrink:0; }
+
+  #contact-picker-list { display:flex; flex-direction:column; gap:6px; }
+  .contact-picker-row {
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+    background:#F2F2F7; cursor:pointer; font-size:14px; color:#1C1C1E;
+  }
+  .contact-picker-row:hover { background:#E5E5EA; }
+  .contact-picker-row i { font-size:15px; color:var(--accent); }
+
   .cols { position:relative; display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
   .sky-panel {
     background: #FFFFFF;
@@ -214,7 +234,7 @@
   .upcoming-item-text { flex:1; color:#1C1C1E; white-space:pre-wrap; word-break:break-word; }
   .upcoming-item-icon { font-size:14px; color:#2FA360; flex-shrink:0; padding-top:1px; }
 
-  #print-modal, #upcoming-modal, #household-modal {
+  #print-modal, #upcoming-modal, #household-modal, #contact-picker-modal {
     display:none; position:fixed; inset:0; background:rgba(20,40,55,0.55); z-index:1000;
     align-items:center; justify-content:center; padding:16px;
   }
@@ -917,6 +937,25 @@
   <button id="undo-toast-btn"></button>
 </div>
 
+<div id="date-action-menu" role="menu">
+  <div id="date-action-menu-title"></div>
+  <button class="date-action-item" id="date-action-location" role="menuitem"><i class="ti ti-map-pin" aria-hidden="true"></i><span id="date-action-location-label">Ubicacion</span></button>
+  <button class="date-action-item" id="date-action-contact" role="menuitem"><i class="ti ti-address-book" aria-hidden="true"></i><span id="date-action-contact-label">Contacto</span></button>
+  <button class="date-action-item" id="date-action-photo" role="menuitem"><i class="ti ti-camera" aria-hidden="true"></i><span id="date-action-photo-label">Foto</span></button>
+  <button class="date-action-item" id="date-action-receipt" role="menuitem"><i class="ti ti-receipt-2" aria-hidden="true"></i><span id="date-action-receipt-label">Recibo</span></button>
+</div>
+
+<div id="contact-picker-modal" role="dialog" aria-modal="true" aria-labelledby="contact-picker-title">
+  <div class="datecalc-modal-inner">
+    <div class="scan-modal-header">
+      <span id="contact-picker-title">Elegir contacto</span>
+      <button id="contact-picker-close-btn" class="icon-btn" aria-label="Cerrar"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </div>
+    <div id="contact-picker-list"></div>
+    <div id="contact-picker-empty" class="upcoming-empty" style="display:none;">No tenes contactos guardados todavia.</div>
+  </div>
+</div>
+
 <div id="upcoming-modal" role="dialog" aria-modal="true" aria-labelledby="upcoming-title">
   <div class="datecalc-modal-inner">
     <div class="scan-modal-header">
@@ -1111,6 +1150,16 @@
       icsImportSummary: 'Se importaron {n} eventos.',
       icsImportSimplifiedNote: '{n} tenian una repeticion muy particular y se importaron como una sola vez.',
       icsImportError: 'No se pudo leer ese archivo .ics.',
+      dateActionLocationLabel: 'Ubicacion',
+      dateActionContactLabel: 'Contacto',
+      dateActionPhotoLabel: 'Foto',
+      dateActionReceiptLabel: 'Recibo',
+      contactPickerTitle: 'Elegir contacto',
+      contactPickerEmptyMsg: 'No tenes contactos guardados todavia.',
+      dateActionContactNoteText: 'Recordatorio con {name}',
+      dateActionLocationNoteText: 'Ubicacion: {address}',
+      locationNotSupported: 'Tu navegador no permite obtener la ubicacion.',
+      locationDenied: 'No se pudo obtener tu ubicacion. Revisa los permisos.',
       highlightHint: 'Desliza para pintar los dias. Toca un dia pintado para borrarlo.',
       noteSelectBtnTitle: 'Empezar nota desde el calendario',
       noteSelectHint: 'Desliza el dedo sobre los dias para tu nota',
@@ -1264,6 +1313,16 @@
       icsImportSummary: '{n} events imported.',
       icsImportSimplifiedNote: '{n} had an unusual repeat rule and were imported as one-time only.',
       icsImportError: "Couldn't read that .ics file.",
+      dateActionLocationLabel: 'Location',
+      dateActionContactLabel: 'Contact',
+      dateActionPhotoLabel: 'Photo',
+      dateActionReceiptLabel: 'Receipt',
+      contactPickerTitle: 'Choose a contact',
+      contactPickerEmptyMsg: "You don't have any saved contacts yet.",
+      dateActionContactNoteText: 'Reminder with {name}',
+      dateActionLocationNoteText: 'Location: {address}',
+      locationNotSupported: "Your browser doesn't support getting your location.",
+      locationDenied: "Couldn't get your location. Check your permissions.",
       highlightHint: 'Drag to paint the days. Tap a painted day to erase it.',
       noteSelectBtnTitle: 'Start a note from the calendar',
       noteSelectHint: 'Drag your finger over the days for your note',
@@ -1540,6 +1599,12 @@
     noteSelectBtn.title = t('noteSelectBtnTitle'); noteSelectBtn.setAttribute('aria-label', t('noteSelectBtnTitle'));
     upcomingBtn.title = t('upcomingBtnTitle'); upcomingBtn.setAttribute('aria-label', t('upcomingBtnTitle'));
     calTitle.setAttribute('aria-label', t('calYearViewLabel'));
+    document.getElementById('date-action-location-label').textContent = t('dateActionLocationLabel');
+    document.getElementById('date-action-contact-label').textContent = t('dateActionContactLabel');
+    document.getElementById('date-action-photo-label').textContent = t('dateActionPhotoLabel');
+    document.getElementById('date-action-receipt-label').textContent = t('dateActionReceiptLabel');
+    document.getElementById('contact-picker-title').textContent = t('contactPickerTitle');
+    document.getElementById('contact-picker-empty').textContent = t('contactPickerEmptyMsg');
     if (pendingNoteAnchor) updatePendingAnchorChip();
     updateNotifBtn();
     updateAuthBtn();
@@ -3294,7 +3359,7 @@
   // would otherwise blur the textarea first and auto-save the draft as a new
   // note before the button's own click even runs. preventDefault on mousedown
   // keeps focus (and the draft) untouched; the button's click still fires.
-  document.querySelectorAll('.top-row button, .cal-action-btn').forEach(function(btn){
+  document.querySelectorAll('.top-row button, .cal-action-btn, .date-action-item, #contact-picker-close-btn').forEach(function(btn){
     btn.addEventListener('mousedown', function(e){ e.preventDefault(); });
   });
   imageLightbox.addEventListener('click', function(){ imageLightbox.style.display = 'none'; imageLightboxImg.src = ''; });
@@ -4145,11 +4210,18 @@
       cell.addEventListener('click', function(k){
         return function(){
           if (paintMode || noteSelectMode) return;
+          if (dateLongPressFired){ dateLongPressFired = false; return; }
           vibrate(6);
           selectedDateKey = (selectedDateKey === k) ? null : k;
           renderCalendar(); renderSelectedPanel();
         };
       }(key));
+      cell.addEventListener('pointerdown', function(k, c){
+        return function(e){ startDateLongPress(e, k, c); };
+      }(key, cell));
+      cell.addEventListener('pointermove', cancelDateLongPressOnMove);
+      cell.addEventListener('pointerup', cancelDateLongPress);
+      cell.addEventListener('pointercancel', cancelDateLongPress);
       calGrid.appendChild(cell);
     }
   }
@@ -4293,6 +4365,156 @@
       if (n.hour == null) return false;
       return dateKey(n.target) === dateKey(d);
     });
+  }
+
+  // ---------- Long-press a date -> quick-action menu ----------
+  var dateLongPressState = null;
+  var dateLongPressFired = false;
+  var dateActionKey = null;
+
+  function startDateLongPress(e, key, cell){
+    if (paintMode || noteSelectMode) return;
+    dateLongPressFired = false;
+    if (dateLongPressState) clearTimeout(dateLongPressState.timer);
+    dateLongPressState = {
+      startX: e.clientX, startY: e.clientY,
+      timer: setTimeout(function(){
+        dateLongPressFired = true;
+        dateLongPressState = null;
+        vibrate([10, 30, 10]);
+        openDateActionMenu(key, cell);
+      }, 500)
+    };
+  }
+  function cancelDateLongPressOnMove(e){
+    if (!dateLongPressState) return;
+    var dx = e.clientX - dateLongPressState.startX, dy = e.clientY - dateLongPressState.startY;
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8){ clearTimeout(dateLongPressState.timer); dateLongPressState = null; }
+  }
+  function cancelDateLongPress(){
+    if (dateLongPressState){ clearTimeout(dateLongPressState.timer); dateLongPressState = null; }
+  }
+
+  var dateActionMenuEl = document.getElementById('date-action-menu');
+  var dateActionMenuTitleEl = document.getElementById('date-action-menu-title');
+  var dateActionLocationBtn = document.getElementById('date-action-location');
+  var dateActionContactBtn = document.getElementById('date-action-contact');
+  var dateActionPhotoBtn = document.getElementById('date-action-photo');
+  var dateActionReceiptBtn = document.getElementById('date-action-receipt');
+
+  function dateActionTargetDate(){
+    if (!dateActionKey) return null;
+    var parts = dateActionKey.split('-');
+    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  }
+  function openDateActionMenu(key, cell){
+    dateActionKey = key;
+    var d = dateActionTargetDate();
+    dateActionMenuTitleEl.textContent = t('days')[d.getDay()] + ' ' + d.getDate() + ' ' + t('months')[d.getMonth()];
+    dateActionMenuEl.style.visibility = 'hidden';
+    dateActionMenuEl.style.display = 'block';
+    var r = cell.getBoundingClientRect();
+    requestAnimationFrame(function(){
+      var mw = dateActionMenuEl.offsetWidth, mh = dateActionMenuEl.offsetHeight;
+      var left = Math.min(Math.max(8, r.left), window.innerWidth - mw - 8);
+      var top = r.bottom + 6;
+      if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 6);
+      dateActionMenuEl.style.left = left + 'px';
+      dateActionMenuEl.style.top = top + 'px';
+      dateActionMenuEl.style.visibility = '';
+    });
+  }
+  function closeDateActionMenu(){
+    dateActionMenuEl.style.display = 'none';
+    dateActionKey = null;
+  }
+  document.addEventListener('pointerdown', function(e){
+    if (dateActionMenuEl.style.display === 'none') return;
+    if (e.target.closest('#date-action-menu')) return;
+    closeDateActionMenu();
+  });
+
+  function createDateNote(d, text){
+    pendingNoteAnchor = { start: d, end: d };
+    addNewNoteFromRaw(capitalizeFirst(text));
+    renderAll();
+    flashSaved();
+    vibrate(15);
+  }
+
+  dateActionLocationBtn.addEventListener('click', function(){
+    var d = dateActionTargetDate();
+    closeDateActionMenu();
+    startLocationCapture(d);
+  });
+  dateActionContactBtn.addEventListener('click', function(){
+    var d = dateActionTargetDate();
+    closeDateActionMenu();
+    openContactPicker(d);
+  });
+  dateActionPhotoBtn.addEventListener('click', function(){
+    var d = dateActionTargetDate();
+    closeDateActionMenu();
+    pendingNoteAnchor = { start: d, end: d };
+    updatePendingAnchorChip();
+    noteInput.focus();
+    photoFileInput.click();
+  });
+  dateActionReceiptBtn.addEventListener('click', function(){
+    closeDateActionMenu();
+    receiptBtn.click();
+  });
+
+  // ---------- Contact picker (long-press menu -> Contacto) ----------
+  var contactPickerModal = document.getElementById('contact-picker-modal');
+  var contactPickerCloseBtn = document.getElementById('contact-picker-close-btn');
+  var contactPickerList = document.getElementById('contact-picker-list');
+  var contactPickerEmpty = document.getElementById('contact-picker-empty');
+
+  function openContactPicker(d){
+    contactPickerList.innerHTML = '';
+    contactPickerEmpty.style.display = contacts.length ? 'none' : 'block';
+    contacts.forEach(function(c){
+      var row = document.createElement('div');
+      row.className = 'contact-picker-row';
+      row.innerHTML = '<i class="ti ti-user" aria-hidden="true"></i>';
+      var span = document.createElement('span');
+      span.textContent = c.name;
+      row.appendChild(span);
+      row.addEventListener('click', function(){
+        createDateNote(d, t('dateActionContactNoteText').replace('{name}', c.name));
+        contactPickerModal.style.display = 'none';
+      });
+      contactPickerList.appendChild(row);
+    });
+    contactPickerModal.style.display = 'flex';
+    contactPickerCloseBtn.focus();
+  }
+  contactPickerCloseBtn.addEventListener('click', function(){ contactPickerModal.style.display = 'none'; });
+
+  // ---------- Location capture (long-press menu -> Ubicacion) ----------
+  // Uses the device's own GPS plus OpenStreetMap's free Nominatim service to
+  // turn coordinates into a readable address — no API key, no billing.
+  // Nearby-business search (hospital/dentist/etc.) needs a paid provider
+  // (Google Places) or a slower free one (OSM Overpass) and is intentionally
+  // left out until that's decided.
+  function startLocationCapture(d){
+    if (!navigator.geolocation){ alert(t('locationNotSupported')); return; }
+    vibrate(8);
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var lat = pos.coords.latitude, lon = pos.coords.longitude;
+      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lon + '&zoom=18&addressdetails=1')
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          var address = (data && data.display_name) ? data.display_name : (lat.toFixed(5) + ', ' + lon.toFixed(5));
+          createDateNote(d, t('dateActionLocationNoteText').replace('{address}', address));
+        })
+        .catch(function(){
+          createDateNote(d, t('dateActionLocationNoteText').replace('{address}', lat.toFixed(5) + ', ' + lon.toFixed(5)));
+        });
+    }, function(){
+      alert(t('locationDenied'));
+    }, { enableHighAccuracy:true, timeout:10000 });
   }
 
   function renderSelectedPanel(){
@@ -5158,6 +5380,8 @@
     if (receiptModal.style.display !== 'none'){ receiptCloseModal(); return; }
     if (printModal.style.display !== 'none'){ printCloseModal(); return; }
     if (householdModal.style.display !== 'none'){ householdModal.style.display = 'none'; return; }
+    if (contactPickerModal.style.display !== 'none'){ contactPickerModal.style.display = 'none'; return; }
+    if (dateActionMenuEl.style.display !== 'none'){ closeDateActionMenu(); return; }
   });
 
   // ---------- Init ----------
