@@ -644,7 +644,7 @@
         <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
           <button id="export-btn" title="Exportar notas" aria-label="Exportar"><i class="ti ti-download" aria-hidden="true"></i></button>
           <button id="import-btn" title="Importar notas" aria-label="Importar"><i class="ti ti-upload" aria-hidden="true"></i></button>
-          <input type="file" id="import-file-input" accept="application/json" style="display:none">
+          <input type="file" id="import-file-input" accept="application/json,.json,.ics,text/calendar" style="display:none">
           <button id="contacts-btn" title="Contactos" aria-label="Contactos"><i class="ti ti-address-book" aria-hidden="true"></i></button>
           <button id="photo-btn" aria-label="Adjuntar foto" title="Adjuntar foto"><i class="ti ti-camera" aria-hidden="true"></i></button>
           <input type="file" id="photo-file-input" accept="image/*" style="display:none">
@@ -1106,6 +1106,11 @@
       printGoBtn: 'Imprimir',
       highlightBtnTitle: 'Pintar fechas',
       calYearViewLabel: 'Ver el ano completo',
+      icsImportedUntitled: 'Evento importado',
+      icsImportNone: 'No se encontro ningun evento para importar en ese archivo.',
+      icsImportSummary: 'Se importaron {n} eventos.',
+      icsImportSimplifiedNote: '{n} tenian una repeticion muy particular y se importaron como una sola vez.',
+      icsImportError: 'No se pudo leer ese archivo .ics.',
       highlightHint: 'Desliza para pintar los dias. Toca un dia pintado para borrarlo.',
       noteSelectBtnTitle: 'Empezar nota desde el calendario',
       noteSelectHint: 'Desliza el dedo sobre los dias para tu nota',
@@ -1254,6 +1259,11 @@
       printGoBtn: 'Print',
       highlightBtnTitle: 'Paint dates',
       calYearViewLabel: 'View the full year',
+      icsImportedUntitled: 'Imported event',
+      icsImportNone: "Couldn't find any events to import in that file.",
+      icsImportSummary: '{n} events imported.',
+      icsImportSimplifiedNote: '{n} had an unusual repeat rule and were imported as one-time only.',
+      icsImportError: "Couldn't read that .ics file.",
       highlightHint: 'Drag to paint the days. Tap a painted day to erase it.',
       noteSelectBtnTitle: 'Start a note from the calendar',
       noteSelectHint: 'Drag your finger over the days for your note',
@@ -5195,6 +5205,167 @@
     });
   }
 
+  // ---------- ICS import (.ics files from Google/Outlook/Apple Calendar) ----------
+  // Hand-rolled, not a full RFC 5545 implementation: covers the recurrence
+  // shapes Nudgy itself already understands (daily/weekly/monthly/yearly at
+  // a fixed interval). Anything fancier (BYSETPOS, EXDATE, multi-rule) is
+  // imported as a plain one-time note on its first occurrence rather than
+  // risk silently building the wrong recurrence.
+  var ICS_WEEKDAY = { SU:0, MO:1, TU:2, WE:3, TH:4, FR:5, SA:6 };
+  function icsUnfoldLines(text){
+    var raw = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    var lines = [];
+    raw.forEach(function(line){
+      if (/^[ \t]/.test(line) && lines.length){
+        lines[lines.length - 1] += line.slice(1);
+      } else if (line.length){
+        lines.push(line);
+      }
+    });
+    return lines;
+  }
+  function icsParseLine(line){
+    var colonIdx = line.indexOf(':');
+    if (colonIdx === -1) return null;
+    var left = line.slice(0, colonIdx);
+    var value = line.slice(colonIdx + 1);
+    var segs = left.split(';');
+    var params = {};
+    for (var i = 1; i < segs.length; i++){
+      var eq = segs[i].indexOf('=');
+      if (eq !== -1) params[segs[i].slice(0, eq).toUpperCase()] = segs[i].slice(eq + 1);
+    }
+    return { name: segs[0].toUpperCase(), params: params, value: value };
+  }
+  function icsUnescapeText(s){
+    return s.replace(/\\n/gi, '\n').replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\');
+  }
+  // TZID offsets aren't resolved (would need a timezone database) — the
+  // wall-clock numbers are taken as local time either way, so an event from
+  // far outside the user's own timezone can land a few hours off.
+  function icsParseDate(value){
+    var m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?$/.exec(value);
+    if (!m) return null;
+    var y = +m[1], mo = +m[2] - 1, d = +m[3];
+    if (m[4] == null) return { date: new Date(y, mo, d), allDay: true };
+    var h = +m[4], mi = +m[5], s = +m[6];
+    if (m[7] === 'Z') return { date: new Date(Date.UTC(y, mo, d, h, mi, s)), allDay: false };
+    return { date: new Date(y, mo, d, h, mi, s), allDay: false };
+  }
+  function icsApproximateUntilFromCount(freq, interval, count, dtstart){
+    if (!count || count < 1) return null;
+    var d = new Date(dtstart);
+    if (freq === 'DAILY') d.setDate(d.getDate() + interval * (count - 1));
+    else if (freq === 'WEEKLY') d.setDate(d.getDate() + interval * 7 * (count - 1));
+    else if (freq === 'MONTHLY') d.setMonth(d.getMonth() + interval * (count - 1));
+    else if (freq === 'YEARLY') d.setFullYear(d.getFullYear() + interval * (count - 1));
+    else return null;
+    return d.toISOString();
+  }
+  function icsMapRRule(rruleStr, dtstart){
+    var parts = {};
+    rruleStr.split(';').forEach(function(p){
+      var eq = p.indexOf('=');
+      if (eq !== -1) parts[p.slice(0, eq).toUpperCase()] = p.slice(eq + 1);
+    });
+    var freq = parts.FREQ;
+    var interval = parseInt(parts.INTERVAL, 10);
+    if (!interval || interval < 1) interval = 1;
+    // Any of these means "which specific day(s)" beyond what a fixed
+    // interval can express — BYSETPOS ("the 2nd Tuesday"), BYMONTHDAY on a
+    // MONTHLY/YEARLY rule, BYWEEKNO, BYYEARDAY. Nudgy's own recurrence model
+    // can't represent that, so bail out to a one-time import rather than
+    // silently import the wrong days.
+    if (parts.BYSETPOS || parts.BYWEEKNO || parts.BYYEARDAY) return { unsupported: true };
+    if ((freq === 'MONTHLY' || freq === 'YEARLY') && (parts.BYDAY || parts.BYMONTHDAY)) return { unsupported: true };
+    var until = null;
+    if (parts.UNTIL){
+      var u = icsParseDate(parts.UNTIL);
+      if (u) until = u.date.toISOString();
+    } else if (parts.COUNT){
+      until = icsApproximateUntilFromCount(freq, interval, parseInt(parts.COUNT, 10), dtstart);
+    }
+    var recurring = null;
+    if (freq === 'DAILY'){
+      recurring = interval === 1 ? { type:'daily' } : { type:'everyNDays', n:interval };
+    } else if (freq === 'WEEKLY'){
+      if (interval > 1){
+        recurring = { type:'everyNDays', n: interval * 7 };
+      } else if (parts.BYDAY){
+        var days = parts.BYDAY.split(',').map(function(code){
+          return ICS_WEEKDAY[code.replace(/^[+-]?\d*/, '')];
+        }).filter(function(n){ return n != null; });
+        recurring = { type:'weekly', weekdays: days.length ? days : [dtstart.getDay()] };
+      } else {
+        recurring = { type:'weekly', weekdays:[dtstart.getDay()] };
+      }
+    } else if (freq === 'MONTHLY'){
+      recurring = { type:'everyNMonths', n:interval };
+    } else if (freq === 'YEARLY'){
+      recurring = interval === 1
+        ? { type:'yearly', month:dtstart.getMonth(), day:dtstart.getDate() }
+        : { type:'everyNYears', n:interval };
+    } else {
+      return { unsupported: true };
+    }
+    if (until) recurring.until = until;
+    return recurring;
+  }
+  function parseIcsEvents(text){
+    var lines = icsUnfoldLines(text);
+    var events = [];
+    var current = null;
+    lines.forEach(function(line){
+      if (line === 'BEGIN:VEVENT'){ current = {}; return; }
+      if (line === 'END:VEVENT'){ if (current) events.push(current); current = null; return; }
+      if (!current) return;
+      var p = icsParseLine(line);
+      if (!p) return;
+      if (p.name === 'SUMMARY') current.summary = icsUnescapeText(p.value);
+      else if (p.name === 'LOCATION') current.location = icsUnescapeText(p.value);
+      else if (p.name === 'DTSTART') current.dtstart = p.value;
+      else if (p.name === 'RRULE') current.rrule = p.value;
+    });
+    return events;
+  }
+  // Returns { added, simplified } counts.
+  function importIcsText(text){
+    var events = parseIcsEvents(text);
+    var added = 0, simplified = 0;
+    var existingKeys = {};
+    notes.forEach(function(n){ existingKeys[n.raw + '|' + (n.createdAt ? n.createdAt.getTime() : '')] = true; });
+    events.forEach(function(ev){
+      if (!ev.dtstart) return;
+      var parsed = icsParseDate(ev.dtstart);
+      if (!parsed) return;
+      var raw = capitalizeFirst((ev.summary || t('icsImportedUntitled')) + (ev.location ? ' (' + ev.location + ')' : ''));
+      var createdAt = parsed.date;
+      var recurring = null;
+      if (ev.rrule){
+        var mapped = icsMapRRule(ev.rrule, parsed.date);
+        if (mapped.unsupported) simplified++;
+        else recurring = mapped;
+      }
+      var key = raw + '|' + createdAt.getTime();
+      if (existingKeys[key]) return;
+      existingKeys[key] = true;
+      notes.push({
+        id: idCounter++, raw: raw,
+        hour: parsed.allDay ? null : parsed.date.getHours(),
+        minute: parsed.allDay ? null : parsed.date.getMinutes(),
+        target: parsed.allDay ? null : parsed.date,
+        dateOnly: parsed.allDay ? parsed.date : null,
+        recurring: recurring, createdAt: createdAt, enabled: true, firedKey: null,
+        image: null, checklistDone: {}, snoozeUntil: null,
+        authorUid: currentHouseholdId ? currentUser.uid : null,
+        authorName: currentHouseholdId ? currentDisplayName() : null,
+        acceptedBy: currentHouseholdId ? ((function(){ var o = {}; o[currentUser.uid] = true; return o; })()) : null
+      });
+      added++;
+    });
+    return { added: added, simplified: simplified };
+  }
+
   // ---------- Export / Import ----------
   var importFileInput = document.getElementById('import-file-input');
 
@@ -5221,8 +5392,28 @@
   importFileInput.addEventListener('change', function(e){
     var file = e.target.files[0];
     if (!file) return;
+    var isIcs = /\.ics$/i.test(file.name) || file.type === 'text/calendar';
     var reader = new FileReader();
     reader.onload = function(ev){
+      if (isIcs){
+        try {
+          var icsResult = importIcsText(ev.target.result);
+          renderAll();
+          flashSaved();
+          vibrate(20);
+          if (icsResult.added === 0){
+            alert(t('icsImportNone'));
+          } else {
+            var msg = t('icsImportSummary').replace('{n}', icsResult.added);
+            if (icsResult.simplified) msg += ' ' + t('icsImportSimplifiedNote').replace('{n}', icsResult.simplified);
+            alert(msg);
+          }
+        } catch(err){
+          alert(t('icsImportError'));
+        }
+        importFileInput.value = '';
+        return;
+      }
       try {
         var parsed = JSON.parse(ev.target.result);
         // Backups from before contacts/highlights were included are a bare
