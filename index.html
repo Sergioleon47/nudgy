@@ -375,6 +375,8 @@
     .col-right { margin-top: 16px; }
     .col-right.panel-primary { margin-top: 0; }
     .col-left:not(.panel-primary) { margin-top: 16px; }
+    .col-left, .col-right { transition: opacity .22s ease; }
+    .col-left.panel-swap-fade, .col-right.panel-swap-fade { opacity: 0; }
     .top-row { margin-bottom: 6px; }
     #note-input { height: 60px; overflow-y: auto; }
     #notes-list { max-height: 260px; margin-top: 8px; gap:10px; }
@@ -397,30 +399,30 @@
 
     .col-left:not(.panel-primary) .sheet-handle { display:flex; }
 
-    .col-right.panel-primary {
+    .col-right {
       background: linear-gradient(160deg, var(--accent-dark) 0%, var(--accent) 55%, var(--accent-light) 100%);
       box-shadow: 0 10px 28px rgba(27,59,16,0.28);
     }
-    .col-right.panel-primary .cal-head button { background: rgba(255,255,255,0.2); color:#fff; }
-    .col-right.panel-primary #cal-title { color:#fff; }
-    .col-right.panel-primary .cal-wd { color: rgba(255,255,255,0.75); }
-    .col-right.panel-primary .cal-cell { background: transparent; box-shadow:none; }
-    .col-right.panel-primary .cal-cell:hover { background: rgba(255,255,255,0.12); }
-    .col-right.panel-primary .cal-cell.has-activity { background: transparent; }
-    .col-right.panel-primary .cal-daynum { color: rgba(255,255,255,0.92); }
-    .col-right.panel-primary .cal-activity-dot { background: #fff; }
-    .col-right.panel-primary .cal-cell.today { background:#fff; border-radius:50%; }
-    .col-right.panel-primary .cal-cell.today .cal-daynum { color: var(--accent-darker); }
-    .col-right.panel-primary .cal-cell.today .cal-activity-dot { background: var(--accent-darker); }
-    .col-right.panel-primary .cal-cell.selected { box-shadow: inset 0 0 0 2px #fff; }
-    .col-right.panel-primary .cal-action-btn { background: rgba(255,255,255,0.2); color:#fff; }
-    .col-right.panel-primary .cal-action-btn:hover { background: rgba(255,255,255,0.32); }
-    .col-right.panel-primary .cal-action-btn.active { background:#fff; color:var(--accent); }
-    .col-right.panel-primary .highlight-btn-dots span { border-color: rgba(255,255,255,0.6); }
-    .col-right.panel-primary .next-alarm-box { border-top-color: rgba(255,255,255,0.25); }
-    .col-right.panel-primary .next-alarm-label { color: rgba(255,255,255,0.75); }
-    .col-right.panel-primary #next-alarm { color:#fff; }
-    .col-right.panel-primary #cal-selected-title { color:#fff; }
+    .col-right .cal-head button { background: rgba(255,255,255,0.2); color:#fff; }
+    .col-right #cal-title { color:#fff; }
+    .col-right .cal-wd { color: rgba(255,255,255,0.75); }
+    .col-right .cal-cell { background: transparent; box-shadow:none; }
+    .col-right .cal-cell:hover { background: rgba(255,255,255,0.12); }
+    .col-right .cal-cell.has-activity { background: transparent; }
+    .col-right .cal-daynum { color: rgba(255,255,255,0.92); }
+    .col-right .cal-activity-dot { background: #fff; }
+    .col-right .cal-cell.today { background:#fff; border-radius:50%; }
+    .col-right .cal-cell.today .cal-daynum { color: var(--accent-darker); }
+    .col-right .cal-cell.today .cal-activity-dot { background: var(--accent-darker); }
+    .col-right .cal-cell.selected { box-shadow: inset 0 0 0 2px #fff; }
+    .col-right .cal-action-btn { background: rgba(255,255,255,0.2); color:#fff; }
+    .col-right .cal-action-btn:hover { background: rgba(255,255,255,0.32); }
+    .col-right .cal-action-btn.active { background:#fff; color:var(--accent); }
+    .col-right .highlight-btn-dots span { border-color: rgba(255,255,255,0.6); }
+    .col-right .next-alarm-box { border-top-color: rgba(255,255,255,0.25); }
+    .col-right .next-alarm-label { color: rgba(255,255,255,0.75); }
+    .col-right #next-alarm { color:#fff; }
+    .col-right #cal-selected-title { color:#fff; }
   }
 
   #print-area { display:none; }
@@ -4564,9 +4566,19 @@
     colRightEl.classList.toggle('panel-primary', !notesIsMain);
   }
   function setNotesIsMain(on){
+    if (on === notesIsMain) return;
     notesIsMain = on;
     try { localStorage.setItem(PANEL_PREF_KEY, on ? 'notes' : 'calendar'); } catch(e){}
-    applyPanelPref();
+    // Cross-fade the swap instead of an instant jump — CSS `order` itself
+    // can't be transitioned, so this fades both panels out, reorders them
+    // while invisible, then fades back in.
+    colLeftEl.classList.add('panel-swap-fade');
+    colRightEl.classList.add('panel-swap-fade');
+    setTimeout(function(){
+      applyPanelPref();
+      colLeftEl.classList.remove('panel-swap-fade');
+      colRightEl.classList.remove('panel-swap-fade');
+    }, 220);
   }
   try { notesIsMain = localStorage.getItem(PANEL_PREF_KEY) === 'notes'; } catch(e){}
   applyPanelPref();
