@@ -399,22 +399,31 @@
     #print-area, #print-area * { visibility: visible; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     #print-area { display:block; position:absolute; top:0; left:0; width:100%; margin:0; padding:0; }
 
-    .print-page-title { font-size:20px; font-weight:700; color:#1C1C1E; margin-bottom:10px; text-align:center; }
+    .print-page-title { font-size:20px; font-weight:700; color:#1C1C1E; margin-bottom:10px; text-align:center; flex-shrink:0; }
 
-    .print-month-wd-row { display:grid; grid-template-columns:repeat(7,1fr); }
+    .print-page-wrap { display:flex; flex-direction:column; min-height:100vh; }
+
+    .print-month-wd-row { display:grid; grid-template-columns:repeat(7,1fr); flex-shrink:0; }
     .print-month-wd { font-size:11px; font-weight:700; text-align:center; color:#5F5F63; padding:0 0 4px; }
-    .print-month-grid { display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:minmax(2.6cm, auto); border-left:1px solid #ccc; border-top:1px solid #ccc; }
-    .print-month-cell { border-right:1px solid #ccc; border-bottom:1px solid #ccc; padding:3px 4px; box-sizing:border-box; }
-    .print-month-cell.empty { border-color:#eee; }
+    .print-month-grid { display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:1fr; border-left:1px solid #888; border-top:1px solid #888; flex:1; }
+    .print-month-cell { border-right:1px solid #888; border-bottom:1px solid #888; padding:3px 4px; box-sizing:border-box; }
+    .print-month-cell.empty { border-color:#ccc; }
     .print-month-daynum { font-size:11px; font-weight:700; color:#1C1C1E; margin-bottom:2px; }
     .print-month-cell.is-today .print-month-daynum { color:var(--accent-darker); }
     .print-month-note { font-size:8.5px; line-height:1.35; color:#1C1C1E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-    .print-week-day { padding:8px 0; border-bottom:1px solid #ddd; page-break-inside: avoid; }
+    .print-week-day { padding:8px 0; border-bottom:1px solid #999; page-break-inside: avoid; flex:1; }
     .print-week-day-head { font-size:13px; font-weight:700; color:#1C1C1E; margin-bottom:4px; }
     .print-week-day-head.is-today { color:var(--accent-darker); }
     .print-week-note { font-size:11px; color:#1C1C1E; padding:2px 0 2px 6px; white-space:pre-wrap; }
     .print-week-empty { font-size:11px; color:#999; font-style:italic; padding:2px 0 2px 6px; }
+
+    .print-bw .print-month-cell.has-print-highlight,
+    .print-bw .print-week-day.has-print-highlight { background:#e8e8e8; }
+    .print-bw .print-month-cell.is-today { border:2px solid #000; }
+    .print-bw .print-month-cell.is-today .print-month-daynum,
+    .print-bw .print-week-day-head.is-today { color:#000; }
+    .print-bw .print-week-day-head.is-today { text-decoration:underline; }
   }
 </style>
 </head>
@@ -728,6 +737,11 @@
       <button id="print-mode-week" class="print-mode-btn">Por semana</button>
     </div>
 
+    <div class="print-mode-toggle">
+      <button id="print-color-mode-color" class="print-mode-btn active">Color</button>
+      <button id="print-color-mode-bw" class="print-mode-btn">Blanco y negro</button>
+    </div>
+
     <div class="cal-head">
       <button id="print-nav-prev"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
       <div id="print-nav-label">Mes</div>
@@ -860,6 +874,8 @@
       printModalTitle: 'Imprimir calendario',
       printModeMonth: 'Mes completo',
       printModeWeek: 'Por semana',
+      printColorModeColor: 'Color',
+      printColorModeBw: 'Blanco y negro',
       printGoBtn: 'Imprimir',
       highlightBtnTitle: 'Pintar fechas',
       highlightHint: 'Desliza para pintar los dias. Toca un dia pintado para borrarlo.',
@@ -977,6 +993,8 @@
       printModalTitle: 'Print calendar',
       printModeMonth: 'Full month',
       printModeWeek: 'By week',
+      printColorModeColor: 'Color',
+      printColorModeBw: 'Black & white',
       printGoBtn: 'Print',
       highlightBtnTitle: 'Paint dates',
       highlightHint: 'Drag to paint the days. Tap a painted day to erase it.',
@@ -3480,12 +3498,14 @@
   var printTitleEl = document.getElementById('print-title');
   var printModeMonthBtn = document.getElementById('print-mode-month');
   var printModeWeekBtn = document.getElementById('print-mode-week');
+  var printColorModeColorBtn = document.getElementById('print-color-mode-color');
+  var printColorModeBwBtn = document.getElementById('print-color-mode-bw');
   var printNavPrev = document.getElementById('print-nav-prev');
   var printNavNext = document.getElementById('print-nav-next');
   var printNavLabel = document.getElementById('print-nav-label');
   var printGoBtn = document.getElementById('print-go-btn');
   var printArea = document.getElementById('print-area');
-  var printState = { mode: 'month', year: today.getFullYear(), month: today.getMonth(), weekStart: null };
+  var printState = { mode: 'month', colorMode: 'color', year: today.getFullYear(), month: today.getMonth(), weekStart: null };
 
   function printStartOfWeek(d){
     var s = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -3511,6 +3531,7 @@
   }
   function buildPrintMonthGrid(year, month){
     var wrap = document.createElement('div');
+    wrap.className = 'print-page-wrap';
     var titleEl = document.createElement('div');
     titleEl.className = 'print-page-title';
     titleEl.textContent = t('months')[month] + ' ' + year;
@@ -3539,7 +3560,10 @@
       var cell = document.createElement('div');
       cell.className = 'print-month-cell' + (dateKey(cellDate) === todayKey ? ' is-today' : '');
       var cellHColor = highlightColorForDate(cellDate);
-      if (cellHColor) cell.style.background = cellHColor;
+      if (cellHColor){
+        cell.classList.add('has-print-highlight');
+        if (printState.colorMode === 'color') cell.style.background = cellHColor;
+      }
       var num = document.createElement('div'); num.className = 'print-month-daynum'; num.textContent = day;
       cell.appendChild(num);
       var dayNotes = printSortDayNotes(notesForDate(cellDate));
@@ -3565,6 +3589,7 @@
   }
   function buildPrintWeekAgenda(weekStart){
     var wrap = document.createElement('div');
+    wrap.className = 'print-page-wrap';
     var titleEl = document.createElement('div');
     titleEl.className = 'print-page-title';
     titleEl.textContent = printWeekLabel(weekStart);
@@ -3576,7 +3601,10 @@
       var dayWrap = document.createElement('div');
       dayWrap.className = 'print-week-day';
       var dayHColor = highlightColorForDate(d);
-      if (dayHColor) dayWrap.style.background = dayHColor;
+      if (dayHColor){
+        dayWrap.classList.add('has-print-highlight');
+        if (printState.colorMode === 'color') dayWrap.style.background = dayHColor;
+      }
       var head = document.createElement('div');
       head.className = 'print-week-day-head' + (dateKey(d) === todayKey ? ' is-today' : '');
       head.textContent = t('days')[d.getDay()] + ' ' + d.getDate() + ' ' + t('months')[d.getMonth()];
@@ -3601,6 +3629,8 @@
     printTitleEl.textContent = t('printModalTitle');
     printModeMonthBtn.textContent = t('printModeMonth');
     printModeWeekBtn.textContent = t('printModeWeek');
+    printColorModeColorBtn.textContent = t('printColorModeColor');
+    printColorModeBwBtn.textContent = t('printColorModeBw');
     printGoBtn.textContent = t('printGoBtn');
     printBtn.title = t('printBtnTitle'); printBtn.setAttribute('aria-label', t('printBtnTitle'));
   }
@@ -3615,12 +3645,18 @@
     printModeWeekBtn.classList.toggle('active', mode === 'week');
     printUpdateNavLabel();
   }
+  function printSetColorMode(mode){
+    printState.colorMode = mode;
+    printColorModeColorBtn.classList.toggle('active', mode === 'color');
+    printColorModeBwBtn.classList.toggle('active', mode === 'bw');
+  }
   function printOpenModal(){
     printApplyLanguage();
     printState.year = calState.year;
     printState.month = calState.month;
     printState.weekStart = printStartOfWeek(new Date(calState.year, calState.month, 1));
     printSetMode('month');
+    printSetColorMode('color');
     printModal.style.display = 'flex';
   }
   function printCloseModal(){ printModal.style.display = 'none'; }
@@ -3629,6 +3665,8 @@
   printModal.addEventListener('click', function(e){ if (e.target === printModal) printCloseModal(); });
   printModeMonthBtn.addEventListener('click', function(){ vibrate(6); printSetMode('month'); });
   printModeWeekBtn.addEventListener('click', function(){ vibrate(6); printSetMode('week'); });
+  printColorModeColorBtn.addEventListener('click', function(){ vibrate(6); printSetColorMode('color'); });
+  printColorModeBwBtn.addEventListener('click', function(){ vibrate(6); printSetColorMode('bw'); });
   printNavPrev.addEventListener('click', function(){
     vibrate(6);
     if (printState.mode === 'month'){
@@ -3649,6 +3687,7 @@
   });
   printGoBtn.addEventListener('click', function(){
     printArea.innerHTML = '';
+    printArea.classList.toggle('print-bw', printState.colorMode === 'bw');
     var content = (printState.mode === 'month')
       ? buildPrintMonthGrid(printState.year, printState.month)
       : buildPrintWeekAgenda(printState.weekStart);
