@@ -39,6 +39,25 @@
     padding:5px 10px; border-radius:7px; cursor:pointer;
   }
   #lang-toggle button.active { background:#FFFFFF; color:var(--accent); box-shadow:0 1px 2px rgba(0,0,0,0.12); }
+
+  /* Horizontal pager: page-main and page-shared sit side by side in a track
+     twice the viewport width; sliding between them is a translateX on the
+     whole track, eased slowly so both pages stay visible mid-drag. */
+  .app-pager-viewport { overflow:hidden; position:relative; }
+  .app-pager { display:flex; width:200%; transition: transform .5s cubic-bezier(0.22, 0.61, 0.36, 1); touch-action: pan-y; }
+  .app-pager.dragging { transition:none; }
+  .app-page { width:50%; flex-shrink:0; box-sizing:border-box; min-width:0; }
+  #page-shared { padding: 0 2px; }
+  .shared-panel-head { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .shared-panel-head span { font-size:16px; font-weight:700; color:#1C1C1E; }
+  #shared-notes-list { display:flex; flex-direction:column; gap:10px; }
+  .shared-note-card { background:#F7F7F9; border-radius:14px; padding:12px 14px; }
+  .shared-note-author { display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--accent-darker); margin-bottom:4px; }
+  .shared-note-author i { font-size:12px; }
+  .shared-note-text { font-size:14px; color:#1C1C1E; white-space:pre-wrap; line-height:1.4; margin-bottom:10px; }
+  .shared-note-actions { display:flex; gap:8px; }
+  .shared-note-actions button { flex:1; }
+
   .cols { position:relative; display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
   .sky-panel {
     background: #FFFFFF;
@@ -82,7 +101,7 @@
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
   }
   #contacts-btn.open { background:var(--accent); color:white; }
-  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn, #upcoming-btn, #timeformat-btn, #household-btn, #auth-btn {
+  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn, #upcoming-btn, #timeformat-btn, #household-btn, #shared-notes-btn, #auth-btn {
     background: #F2F2F7; border: none; color: #274257;
     width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px;
@@ -603,6 +622,10 @@
     </div>
   </div>
 
+  <div class="app-pager-viewport">
+  <div id="app-pager" class="app-pager">
+  <div id="page-main" class="app-page">
+
   <div id="panel-swap" class="panel-swap">
     <div class="panel-swap-track">
       <i class="ti ti-notes" aria-hidden="true"></i>
@@ -647,6 +670,7 @@
           <button id="upcoming-btn" aria-label="Proximas alarmas" title="Proximas alarmas"><i class="ti ti-bell-ringing" aria-hidden="true"></i><span id="upcoming-badge" class="upcoming-badge"></span></button>
           <button id="timeformat-btn" aria-label="Cambiar a formato 24 horas" title="Cambiar a formato 24 horas"><i class="ti ti-clock" aria-hidden="true"></i></button>
           <button id="household-btn" aria-label="Hogar compartido" title="Hogar compartido"><i class="ti ti-users" aria-hidden="true"></i></button>
+          <button id="shared-notes-btn" aria-label="Notas compartidas pendientes" title="Notas compartidas pendientes"><i class="ti ti-inbox" aria-hidden="true"></i><span id="shared-notes-badge" class="upcoming-badge"></span></button>
           <button id="auth-btn" aria-label="Iniciar sesion para sincronizar" title="Iniciar sesion para sincronizar"><i class="ti ti-cloud" aria-hidden="true"></i></button>
         </div>
       </div>
@@ -724,6 +748,23 @@
   </div>
 
   <div class="footer-note" id="footer-note">Tus notas se guardan en este navegador y este dispositivo.</div>
+
+  </div>
+
+  <div id="page-shared" class="app-page">
+    <div class="sky-panel" id="shared-panel">
+      <div class="shared-panel-head">
+        <button id="shared-back-btn" class="icon-btn" aria-label="Volver"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
+        <span id="shared-panel-title">Notas compartidas</span>
+      </div>
+      <div id="shared-panel-hint" class="household-hint">Notas que otros miembros de tu hogar agregaron, esperando que las aceptes.</div>
+      <div id="shared-notes-list"></div>
+      <div id="shared-notes-empty" class="upcoming-empty" style="display:none;">No tenes notas compartidas pendientes.</div>
+    </div>
+  </div>
+
+  </div>
+  </div>
 </div>
 
 <button id="fab-add-note" class="fab-add-note" aria-label="Nueva nota" title="Nueva nota"><i class="ti ti-plus" aria-hidden="true"></i></button>
@@ -1044,6 +1085,13 @@
       householdJoinNotFound: 'No existe ningun hogar con ese codigo.',
       householdJoinError: 'No se pudo unir al hogar. Intenta de nuevo.',
       householdLeaveConfirm: 'Salir de este hogar? Sus notas se quedan en el hogar, no vuelven con vos.',
+      sharedNotesBtnTitle: 'Notas compartidas pendientes',
+      sharedPanelTitle: 'Notas compartidas',
+      sharedPanelHint: 'Notas que otros miembros de tu hogar agregaron, esperando que las aceptes.',
+      sharedNotesEmptyMsg: 'No tenes notas compartidas pendientes.',
+      sharedAccept: 'Aceptar',
+      sharedDismiss: 'Ignorar',
+      sharedBackLabel: 'Volver',
       datecalcToday: 'Es hoy',
       datecalcInDays: 'Faltan {n} dias',
       datecalcAgoDays: 'Fue hace {n} dias',
@@ -1182,6 +1230,13 @@
       householdJoinNotFound: 'No household found with that code.',
       householdJoinError: 'Could not join the household. Try again.',
       householdLeaveConfirm: 'Leave this household? Its notes stay with the household, not with you.',
+      sharedNotesBtnTitle: 'Pending shared notes',
+      sharedPanelTitle: 'Shared notes',
+      sharedPanelHint: 'Notes other household members added, waiting for you to accept.',
+      sharedNotesEmptyMsg: "You don't have any pending shared notes.",
+      sharedAccept: 'Accept',
+      sharedDismiss: 'Ignore',
+      sharedBackLabel: 'Back',
       datecalcLabelUntil: 'How many days until...',
       datecalcLabelOffset: 'What day will it be...',
       datecalcToday: "It's today",
@@ -1488,6 +1543,7 @@
     updateAuthBtn();
     updateTimeformatBtn();
     householdApplyLanguage();
+    sharedNotesApplyLanguage();
     document.documentElement.lang = currentLang;
     updateParsePreview();
   }
@@ -1662,7 +1718,8 @@
       enabled: n.enabled, firedKey: n.firedKey, image: n.image || null,
       checklistDone: n.checklistDone || {},
       snoozeUntil: n.snoozeUntil || null,
-      authorUid: n.authorUid || null, authorName: n.authorName || null
+      authorUid: n.authorUid || null, authorName: n.authorName || null,
+      acceptedBy: n.acceptedBy || null, dismissedBy: n.dismissedBy || null
     };
   }
   function deserializeOneNote(n){
@@ -1674,7 +1731,8 @@
       enabled: n.enabled, firedKey: n.firedKey, image: n.image || null,
       checklistDone: n.checklistDone || {},
       snoozeUntil: n.snoozeUntil || null,
-      authorUid: n.authorUid || null, authorName: n.authorName || null
+      authorUid: n.authorUid || null, authorName: n.authorName || null,
+      acceptedBy: n.acceptedBy || null, dismissedBy: n.dismissedBy || null
     };
   }
   function serializeNotes(){
@@ -1722,6 +1780,28 @@
   // right after leaving one (existing notes still carry their old authorUid).
   function noteLocalKey(n){
     return n.authorUid ? (n.authorUid + '_' + n.id) : String(n.id);
+  }
+  // A household note someone else wrote doesn't count as "yours" — doesn't
+  // show in your list/calendar, doesn't ring — until you've accepted it (or
+  // it's a personal note, which is always active). Notes you dismissed stay
+  // out of the pending queue too, without ever becoming active.
+  function isNoteActiveForMe(n){
+    if (!n.authorUid) return true;
+    if (!currentUser) return true;
+    if (n.authorUid === currentUser.uid) return true;
+    return !!(n.acceptedBy && n.acceptedBy[currentUser.uid]);
+  }
+  function isNotePendingForMe(n){
+    if (!n.authorUid || !currentUser || n.authorUid === currentUser.uid) return false;
+    if (n.acceptedBy && n.acceptedBy[currentUser.uid]) return false;
+    if (n.dismissedBy && n.dismissedBy[currentUser.uid]) return false;
+    return true;
+  }
+  function activeNotes(){
+    return notes.filter(isNoteActiveForMe);
+  }
+  function pendingNotesForMe(){
+    return notes.filter(isNotePendingForMe);
   }
 
   // Set the moment a local change is queued to sync, cleared only once the
@@ -2001,6 +2081,8 @@
     notes.forEach(function(n){
       n.authorUid = currentUser.uid;
       n.authorName = currentDisplayName();
+      if (!n.acceptedBy) n.acceptedBy = {};
+      n.acceptedBy[currentUser.uid] = true;
       // Namespaced by author (see noteDocId) — currentHouseholdId isn't set yet
       // at this point (that happens right after this resolves), so the same
       // uid_localId scheme is spelled out explicitly here instead.
@@ -2885,7 +2967,7 @@
     setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
   }
   function getUpcomingOccurrences(){
-    var upcoming = notes.map(function(n){ return { n: n, t: nextOccurrence(n) }; }).filter(function(x){ return x.t; });
+    var upcoming = activeNotes().map(function(n){ return { n: n, t: nextOccurrence(n) }; }).filter(function(x){ return x.t; });
     upcoming.sort(function(a, b){ return a.t - b.t; });
     return upcoming;
   }
@@ -3910,13 +3992,14 @@
 
   function renderNotes(){
     listEl.innerHTML = '';
-    var ordered = notes.slice().reverse();
+    var allActive = activeNotes();
+    var ordered = allActive.slice().reverse();
     if (searchTerm){
       ordered = ordered.filter(function(n){ return n.raw.toLowerCase().indexOf(searchTerm) !== -1; });
     }
     emptyMsg.style.display = ordered.length ? 'none' : 'block';
     emptyMsg.textContent = searchTerm ? t('noMatches') : t('empty');
-    onboardingHint.style.display = (!notes.length && !searchTerm) ? 'block' : 'none';
+    onboardingHint.style.display = (!allActive.length && !searchTerm) ? 'block' : 'none';
     ordered.forEach(function(note, idx){
       var block = document.createElement('div');
       block.className = 'note-block' + (note.hour != null && !note.enabled ? ' disabled' : '');
@@ -4070,7 +4153,7 @@
   }
 
   function notesForDate(d){
-    return notes.filter(function(n){
+    return activeNotes().filter(function(n){
       if (n.dateOnly && dateKey(n.dateOnly) === dateKey(d)) return true;
       if (n.recurring) return recurringMatchesDay(n.recurring, n.createdAt, d);
       if (n.hour == null) return false;
@@ -4101,6 +4184,8 @@
     renderNotes(); renderCalendar(); renderSelectedPanel(); renderNextAlarm(); saveToStorage();
     updateSheetHandleLabel();
     upcomingUpdateBadge();
+    updateSharedNotesBadge();
+    if (onSharedPage) renderSharedPanel();
   }
 
   calPrev.addEventListener('click', function(){ vibrate(6); calState.month--; if (calState.month < 0){ calState.month = 11; calState.year--; } renderCalendar(); });
@@ -4616,6 +4701,142 @@
     noteInput.focus();
   });
 
+  // ---------- Shared-notes pager: swipe (or tap) left to reveal pending ----------
+  // ---------- household notes; both pages stay visible during the drag. ----------
+  var appPager = document.getElementById('app-pager');
+  var sharedNotesBtn = document.getElementById('shared-notes-btn');
+  var sharedNotesBadge = document.getElementById('shared-notes-badge');
+  var sharedBackBtn = document.getElementById('shared-back-btn');
+  var sharedNotesList = document.getElementById('shared-notes-list');
+  var sharedNotesEmpty = document.getElementById('shared-notes-empty');
+  var sharedPanelTitleEl = document.getElementById('shared-panel-title');
+  var sharedPanelHintEl = document.getElementById('shared-panel-hint');
+
+  function sharedNotesApplyLanguage(){
+    if (!sharedNotesBtn) return;
+    sharedNotesBtn.title = t('sharedNotesBtnTitle'); sharedNotesBtn.setAttribute('aria-label', t('sharedNotesBtnTitle'));
+    sharedBackBtn.setAttribute('aria-label', t('sharedBackLabel'));
+    sharedPanelTitleEl.textContent = t('sharedPanelTitle');
+    sharedPanelHintEl.textContent = t('sharedPanelHint');
+    sharedNotesEmpty.textContent = t('sharedNotesEmptyMsg');
+  }
+
+  var onSharedPage = false;
+  function pagerBasePercent(){ return onSharedPage ? -50 : 0; }
+  function goToSharedPage(){
+    if (onSharedPage) return;
+    onSharedPage = true;
+    vibrate(8);
+    appPager.classList.remove('dragging');
+    appPager.style.transform = 'translateX(-50%)';
+    renderSharedPanel();
+  }
+  function goToMainPage(){
+    if (!onSharedPage) return;
+    onSharedPage = false;
+    vibrate(8);
+    appPager.classList.remove('dragging');
+    appPager.style.transform = 'translateX(0%)';
+  }
+  if (sharedNotesBtn) sharedNotesBtn.addEventListener('click', goToSharedPage);
+  if (sharedBackBtn) sharedBackBtn.addEventListener('click', goToMainPage);
+
+  // Doesn't commit to a horizontal page-swipe until the gesture is clearly
+  // more horizontal than vertical, so it never fights normal page/list
+  // scrolling — and skips entirely inside other draggable surfaces (the
+  // panel-swap slider, the calendar in paint/select mode, scan handles, form
+  // controls) so it can't steal their pointer events.
+  var pagerDrag = null;
+  appPager.addEventListener('pointerdown', function(e){
+    if (e.target.closest('#panel-swap, .cal-action-btn, #cal-grid, .scan-handle, .checklist-box, input, textarea, select, button, a')) return;
+    pagerDrag = { startX: e.clientX, startY: e.clientY, committed: null, pointerId: e.pointerId };
+  });
+  appPager.addEventListener('pointermove', function(e){
+    if (!pagerDrag || pagerDrag.pointerId !== e.pointerId) return;
+    var dx = e.clientX - pagerDrag.startX;
+    var dy = e.clientY - pagerDrag.startY;
+    if (!pagerDrag.committed){
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      pagerDrag.committed = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+      if (pagerDrag.committed === 'h'){
+        appPager.classList.add('dragging');
+        try { appPager.setPointerCapture(e.pointerId); } catch(err){}
+      }
+    }
+    if (pagerDrag.committed !== 'h') return;
+    e.preventDefault();
+    var pct = (dx / appPager.getBoundingClientRect().width) * 100;
+    var target = Math.max(-50, Math.min(0, pagerBasePercent() + pct));
+    appPager.style.transform = 'translateX(' + target + '%)';
+  });
+  function pagerEnd(e){
+    if (!pagerDrag) return;
+    if (pagerDrag.committed === 'h'){
+      var dx = e.clientX - pagerDrag.startX;
+      var threshold = appPager.getBoundingClientRect().width * 0.18;
+      if (!onSharedPage && dx < -threshold) goToSharedPage();
+      else if (onSharedPage && dx > threshold) goToMainPage();
+      else { appPager.classList.remove('dragging'); appPager.style.transform = 'translateX(' + pagerBasePercent() + '%)'; }
+    }
+    pagerDrag = null;
+  }
+  appPager.addEventListener('pointerup', pagerEnd);
+  appPager.addEventListener('pointercancel', pagerEnd);
+
+  function updateSharedNotesBadge(){
+    if (!sharedNotesBtn) return;
+    var count = pendingNotesForMe().length;
+    sharedNotesBadge.textContent = count > 99 ? '99+' : String(count);
+    sharedNotesBadge.classList.toggle('visible', count > 0);
+  }
+  function renderSharedPanel(){
+    if (!sharedNotesList) return;
+    var pending = pendingNotesForMe();
+    sharedNotesList.innerHTML = '';
+    sharedNotesEmpty.style.display = pending.length ? 'none' : 'block';
+    pending.forEach(function(note){
+      var card = document.createElement('div');
+      card.className = 'shared-note-card';
+      var author = document.createElement('div');
+      author.className = 'shared-note-author';
+      author.innerHTML = '<i class="ti ti-user" aria-hidden="true"></i>';
+      var authorName = document.createElement('span');
+      authorName.textContent = note.authorName || '?';
+      author.appendChild(authorName);
+      card.appendChild(author);
+      var text = document.createElement('div');
+      text.className = 'shared-note-text';
+      text.textContent = (note.hour != null ? (formatHM2(note.hour, note.minute) + ' — ') : '') + note.raw;
+      card.appendChild(text);
+      var actions = document.createElement('div');
+      actions.className = 'shared-note-actions';
+      var acceptBtn = document.createElement('button');
+      acceptBtn.className = 'sky-btn primary';
+      acceptBtn.textContent = t('sharedAccept');
+      acceptBtn.addEventListener('click', function(){
+        if (!note.acceptedBy) note.acceptedBy = {};
+        note.acceptedBy[currentUser.uid] = true;
+        vibrate(10);
+        saveToStorage();
+        renderAll();
+      });
+      var dismissBtn = document.createElement('button');
+      dismissBtn.className = 'sky-btn';
+      dismissBtn.textContent = t('sharedDismiss');
+      dismissBtn.addEventListener('click', function(){
+        if (!note.dismissedBy) note.dismissedBy = {};
+        note.dismissedBy[currentUser.uid] = true;
+        vibrate(6);
+        saveToStorage();
+        renderAll();
+      });
+      actions.appendChild(acceptBtn);
+      actions.appendChild(dismissBtn);
+      card.appendChild(actions);
+      sharedNotesList.appendChild(card);
+    });
+  }
+
   // "cada N horas" fires several times a day, so it needs a real anchor moment to
   // count from. If the user didn't give an explicit start time, anchor it to the
   // exact moment the note was written (or last edited) instead of leaving it timeless.
@@ -4653,7 +4874,10 @@
       recurring: recurring, dateOnly: dateOnly, createdAt: createdAt, enabled: true, firedKey: null,
       image: image || null,
       authorUid: currentHouseholdId ? currentUser.uid : null,
-      authorName: currentHouseholdId ? currentDisplayName() : null
+      authorName: currentHouseholdId ? currentDisplayName() : null,
+      // The author never has to "accept" their own note — everyone else in
+      // the household starts absent from this map, i.e. pending for them.
+      acceptedBy: currentHouseholdId ? ((function(){ var o = {}; o[currentUser.uid] = true; return o; })()) : null
     };
     notes.push(newNote);
     var dateRange = extractDateRange(raw);
@@ -4789,7 +5013,7 @@
       today = now;
       renderCalendar();
     }
-    notes.forEach(function(note){
+    activeNotes().forEach(function(note){
       if (note.hour == null || !note.enabled) return;
       if (note === currentRinging) return;
       if (ringQueue.indexOf(note) !== -1) return;
