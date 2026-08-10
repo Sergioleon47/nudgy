@@ -58,17 +58,17 @@
   .shared-note-actions { display:flex; gap:8px; }
   .shared-note-actions button { flex:1; }
 
-  #date-action-menu {
-    display:none; position:fixed; z-index:900; background:#FFFFFF; border-radius:14px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.25); padding:8px; min-width:180px;
-  }
-  #date-action-menu-title { font-size:11px; font-weight:700; color:#5F5F63; padding:6px 10px 4px; text-transform:uppercase; letter-spacing:0.3px; }
+  #date-action-menu { display:flex; gap:6px; margin-top:10px; justify-content:space-between; }
   .date-action-item {
-    display:flex; align-items:center; gap:10px; width:100%; background:none; border:none;
-    padding:9px 10px; border-radius:9px; cursor:pointer; font-size:14px; color:#1C1C1E; text-align:left;
+    display:flex; flex-direction:column; align-items:center; gap:4px; flex:1;
+    background:none; border:none; cursor:pointer; padding:6px 2px; border-radius:10px;
   }
   .date-action-item:hover { background:#F2F2F7; }
-  .date-action-item i { font-size:16px; color:var(--accent); flex-shrink:0; }
+  .date-action-item i {
+    width:34px; height:34px; border-radius:50%; background:var(--accent-soft); color:var(--accent-darker);
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+  }
+  .date-action-item span { font-size:10px; font-weight:600; color:#5F5F63; }
 
   #contact-picker-list { display:flex; flex-direction:column; gap:6px; }
   .contact-picker-row {
@@ -449,6 +449,9 @@
     .col-right .cal-action-btn { background: rgba(255,255,255,0.2); color:#fff; }
     .col-right .cal-action-btn:hover { background: rgba(255,255,255,0.32); }
     .col-right .cal-action-btn.active { background:#fff; color:var(--accent); }
+    .col-right .date-action-item:hover { background: rgba(255,255,255,0.12); }
+    .col-right .date-action-item i { background: rgba(255,255,255,0.2); color:#fff; }
+    .col-right .date-action-item span { color: rgba(255,255,255,0.85); }
     .col-right .cal-year-month:hover { background: rgba(255,255,255,0.12); }
     .col-right .cal-year-month-name { color:#fff; }
     .col-right .cal-year-day { color: rgba(255,255,255,0.7); }
@@ -745,6 +748,12 @@
       <div id="cal-selected-panel">
         <div id="cal-selected-title"></div>
         <div id="cal-selected-notes" style="display:flex; flex-direction:column; gap:5px;"></div>
+        <div id="date-action-menu" role="menu">
+          <button class="date-action-item" id="date-action-location" role="menuitem"><i class="ti ti-map-pin" aria-hidden="true"></i><span id="date-action-location-label">Ubicacion</span></button>
+          <button class="date-action-item" id="date-action-contact" role="menuitem"><i class="ti ti-address-book" aria-hidden="true"></i><span id="date-action-contact-label">Contacto</span></button>
+          <button class="date-action-item" id="date-action-photo" role="menuitem"><i class="ti ti-camera" aria-hidden="true"></i><span id="date-action-photo-label">Foto</span></button>
+          <button class="date-action-item" id="date-action-receipt" role="menuitem"><i class="ti ti-receipt-2" aria-hidden="true"></i><span id="date-action-receipt-label">Recibo</span></button>
+        </div>
       </div>
       <div class="next-alarm-box">
         <div class="next-alarm-label" id="next-alarm-label">Proxima alarma</div>
@@ -935,14 +944,6 @@
 <div id="undo-toast">
   <span id="undo-toast-text"></span>
   <button id="undo-toast-btn"></button>
-</div>
-
-<div id="date-action-menu" role="menu">
-  <div id="date-action-menu-title"></div>
-  <button class="date-action-item" id="date-action-location" role="menuitem"><i class="ti ti-map-pin" aria-hidden="true"></i><span id="date-action-location-label">Ubicacion</span></button>
-  <button class="date-action-item" id="date-action-contact" role="menuitem"><i class="ti ti-address-book" aria-hidden="true"></i><span id="date-action-contact-label">Contacto</span></button>
-  <button class="date-action-item" id="date-action-photo" role="menuitem"><i class="ti ti-camera" aria-hidden="true"></i><span id="date-action-photo-label">Foto</span></button>
-  <button class="date-action-item" id="date-action-receipt" role="menuitem"><i class="ti ti-receipt-2" aria-hidden="true"></i><span id="date-action-receipt-label">Recibo</span></button>
 </div>
 
 <div id="contact-picker-modal" role="dialog" aria-modal="true" aria-labelledby="contact-picker-title">
@@ -4210,18 +4211,9 @@
       cell.addEventListener('click', function(k){
         return function(){
           if (paintMode || noteSelectMode) return;
-          if (dateLongPressFired){ dateLongPressFired = false; return; }
-          vibrate(6);
-          selectedDateKey = (selectedDateKey === k) ? null : k;
-          renderCalendar(); renderSelectedPanel();
+          toggleDateSelection(k);
         };
       }(key));
-      cell.addEventListener('pointerdown', function(k, c){
-        return function(e){ startDateLongPress(e, k, c); };
-      }(key, cell));
-      cell.addEventListener('pointermove', cancelDateLongPressOnMove);
-      cell.addEventListener('pointerup', cancelDateLongPress);
-      cell.addEventListener('pointercancel', cancelDateLongPress);
       calGrid.appendChild(cell);
     }
   }
@@ -4367,72 +4359,28 @@
     });
   }
 
-  // ---------- Long-press a date -> quick-action menu ----------
-  var dateLongPressState = null;
-  var dateLongPressFired = false;
-  var dateActionKey = null;
-
-  function startDateLongPress(e, key, cell){
-    if (paintMode || noteSelectMode) return;
-    dateLongPressFired = false;
-    if (dateLongPressState) clearTimeout(dateLongPressState.timer);
-    dateLongPressState = {
-      startX: e.clientX, startY: e.clientY,
-      timer: setTimeout(function(){
-        dateLongPressFired = true;
-        dateLongPressState = null;
-        vibrate([10, 30, 10]);
-        openDateActionMenu(key, cell);
-      }, 500)
-    };
-  }
-  function cancelDateLongPressOnMove(e){
-    if (!dateLongPressState) return;
-    var dx = e.clientX - dateLongPressState.startX, dy = e.clientY - dateLongPressState.startY;
-    if (Math.abs(dx) > 8 || Math.abs(dy) > 8){ clearTimeout(dateLongPressState.timer); dateLongPressState = null; }
-  }
-  function cancelDateLongPress(){
-    if (dateLongPressState){ clearTimeout(dateLongPressState.timer); dateLongPressState = null; }
+  // ---------- Tap a date: grows the calendar card in place (same animation ----------
+  // ---------- as the year view) to reveal that day's notes + quick actions. ----------
+  function toggleDateSelection(k){
+    var opening = selectedDateKey !== k;
+    vibrate(6);
+    animateCalHeight(function(){
+      selectedDateKey = opening ? k : null;
+      renderCalendar();
+      renderSelectedPanel();
+    });
   }
 
-  var dateActionMenuEl = document.getElementById('date-action-menu');
-  var dateActionMenuTitleEl = document.getElementById('date-action-menu-title');
   var dateActionLocationBtn = document.getElementById('date-action-location');
   var dateActionContactBtn = document.getElementById('date-action-contact');
   var dateActionPhotoBtn = document.getElementById('date-action-photo');
   var dateActionReceiptBtn = document.getElementById('date-action-receipt');
 
   function dateActionTargetDate(){
-    if (!dateActionKey) return null;
-    var parts = dateActionKey.split('-');
+    if (!selectedDateKey) return null;
+    var parts = selectedDateKey.split('-');
     return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
   }
-  function openDateActionMenu(key, cell){
-    dateActionKey = key;
-    var d = dateActionTargetDate();
-    dateActionMenuTitleEl.textContent = t('days')[d.getDay()] + ' ' + d.getDate() + ' ' + t('months')[d.getMonth()];
-    dateActionMenuEl.style.visibility = 'hidden';
-    dateActionMenuEl.style.display = 'block';
-    var r = cell.getBoundingClientRect();
-    requestAnimationFrame(function(){
-      var mw = dateActionMenuEl.offsetWidth, mh = dateActionMenuEl.offsetHeight;
-      var left = Math.min(Math.max(8, r.left), window.innerWidth - mw - 8);
-      var top = r.bottom + 6;
-      if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 6);
-      dateActionMenuEl.style.left = left + 'px';
-      dateActionMenuEl.style.top = top + 'px';
-      dateActionMenuEl.style.visibility = '';
-    });
-  }
-  function closeDateActionMenu(){
-    dateActionMenuEl.style.display = 'none';
-    dateActionKey = null;
-  }
-  document.addEventListener('pointerdown', function(e){
-    if (dateActionMenuEl.style.display === 'none') return;
-    if (e.target.closest('#date-action-menu')) return;
-    closeDateActionMenu();
-  });
 
   function createDateNote(d, text){
     pendingNoteAnchor = { start: d, end: d };
@@ -4443,29 +4391,23 @@
   }
 
   dateActionLocationBtn.addEventListener('click', function(){
-    var d = dateActionTargetDate();
-    closeDateActionMenu();
-    startLocationCapture(d);
+    startLocationCapture(dateActionTargetDate());
   });
   dateActionContactBtn.addEventListener('click', function(){
-    var d = dateActionTargetDate();
-    closeDateActionMenu();
-    openContactPicker(d);
+    openContactPicker(dateActionTargetDate());
   });
   dateActionPhotoBtn.addEventListener('click', function(){
     var d = dateActionTargetDate();
-    closeDateActionMenu();
     pendingNoteAnchor = { start: d, end: d };
     updatePendingAnchorChip();
     noteInput.focus();
     photoFileInput.click();
   });
   dateActionReceiptBtn.addEventListener('click', function(){
-    closeDateActionMenu();
     receiptBtn.click();
   });
 
-  // ---------- Contact picker (long-press menu -> Contacto) ----------
+  // ---------- Contact picker (date menu -> Contacto) ----------
   var contactPickerModal = document.getElementById('contact-picker-modal');
   var contactPickerCloseBtn = document.getElementById('contact-picker-close-btn');
   var contactPickerList = document.getElementById('contact-picker-list');
@@ -5381,7 +5323,7 @@
     if (printModal.style.display !== 'none'){ printCloseModal(); return; }
     if (householdModal.style.display !== 'none'){ householdModal.style.display = 'none'; return; }
     if (contactPickerModal.style.display !== 'none'){ contactPickerModal.style.display = 'none'; return; }
-    if (dateActionMenuEl.style.display !== 'none'){ closeDateActionMenu(); return; }
+    if (selectedDateKey){ toggleDateSelection(selectedDateKey); return; }
   });
 
   // ---------- Init ----------
