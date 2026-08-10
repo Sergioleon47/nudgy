@@ -245,6 +245,15 @@
   #parse-preview i { font-size:13px; }
   .action-row { display:flex; align-items:center; gap:12px; margin-top:8px; min-height:22px; }
   #saved-flash { font-size:12px; color:#2FA360; opacity:0; transition:opacity .3s ease; }
+  #undo-toast {
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(0);
+    display:flex; align-items:center; gap:14px;
+    background:#1C1C1E; color:#fff; font-size:14px; font-weight:500;
+    padding:12px 14px 12px 18px; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.25);
+    z-index:500; opacity:0; pointer-events:none; transition:opacity .35s ease, transform .35s ease;
+  }
+  #undo-toast.visible { opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(-4px); }
+  #undo-toast-btn { background:none; border:none; color:var(--accent); font-weight:700; font-size:14px; cursor:pointer; padding:4px 4px; }
   #cancel-edit-btn { display:none; background:none; border:none; color:#5F5F63; font-size:12px; cursor:pointer; }
   #add-btn { display:none; }
 
@@ -756,6 +765,11 @@
 </div>
 <div id="print-area"></div>
 
+<div id="undo-toast">
+  <span id="undo-toast-text"></span>
+  <button id="undo-toast-btn"></button>
+</div>
+
 <div id="upcoming-modal">
   <div class="datecalc-modal-inner">
     <div class="scan-modal-header">
@@ -832,6 +846,8 @@
       exportIcsTitle: 'Agregar al calendario (.ics)',
       editLabel: 'Editar',
       deleteLabel: 'Eliminar',
+      noteDeletedToast: 'Nota eliminada',
+      undoLabel: 'Deshacer',
       checklistCheck: 'Marcar como hecho',
       checklistUncheck: 'Marcar como pendiente',
       alarmOffLabel: 'Apagar alarma',
@@ -951,6 +967,8 @@
       exportIcsTitle: 'Add to calendar (.ics)',
       editLabel: 'Edit',
       deleteLabel: 'Delete',
+      noteDeletedToast: 'Note deleted',
+      undoLabel: 'Undo',
       checklistCheck: 'Mark as done',
       checklistUncheck: 'Mark as not done',
       alarmOffLabel: 'Turn alarm off',
@@ -1150,6 +1168,9 @@
   var addBtn = document.getElementById('add-btn');
   var cancelEditBtn = document.getElementById('cancel-edit-btn');
   var savedFlash = document.getElementById('saved-flash');
+  var undoToast = document.getElementById('undo-toast');
+  var undoToastText = document.getElementById('undo-toast-text');
+  var undoToastBtn = document.getElementById('undo-toast-btn');
   var notifBtn = document.getElementById('notif-btn');
   var notifBtnText = document.getElementById('notif-btn-text');
   var listEl = document.getElementById('notes-list');
@@ -1216,6 +1237,7 @@
     langEsBtn.classList.toggle('active', currentLang === 'es');
     langEnBtn.classList.toggle('active', currentLang === 'en');
     savedFlash.textContent = t('saved');
+    undoToastBtn.textContent = t('undoLabel');
     cancelEditBtn.textContent = t('cancel');
     emptyMsg.textContent = t('empty');
     snoozeBtn.textContent = t('snooze5');
@@ -1416,7 +1438,8 @@
       dateOnly: n.dateOnly ? n.dateOnly.toISOString() : null,
       recurring: n.recurring, createdAt: n.createdAt.toISOString(),
       enabled: n.enabled, firedKey: n.firedKey, image: n.image || null,
-      checklistDone: n.checklistDone || {}
+      checklistDone: n.checklistDone || {},
+      snoozeUntil: n.snoozeUntil || null
     };
   }
   function deserializeOneNote(n){
@@ -1426,7 +1449,8 @@
       dateOnly: n.dateOnly ? new Date(n.dateOnly) : null,
       recurring: n.recurring, createdAt: new Date(n.createdAt),
       enabled: n.enabled, firedKey: n.firedKey, image: n.image || null,
-      checklistDone: n.checklistDone || {}
+      checklistDone: n.checklistDone || {},
+      snoozeUntil: n.snoozeUntil || null
     };
   }
   function serializeNotes(){
@@ -1450,11 +1474,21 @@
   function firestoreNotesRef(uid){ return firebase.firestore().collection('users').doc(uid).collection('notes'); }
   function firestoreContactsRef(uid){ return firebase.firestore().collection('users').doc(uid).collection('contacts'); }
 
+  // Set the moment a local change is queued to sync, cleared only once the
+  // corresponding write is confirmed committed. While true, incoming remote
+  // snapshots are ignored — otherwise a remote update that lands during the
+  // debounce/commit window can replace `notes`/`contacts` and silently drop
+  // whatever was just changed locally (e.g. an import) before it ever synced.
+  var notesDirtyLocally = false;
+  var contactsDirtyLocally = false;
+
   function scheduleNotesSync(){
+    notesDirtyLocally = true;
     if (notesSyncDebounce) clearTimeout(notesSyncDebounce);
     notesSyncDebounce = setTimeout(syncAllNotesToFirestore, 400);
   }
   function scheduleContactsSync(){
+    contactsDirtyLocally = true;
     if (contactsSyncDebounce) clearTimeout(contactsSyncDebounce);
     contactsSyncDebounce = setTimeout(syncAllContactsToFirestore, 400);
   }
@@ -1466,7 +1500,7 @@
   var lastKnownRemoteContactIds = null;
 
   function syncAllNotesToFirestore(){
-    if (!currentUser) return;
+    if (!currentUser) { notesDirtyLocally = false; return; }
     var uid = currentUser.uid;
     var batch = firebase.firestore().batch();
     var ref = firestoreNotesRef(uid);
@@ -1483,10 +1517,10 @@
         if (!currentIds[id]) batch.delete(ref.doc(id));
       });
     }
-    batch.commit().catch(function(){});
+    batch.commit().then(function(){ notesDirtyLocally = false; }).catch(function(){ notesDirtyLocally = false; });
   }
   function syncAllContactsToFirestore(){
-    if (!currentUser) return;
+    if (!currentUser) { contactsDirtyLocally = false; return; }
     var uid = currentUser.uid;
     var batch = firebase.firestore().batch();
     var ref = firestoreContactsRef(uid);
@@ -1500,11 +1534,12 @@
         if (!currentIds[id]) batch.delete(ref.doc(id));
       });
     }
-    batch.commit().catch(function(){});
+    batch.commit().then(function(){ contactsDirtyLocally = false; }).catch(function(){ contactsDirtyLocally = false; });
   }
 
   function applyRemoteNotesSnapshot(snapshot){
     if (snapshot.metadata.hasPendingWrites) return; // echo of our own write, not a remote change
+    if (notesDirtyLocally) return; // a local change is queued/committing — don't clobber it
     applyingRemoteSnapshot = true;
     lastKnownRemoteNoteIds = snapshot.docs.map(function(d){ return d.id; });
     notes = snapshot.docs.map(function(d){ return deserializeOneNote(d.data()); });
@@ -1514,6 +1549,7 @@
   }
   function applyRemoteContactsSnapshot(snapshot){
     if (snapshot.metadata.hasPendingWrites) return;
+    if (contactsDirtyLocally) return;
     applyingRemoteSnapshot = true;
     lastKnownRemoteContactIds = snapshot.docs.map(function(d){ return d.id; });
     contacts = snapshot.docs.map(function(d){ return d.data(); });
@@ -2652,6 +2688,13 @@
   });
   imagePreviewRemoveBtn.addEventListener('mousedown', function(e){ e.preventDefault(); });
   imagePreviewRemoveBtn.addEventListener('click', function(){ clearPendingImage(); vibrate(6); });
+  // Tapping any header/calendar action button while a note draft is unsaved
+  // would otherwise blur the textarea first and auto-save the draft as a new
+  // note before the button's own click even runs. preventDefault on mousedown
+  // keeps focus (and the draft) untouched; the button's click still fires.
+  document.querySelectorAll('.top-row button, .cal-action-btn').forEach(function(btn){
+    btn.addEventListener('mousedown', function(e){ e.preventDefault(); });
+  });
   imageLightbox.addEventListener('click', function(){ imageLightbox.style.display = 'none'; imageLightboxImg.src = ''; });
   noteInput.addEventListener('paste', function(e){
     var cd = e.clipboardData || window.clipboardData;
@@ -3282,6 +3325,37 @@
     savedFlash.style.opacity = '1';
     setTimeout(function(){ savedFlash.style.opacity = '0'; }, 1200);
   }
+
+  var lastDeletedNote = null;
+  var undoToastTimer = null;
+  function hideUndoToast(){
+    undoToast.classList.remove('visible');
+    lastDeletedNote = null;
+  }
+  function showUndoToast(note, index){
+    lastDeletedNote = { note: note, index: index };
+    undoToastText.textContent = t('noteDeletedToast');
+    undoToast.classList.add('visible');
+    if (undoToastTimer) clearTimeout(undoToastTimer);
+    undoToastTimer = setTimeout(hideUndoToast, 5000);
+  }
+  function undoLastDelete(){
+    if (!lastDeletedNote) return;
+    var note = lastDeletedNote.note;
+    var idx = lastDeletedNote.index;
+    if (idx < 0 || idx > notes.length) idx = notes.length;
+    notes.splice(idx, 0, note);
+    var dateRange = extractDateRange(note.raw);
+    if (dateRange){
+      var resolvedRange = resolveDateRange(dateRange, note.createdAt);
+      applyNoteRangeHighlight(note.id, resolvedRange.start, resolvedRange.end);
+    }
+    if (undoToastTimer) clearTimeout(undoToastTimer);
+    hideUndoToast();
+    renderAll();
+    vibrate(10);
+  }
+  undoToastBtn.addEventListener('click', undoLastDelete);
   function loadForEdit(note){
     editingId = note.id;
     noteInput.value = note.raw;
@@ -3398,10 +3472,12 @@
       delBtn.setAttribute('aria-label', t('deleteLabel'));
       delBtn.addEventListener('click', function(){
         vibrate([8,30,8]);
+        var noteIndex = notes.indexOf(note);
         notes = notes.filter(function(n){ return n.id !== note.id; });
         removeNoteRangeHighlight(note.id);
         if (editingId === note.id) exitEditMode();
         renderAll();
+        showUndoToast(note, noteIndex);
       });
       actions.appendChild(delBtn);
 
@@ -4156,6 +4232,13 @@
   setInterval(function(){
     var now = new Date();
     var todayKey = dateKey(now);
+    // `today` only drives the calendar/print "today" highlight (alarm firing
+    // above always uses a fresh `now`). Without this, leaving the tab open
+    // past midnight leaves the highlight stuck on yesterday.
+    if (todayKey !== dateKey(today)){
+      today = now;
+      renderCalendar();
+    }
     notes.forEach(function(note){
       if (note.hour == null || !note.enabled) return;
       if (note === currentRinging) return;
