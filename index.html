@@ -336,6 +336,15 @@
   .cal-daynum { font-weight:600; color:#1C1C1E; font-size:11px; }
   .cal-activity-dot { width:4px; height:4px; border-radius:50%; margin-top:2px; background:#2FA360; }
   .cal-cell.today .cal-activity-dot { background:var(--accent-darker); }
+  #cal-title { cursor:pointer; }
+  #cal-year-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .cal-year-month { cursor:pointer; padding:6px 4px; border-radius:10px; }
+  .cal-year-month:hover { background:#F2F2F7; }
+  .cal-year-month-name { font-size:11px; font-weight:700; text-align:center; margin-bottom:5px; color:#1C1C1E; }
+  .cal-year-month-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; }
+  .cal-year-day { font-size:7px; text-align:center; color:#5F5F63; line-height:1.7; position:relative; }
+  .cal-year-day.today { color:var(--accent-darker); font-weight:800; }
+  .cal-year-day.has-activity::after { content:''; position:absolute; bottom:1px; left:50%; transform:translateX(-50%); width:2px; height:2px; border-radius:50%; background:var(--accent); }
   .cal-toolbar { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-bottom:8px; }
   .cal-action-btn { border:none; background:#F2F2F7; font-size:16px; color:var(--accent); cursor:pointer; width:30px; height:30px; border-radius:50%; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .cal-action-btn:hover { background:#E5E5EA; }
@@ -420,6 +429,11 @@
     .col-right .cal-action-btn { background: rgba(255,255,255,0.2); color:#fff; }
     .col-right .cal-action-btn:hover { background: rgba(255,255,255,0.32); }
     .col-right .cal-action-btn.active { background:#fff; color:var(--accent); }
+    .col-right .cal-year-month:hover { background: rgba(255,255,255,0.12); }
+    .col-right .cal-year-month-name { color:#fff; }
+    .col-right .cal-year-day { color: rgba(255,255,255,0.7); }
+    .col-right .cal-year-day.today { color:#fff; }
+    .col-right .cal-year-day.has-activity::after { background:#fff; }
     .col-right .highlight-btn-dots span { border-color: rgba(255,255,255,0.6); }
     .col-right .next-alarm-box { border-top-color: rgba(255,255,255,0.25); }
     .col-right .next-alarm-label { color: rgba(255,255,255,0.75); }
@@ -688,7 +702,7 @@
     <div class="sky-panel col-right">
       <div class="cal-head">
         <button id="cal-prev" aria-label="Mes anterior"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
-        <div id="cal-title">Mes</div>
+        <div id="cal-title" role="button" tabindex="0" aria-label="Ver el ano completo">Mes</div>
         <button id="cal-next" aria-label="Mes siguiente"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
       </div>
       <div class="cal-toolbar">
@@ -700,6 +714,7 @@
       </div>
       <div id="cal-weekdays"></div>
       <div id="cal-grid"></div>
+      <div id="cal-year-grid" style="display:none;"></div>
       <div id="paint-palette-bar" class="paint-palette-bar" style="display:none;">
         <div id="paint-palette-hint" class="paint-palette-hint">Desliza el dedo sobre los dias para pintarlos</div>
         <div id="paint-palette-swatches" class="highlight-palette"></div>
@@ -1090,6 +1105,7 @@
       printColorModeBw: 'Blanco y negro',
       printGoBtn: 'Imprimir',
       highlightBtnTitle: 'Pintar fechas',
+      calYearViewLabel: 'Ver el ano completo',
       highlightHint: 'Desliza para pintar los dias. Toca un dia pintado para borrarlo.',
       noteSelectBtnTitle: 'Empezar nota desde el calendario',
       noteSelectHint: 'Desliza el dedo sobre los dias para tu nota',
@@ -1237,6 +1253,7 @@
       printColorModeBw: 'Black & white',
       printGoBtn: 'Print',
       highlightBtnTitle: 'Paint dates',
+      calYearViewLabel: 'View the full year',
       highlightHint: 'Drag to paint the days. Tap a painted day to erase it.',
       noteSelectBtnTitle: 'Start a note from the calendar',
       noteSelectHint: 'Drag your finger over the days for your note',
@@ -1420,6 +1437,7 @@
   var calTitle = document.getElementById('cal-title');
   var calWeekdays = document.getElementById('cal-weekdays');
   var calGrid = document.getElementById('cal-grid');
+  var calYearGridEl = document.getElementById('cal-year-grid');
   var calPrev = document.getElementById('cal-prev');
   var calNext = document.getElementById('cal-next');
   var calSelectedPanel = document.getElementById('cal-selected-panel');
@@ -1511,6 +1529,7 @@
     highlightBtn.title = t('highlightBtnTitle'); highlightBtn.setAttribute('aria-label', t('highlightBtnTitle'));
     noteSelectBtn.title = t('noteSelectBtnTitle'); noteSelectBtn.setAttribute('aria-label', t('noteSelectBtnTitle'));
     upcomingBtn.title = t('upcomingBtnTitle'); upcomingBtn.setAttribute('aria-label', t('upcomingBtnTitle'));
+    calTitle.setAttribute('aria-label', t('calYearViewLabel'));
     if (pendingNoteAnchor) updatePendingAnchorChip();
     updateNotifBtn();
     updateAuthBtn();
@@ -4125,6 +4144,138 @@
     }
   }
 
+  // ---------- Year view: tap the month/year title to zoom out ----------
+  var calYearMode = false;
+  var calYearGridYear = null;
+  var calToolbarEl = document.querySelector('.cal-toolbar');
+  var colRightCardEl = document.querySelector('.col-right');
+
+  function renderCalYearGrid(year){
+    calYearGridEl.innerHTML = '';
+    var todayKey = dateKey(today);
+    for (var m = 0; m < 12; m++){
+      var monthBlock = document.createElement('div');
+      monthBlock.className = 'cal-year-month';
+      var nameEl = document.createElement('div');
+      nameEl.className = 'cal-year-month-name';
+      nameEl.textContent = t('months')[m];
+      monthBlock.appendChild(nameEl);
+      var grid = document.createElement('div');
+      grid.className = 'cal-year-month-grid';
+      var firstDay = new Date(year, m, 1);
+      var startOffset = firstDay.getDay();
+      var daysInMonth = new Date(year, m + 1, 0).getDate();
+      for (var i = 0; i < startOffset; i++){
+        grid.appendChild(document.createElement('div')).className = 'cal-year-day';
+      }
+      for (var day = 1; day <= daysInMonth; day++){
+        var cellDate = new Date(year, m, day);
+        var key = dateKey(cellDate);
+        var dEl = document.createElement('div');
+        dEl.className = 'cal-year-day' + (key === todayKey ? ' today' : '');
+        if (notesForDate(cellDate).length) dEl.classList.add('has-activity');
+        dEl.textContent = day;
+        grid.appendChild(dEl);
+      }
+      monthBlock.appendChild(grid);
+      monthBlock.addEventListener('click', function(mm){
+        return function(){ exitYearView(mm); };
+      }(m));
+      calYearGridEl.appendChild(monthBlock);
+    }
+  }
+  // Animates .col-right's own height between its before/after natural size —
+  // grows or shrinks smoothly instead of jumping, and since the notes card
+  // sits right below it in normal flow, it visually gets pushed along too.
+  function animateCalHeight(changeFn){
+    var card = colRightCardEl;
+    var startH = card.offsetHeight;
+    changeFn();
+    var endH = card.offsetHeight;
+    card.style.height = startH + 'px';
+    card.style.overflow = 'hidden';
+    void card.offsetHeight;
+    card.style.transition = 'height .5s cubic-bezier(0.22, 0.61, 0.36, 1)';
+    requestAnimationFrame(function(){ card.style.height = endH + 'px'; });
+    var finished = false;
+    function finish(){
+      if (finished) return;
+      finished = true;
+      card.style.height = ''; card.style.transition = ''; card.style.overflow = '';
+      card.removeEventListener('transitionend', finish);
+    }
+    card.addEventListener('transitionend', finish);
+    setTimeout(finish, 650);
+  }
+  function enterYearView(){
+    if (calYearMode) return;
+    vibrate(8);
+    animateCalHeight(function(){
+      calYearMode = true;
+      calYearGridYear = calState.year;
+      calWeekdays.style.display = 'none';
+      calGrid.style.display = 'none';
+      calToolbarEl.style.display = 'none';
+      calSelectedPanel.style.display = 'none';
+      calYearGridEl.style.display = 'grid';
+      calTitle.textContent = String(calYearGridYear);
+      renderCalYearGrid(calYearGridYear);
+    });
+  }
+  function exitYearView(month){
+    vibrate(8);
+    animateCalHeight(function(){
+      calYearMode = false;
+      if (month != null){ calState.year = calYearGridYear; calState.month = month; }
+      calYearGridEl.style.display = 'none';
+      calWeekdays.style.display = '';
+      calGrid.style.display = '';
+      calToolbarEl.style.display = '';
+      renderCalendar();
+      renderSelectedPanel();
+    });
+  }
+  // Shared by the prev/next arrows and the swipe gesture below — slides the
+  // grid out in the direction of travel and the new year in from the
+  // opposite side, instead of just swapping the numbers instantly.
+  function goToYear(delta){
+    var dir = delta > 0 ? 1 : -1;
+    calYearGridEl.style.transition = 'transform .28s ease, opacity .28s ease';
+    calYearGridEl.style.transform = 'translateY(' + (-dir * 16) + 'px)';
+    calYearGridEl.style.opacity = '0';
+    setTimeout(function(){
+      calYearGridYear += delta;
+      renderCalYearGrid(calYearGridYear);
+      calTitle.textContent = String(calYearGridYear);
+      calYearGridEl.style.transition = 'none';
+      calYearGridEl.style.transform = 'translateY(' + (dir * 16) + 'px)';
+      void calYearGridEl.offsetHeight;
+      calYearGridEl.style.transition = 'transform .28s ease, opacity .28s ease';
+      calYearGridEl.style.transform = 'translateY(0)';
+      calYearGridEl.style.opacity = '1';
+    }, 280);
+  }
+  calTitle.addEventListener('click', function(){
+    if (calYearMode) exitYearView(null); else enterYearView();
+  });
+  calTitle.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    if (calYearMode) exitYearView(null); else enterYearView();
+  });
+  var yearSwipeDrag = null;
+  calYearGridEl.addEventListener('pointerdown', function(e){
+    yearSwipeDrag = { startY: e.clientY };
+  });
+  calYearGridEl.addEventListener('pointerup', function(e){
+    if (!yearSwipeDrag) return;
+    var dy = e.clientY - yearSwipeDrag.startY;
+    yearSwipeDrag = null;
+    if (Math.abs(dy) < 40) return;
+    vibrate(6);
+    goToYear(dy < 0 ? 1 : -1);
+  });
+
   function notesForDate(d){
     return activeNotes().filter(function(n){
       if (n.dateOnly && dateKey(n.dateOnly) === dateKey(d)) return true;
@@ -4161,8 +4312,14 @@
     if (onSharedPage) renderSharedPanel();
   }
 
-  calPrev.addEventListener('click', function(){ vibrate(6); calState.month--; if (calState.month < 0){ calState.month = 11; calState.year--; } renderCalendar(); });
-  calNext.addEventListener('click', function(){ vibrate(6); calState.month++; if (calState.month > 11){ calState.month = 0; calState.year++; } renderCalendar(); });
+  calPrev.addEventListener('click', function(){
+    if (calYearMode){ vibrate(6); goToYear(-1); return; }
+    vibrate(6); calState.month--; if (calState.month < 0){ calState.month = 11; calState.year--; } renderCalendar();
+  });
+  calNext.addEventListener('click', function(){
+    if (calYearMode){ vibrate(6); goToYear(1); return; }
+    vibrate(6); calState.month++; if (calState.month > 11){ calState.month = 0; calState.year++; } renderCalendar();
+  });
 
   // ---------- Print calendar ----------
   var printBtn = document.getElementById('print-btn');
