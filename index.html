@@ -928,6 +928,15 @@
 </script>
 <script>
 (function(){
+  // Surfaces otherwise-silent failures in the console for debugging — doesn't
+  // change app behavior or interrupt the user.
+  window.addEventListener('error', function(e){
+    console.error('[Nudgy] unhandled error:', e.error || e.message);
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    console.error('[Nudgy] unhandled promise rejection:', e.reason);
+  });
+
   var STORAGE_KEY = 'mi_alarma_notes_v1';
   var LANG_KEY = 'mi_alarma_lang';
   var REMIND_AGAIN_MINUTES = 15;
@@ -2860,13 +2869,14 @@
   }
 
   // ---------- Photo attachment ----------
+  var PHOTO_MAX_DIM = 900; // longest side, px — kept small since photos are stored as base64 in localStorage
   function processImageFile(file, cb, onError){
     if (!file || !/^image\//.test(file.type)) { if (onError) onError(); return; }
     var reader = new FileReader();
     reader.onload = function(e){
       var img = new Image();
       img.onload = function(){
-        var maxDim = 900;
+        var maxDim = PHOTO_MAX_DIM;
         var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
         var canvas = document.createElement('canvas');
         canvas.width = Math.round(img.width * scale);
@@ -2927,6 +2937,9 @@
   });
 
   // ---------- Scan physical calendar ----------
+  var SCAN_DETECTION_MAX_DIM = 1200; // working resolution for ink-contrast detection, px
+  var SCAN_RECTIFY_MAX_DIM = 1600; // working resolution for the perspective-corrected grid, px
+  var SCAN_CELL_W = 140, SCAN_CELL_H = 100; // size of each rectified day cell, px
   function scanBilinear(corners, u, v){
     var top = { x: corners.tl.x + (corners.tr.x - corners.tl.x) * u, y: corners.tl.y + (corners.tr.y - corners.tl.y) * u };
     var bottom = { x: corners.bl.x + (corners.br.x - corners.bl.x) * u, y: corners.bl.y + (corners.br.y - corners.bl.y) * u };
@@ -3102,7 +3115,7 @@
   function scanRectifyGrid(){
     var info = scanDetectedInfo;
     var srcCanvas = document.createElement('canvas');
-    var maxDim = 1600;
+    var maxDim = SCAN_RECTIFY_MAX_DIM;
     var scale = Math.min(1, maxDim / Math.max(scanImageNaturalW, scanImageNaturalH));
     srcCanvas.width = Math.round(scanImageNaturalW * scale);
     srcCanvas.height = Math.round(scanImageNaturalH * scale);
@@ -3110,7 +3123,7 @@
     sctx.drawImage(scanPhotoImg, 0, 0, srcCanvas.width, srcCanvas.height);
     var srcData = sctx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
 
-    var cellW = 140, cellH = 100;
+    var cellW = SCAN_CELL_W, cellH = SCAN_CELL_H;
     var outCanvas = document.createElement('canvas');
     outCanvas.width = cellW * 7;
     outCanvas.height = cellH * info.rows;
@@ -3181,7 +3194,7 @@
     var info = scanGridInfo();
     scanDetectedInfo = info;
     var canvas = document.createElement('canvas');
-    var maxDim = 1200;
+    var maxDim = SCAN_DETECTION_MAX_DIM;
     var scale = Math.min(1, maxDim / Math.max(scanImageNaturalW, scanImageNaturalH));
     canvas.width = Math.round(scanImageNaturalW * scale);
     canvas.height = Math.round(scanImageNaturalH * scale);
@@ -4583,7 +4596,7 @@
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = 'mi-alarma-backup-' + dateKey(new Date()) + '.json';
+    a.download = 'nudgy-backup-' + dateKey(new Date()) + '.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
