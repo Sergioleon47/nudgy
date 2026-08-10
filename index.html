@@ -83,7 +83,7 @@
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
   }
   #contacts-btn.open { background:var(--accent); color:white; }
-  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn, #upcoming-btn, #auth-btn {
+  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn, #upcoming-btn, #timeformat-btn, #auth-btn {
     background: #F2F2F7; border: none; color: #274257;
     width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px;
@@ -96,6 +96,7 @@
   }
   .upcoming-badge.visible { display:flex; }
   #auth-btn.synced { color: #2FA360; background:#E7F7EE; }
+  #timeformat-btn.active { color: var(--accent); background:var(--accent-soft); }
   #auth-btn.loading { opacity:0.5; pointer-events:none; }
   #auth-btn.loading i { animation: auth-btn-spin 0.9s linear infinite; }
   @keyframes auth-btn-spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
@@ -534,6 +535,7 @@
           <button id="receipt-btn" aria-label="Foto de recibo" title="Foto de recibo"><i class="ti ti-receipt-2" aria-hidden="true"></i></button>
           <input type="file" id="receipt-file-input" accept="image/*" style="display:none">
           <button id="upcoming-btn" aria-label="Proximas alarmas" title="Proximas alarmas"><i class="ti ti-bell-ringing" aria-hidden="true"></i><span id="upcoming-badge" class="upcoming-badge"></span></button>
+          <button id="timeformat-btn" aria-label="Cambiar a formato 24 horas" title="Cambiar a formato 24 horas"><i class="ti ti-clock" aria-hidden="true"></i></button>
           <button id="auth-btn" aria-label="Iniciar sesion para sincronizar" title="Iniciar sesion para sincronizar"><i class="ti ti-cloud" aria-hidden="true"></i></button>
         </div>
       </div>
@@ -853,6 +855,8 @@
       noteDeletedToast: 'Nota eliminada',
       undoLabel: 'Deshacer',
       photoErrorMsg: 'No se pudo cargar la foto. Intenta con otra imagen.',
+      timeFormatTo24h: 'Cambiar a formato 24 horas',
+      timeFormatTo12h: 'Cambiar a formato 12 horas (AM/PM)',
       checklistCheck: 'Marcar como hecho',
       checklistUncheck: 'Marcar como pendiente',
       alarmOffLabel: 'Apagar alarma',
@@ -975,6 +979,8 @@
       noteDeletedToast: 'Note deleted',
       undoLabel: 'Undo',
       photoErrorMsg: "Couldn't load the photo. Try a different image.",
+      timeFormatTo24h: 'Switch to 24-hour format',
+      timeFormatTo12h: 'Switch to 12-hour format (AM/PM)',
       checklistCheck: 'Mark as done',
       checklistUncheck: 'Mark as not done',
       alarmOffLabel: 'Turn alarm off',
@@ -1055,6 +1061,10 @@
   var currentLang = 'es';
   try { currentLang = localStorage.getItem(LANG_KEY) || 'es'; } catch(e){}
   function t(key){ return T[currentLang][key]; }
+
+  var TIME_FORMAT_KEY = 'mi_alarma_use_24h';
+  var use24h = false;
+  try { use24h = localStorage.getItem(TIME_FORMAT_KEY) === '1'; } catch(e){}
 
   // localStorage.setItem throws when the quota (~5MB, easy to hit with photo
   // notes) is full. Used only for the writes where silently losing the data
@@ -1274,6 +1284,7 @@
     if (pendingNoteAnchor) updatePendingAnchorChip();
     updateNotifBtn();
     updateAuthBtn();
+    updateTimeformatBtn();
     document.documentElement.lang = currentLang;
     updateParsePreview();
   }
@@ -1636,6 +1647,23 @@
       var label2 = currentLang === 'en' ? 'Sign in to sync' : 'Iniciar sesion para sincronizar';
       authBtn.title = label2; authBtn.setAttribute('aria-label', label2);
     }
+  }
+
+  var timeformatBtn = document.getElementById('timeformat-btn');
+  function updateTimeformatBtn(){
+    if (!timeformatBtn) return;
+    timeformatBtn.classList.toggle('active', use24h);
+    var label = use24h ? t('timeFormatTo12h') : t('timeFormatTo24h');
+    timeformatBtn.title = label; timeformatBtn.setAttribute('aria-label', label);
+  }
+  if (timeformatBtn){
+    timeformatBtn.addEventListener('click', function(){
+      use24h = !use24h;
+      try { localStorage.setItem(TIME_FORMAT_KEY, use24h ? '1' : '0'); } catch(e){}
+      updateTimeformatBtn();
+      vibrate(8);
+      renderAll();
+    });
   }
 
   // ---------- Lazy Firebase load: the 3 SDK scripts only download once the ----------
@@ -2205,6 +2233,7 @@
     return t('days')[target.getDay()];
   }
   function formatHM2(h, m){
+    if (use24h) return h.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0');
     var suffix = h >= 12 ? 'PM' : 'AM';
     var h12 = h % 12; if (h12 === 0) h12 = 12;
     return h12 + ':' + m.toString().padStart(2, '0') + ' ' + suffix;
