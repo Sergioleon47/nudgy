@@ -366,9 +366,7 @@
   .cal-daynum { font-weight:600; color:#1C1C1E; font-size:11px; }
   .cal-activity-dot { width:4px; height:4px; border-radius:50%; margin-top:2px; background:#2FA360; }
   .cal-cell.today .cal-activity-dot { background:var(--accent-darker); }
-  .cal-photo-badge { position:absolute; top:2px; right:3px; font-size:9px; line-height:1; color:var(--accent); }
-  .cal-cell.today .cal-photo-badge { color:var(--accent-darker); }
-  body.dark-mode .cal-photo-badge { color:var(--accent-light); }
+  .cal-photo-badge { position:absolute; top:2px; right:3px; width:11px; height:11px; }
   #cal-title { cursor:pointer; }
   #cal-year-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
   .cal-year-month { cursor:pointer; padding:6px 4px; border-radius:10px; }
@@ -4271,10 +4269,11 @@
         cell.appendChild(dot);
       }
       if (dayNotes.some(function(n){ return !!n.image; })){
-        var photoBadge = document.createElement('i');
-        photoBadge.className = 'ti ti-bell cal-photo-badge';
-        photoBadge.setAttribute('aria-hidden', 'true');
-        cell.appendChild(photoBadge);
+        cell.insertAdjacentHTML('beforeend',
+          '<svg class="cal-photo-badge" viewBox="110 55 290 290" aria-hidden="true">' +
+          '<path d="M256 96 c-64 0 -104 48 -104 128 v54 c0 22 -10 40 -30 56 h268 c-20 -16 -30 -34 -30 -56 v-54 c0 -80 -40 -128 -104 -128 z" fill="url(#decorBell)" stroke="#A9600F" stroke-width="6" stroke-linejoin="round"/>' +
+          '<circle cx="256" cy="88" r="20" fill="#D98A1F" stroke="#A9600F" stroke-width="6"/>' +
+          '</svg>');
       }
       cell.addEventListener('click', function(k){
         return function(){
