@@ -140,6 +140,7 @@ exports.handler = async (event) => {
     db = admin.firestore();
     messaging = admin.messaging();
   } catch (err) {
+    console.error('check-alarms: init failed —', err.message);
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 
@@ -163,7 +164,14 @@ exports.handler = async (event) => {
       }
       byUid.set(uid, entry);
     });
-    if (!byUid.size) return { statusCode: 200, body: JSON.stringify({ skipped: 'no push tokens registered' }) };
+    console.log('check-alarms: ' + tokenDocs.size + ' pushToken doc(s) across ' + byUid.size + ' uid(s)');
+    if (!byUid.size) {
+      console.log('check-alarms: no push tokens registered, nothing to do');
+      return { statusCode: 200, body: JSON.stringify({ skipped: 'no push tokens registered' }) };
+    }
+    Array.from(byUid.entries()).forEach(([uid, r]) => {
+      console.log('check-alarms: uid=' + uid + ' tokens=' + r.tokens.length + ' timezone=' + r.timezone);
+    });
 
     // 2. Resolver, por uid, si tiene un hogar activo -> agrupar por
     // coleccion de notas real para no leerla mas de una vez por hogar.
@@ -176,6 +184,7 @@ exports.handler = async (event) => {
 
     const householdIds = new Set(householdIdByUid.values());
     const personalUids = Array.from(byUid.keys()).filter((uid) => !householdIdByUid.has(uid));
+    console.log('check-alarms: ' + personalUids.length + ' personal uid(s), ' + householdIds.size + ' household(s)');
 
     // Cache de miembros por hogar (uid -> autoAccept), un solo read por hogar.
     const membersByHousehold = new Map();
@@ -260,8 +269,11 @@ exports.handler = async (event) => {
     });
 
     await Promise.all(tasks);
+    console.log('check-alarms: done — checked=' + results.checked + ' fired=' + results.fired + ' errors=' + results.errors.length);
+    if (results.errors.length) console.error('check-alarms errors:', results.errors);
     return { statusCode: 200, body: JSON.stringify(results) };
   } catch (err) {
+    console.error('check-alarms: fatal —', err);
     return { statusCode: 500, body: JSON.stringify({ error: err.message, ...results }) };
   }
 };
@@ -274,10 +286,17 @@ async function sendAndMark(noteRef, note, evalResult, recipients, messaging, db,
   const tag = 'alarm-' + (note.authorUid ? note.authorUid + '_' + note.id : String(note.id));
   const data = { title: '⏰ Nudgy', body: note.raw || '', tag };
 
+  console.log('check-alarms: firing ' + noteRef.path + ' -> ' + tokens.length + ' token(s), body="' + data.body + '"');
+
   let sendResponse = null;
   try {
     sendResponse = await messaging.sendEachForMulticast({ tokens, data });
+    console.log('check-alarms: FCM result for ' + noteRef.path + ' — successCount=' + sendResponse.successCount + ' failureCount=' + sendResponse.failureCount);
+    sendResponse.responses.forEach((r, i) => {
+      if (!r.success) console.error('check-alarms: token #' + i + ' failed —', r.error && r.error.code, r.error && r.error.message);
+    });
   } catch (err) {
+    console.error('check-alarms: send threw for ' + noteRef.path + ' —', err);
     results.errors.push('send failed for ' + noteRef.path + ': ' + err.message);
   }
 

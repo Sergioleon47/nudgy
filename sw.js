@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nudgy-v7';
+const CACHE_NAME = 'nudgy-v8';
 const FILES_TO_CACHE = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -46,6 +46,13 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(payload.title || 'Nudgy', {
       body: payload.body || '',
       tag: payload.tag || 'alarm-push',
+      // Matches the urgency of the in-app alarm (which beeps on a loop and
+      // vibrates) as closely as a background push notification can: a
+      // noticeable vibration pattern, and stays on screen instead of
+      // auto-dismissing after a few seconds, since this is a medication/
+      // appointment reminder, not an FYI.
+      vibrate: [200, 100, 200, 100, 200],
+      requireInteraction: true,
       actions: [
         { action: 'snooze5', title: '+5 min' },
         { action: 'remind15', title: '+15 min' },
