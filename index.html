@@ -78,6 +78,14 @@
   .contact-picker-row:hover { background:#E5E5EA; }
   .contact-picker-row i { font-size:15px; color:var(--accent); }
 
+  #location-provider-row { display:none; flex-direction:column; gap:6px; margin-top:10px; }
+  .location-provider-btn {
+    display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; border-radius:10px;
+    background:#F2F2F7; border:none; cursor:pointer; font-size:14px; color:#1C1C1E; text-align:left;
+  }
+  .location-provider-btn:hover { background:#E5E5EA; }
+  .location-provider-btn i { font-size:15px; color:var(--accent); flex-shrink:0; }
+
   .cols { position:relative; display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
   .sky-panel {
     background: #FFFFFF;
@@ -129,6 +137,8 @@
   .household-member-row { display:flex; align-items:center; gap:8px; font-size:13px; color:#1C1C1E; background:#F2F2F7; padding:7px 10px; border-radius:9px; }
   .household-member-row i { font-size:13px; color:var(--accent); }
   .household-join-row { display:flex; gap:6px; margin-top:10px; }
+  .household-autoaccept-row { display:flex; align-items:center; gap:8px; font-size:13px; color:#1C1C1E; margin-bottom:6px; cursor:pointer; }
+  .household-autoaccept-row input { width:17px; height:17px; flex-shrink:0; accent-color:var(--accent); }
   #household-join-input { flex:1; font-size:15px; letter-spacing:2px; text-transform:uppercase; text-align:center; padding:8px 9px; border-radius:9px; border:none; background:#F2F2F7; color:#1C1C1E; font-family:inherit; }
   #auth-btn.loading { opacity:0.5; pointer-events:none; }
     #darkmode-btn {
@@ -356,6 +366,9 @@
   .cal-daynum { font-weight:600; color:#1C1C1E; font-size:11px; }
   .cal-activity-dot { width:4px; height:4px; border-radius:50%; margin-top:2px; background:#2FA360; }
   .cal-cell.today .cal-activity-dot { background:var(--accent-darker); }
+  .cal-photo-badge { position:absolute; top:2px; right:3px; font-size:9px; line-height:1; color:var(--accent); }
+  .cal-cell.today .cal-photo-badge { color:var(--accent-darker); }
+  body.dark-mode .cal-photo-badge { color:var(--accent-light); }
   #cal-title { cursor:pointer; }
   #cal-year-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
   .cal-year-month { cursor:pointer; padding:6px 4px; border-radius:10px; }
@@ -452,6 +465,9 @@
     .col-right .date-action-item:hover { background: rgba(255,255,255,0.12); }
     .col-right .date-action-item i { background: rgba(255,255,255,0.2); color:#fff; }
     .col-right .date-action-item span { color: rgba(255,255,255,0.85); }
+    .col-right .location-provider-btn { background: rgba(255,255,255,0.15); color:#fff; }
+    .col-right .location-provider-btn:hover { background: rgba(255,255,255,0.25); }
+    .col-right .location-provider-btn i { color:#fff; }
     .col-right .cal-year-month:hover { background: rgba(255,255,255,0.12); }
     .col-right .cal-year-month-name { color:#fff; }
     .col-right .cal-year-day { color: rgba(255,255,255,0.7); }
@@ -754,6 +770,11 @@
           <button class="date-action-item" id="date-action-photo" role="menuitem"><i class="ti ti-camera" aria-hidden="true"></i><span id="date-action-photo-label">Foto</span></button>
           <button class="date-action-item" id="date-action-receipt" role="menuitem"><i class="ti ti-receipt-2" aria-hidden="true"></i><span id="date-action-receipt-label">Recibo</span></button>
         </div>
+        <div id="location-provider-row" style="display:none;">
+          <button class="location-provider-btn" id="location-my-current"><i class="ti ti-current-location" aria-hidden="true"></i> <span id="location-my-current-label">Mi ubicacion actual</span></button>
+          <button class="location-provider-btn" id="location-google"><i class="ti ti-brand-google" aria-hidden="true"></i> <span>Google Maps</span></button>
+          <button class="location-provider-btn" id="location-apple"><i class="ti ti-brand-apple" aria-hidden="true"></i> <span>Apple Maps</span></button>
+        </div>
       </div>
       <div class="next-alarm-box">
         <div class="next-alarm-label" id="next-alarm-label">Proxima alarma</div>
@@ -989,6 +1010,11 @@
       <div id="household-code-display" class="household-code"></div>
       <div class="household-hint" id="household-share-hint">Comparti este codigo para que otros se unan a tu hogar.</div>
       <div id="household-members-list" class="household-members"></div>
+      <label class="household-autoaccept-row">
+        <input type="checkbox" id="household-autoaccept-toggle">
+        <span id="household-autoaccept-label">Aceptar notas de este hogar automaticamente</span>
+      </label>
+      <div class="household-hint" id="household-autoaccept-hint">Sin esto, cada nota que agregue otro miembro hay que aceptarla a mano antes de que suene. Activalo en el telefono de quien va a recibir los recordatorios.</div>
       <button id="household-leave-btn" class="sky-btn danger" style="width:100%;">Salir del hogar</button>
     </div>
   </div>
@@ -1106,6 +1132,8 @@
       householdJoinPlaceholder: 'CODIGO',
       householdJoinBtn: 'Unirme',
       householdShareHint: 'Comparti este codigo para que otros se unan a tu hogar.',
+      householdAutoAcceptLabel: 'Aceptar notas de este hogar automaticamente',
+      householdAutoAcceptHint: 'Sin esto, cada nota que agregue otro miembro hay que aceptarla a mano antes de que suene. Activalo en el telefono de quien va a recibir los recordatorios.',
       householdLeaveBtn: 'Salir del hogar',
       householdYouSuffix: ' (vos)',
       householdSignInFirst: 'Inicia sesion primero para usar un hogar compartido.',
@@ -1161,6 +1189,7 @@
       dateActionLocationNoteText: 'Ubicacion: {address}',
       locationNotSupported: 'Tu navegador no permite obtener la ubicacion.',
       locationDenied: 'No se pudo obtener tu ubicacion. Revisa los permisos.',
+      locationMyCurrentLabel: 'Mi ubicacion actual',
       highlightHint: 'Desliza para pintar los dias. Toca un dia pintado para borrarlo.',
       noteSelectBtnTitle: 'Empezar nota desde el calendario',
       noteSelectHint: 'Desliza el dedo sobre los dias para tu nota',
@@ -1267,6 +1296,8 @@
       householdJoinPlaceholder: 'CODE',
       householdJoinBtn: 'Join',
       householdShareHint: 'Share this code so others can join your household.',
+      householdAutoAcceptLabel: 'Automatically accept notes from this household',
+      householdAutoAcceptHint: "Without this, every note another member adds has to be accepted by hand before it can ring. Turn it on on the phone of whoever should receive the reminders.",
       householdLeaveBtn: 'Leave household',
       householdYouSuffix: ' (you)',
       householdSignInFirst: 'Sign in first to use a shared household.',
@@ -1324,6 +1355,7 @@
       dateActionLocationNoteText: 'Location: {address}',
       locationNotSupported: "Your browser doesn't support getting your location.",
       locationDenied: "Couldn't get your location. Check your permissions.",
+      locationMyCurrentLabel: 'My current location',
       highlightHint: 'Drag to paint the days. Tap a painted day to erase it.',
       noteSelectBtnTitle: 'Start a note from the calendar',
       noteSelectHint: 'Drag your finger over the days for your note',
@@ -1606,6 +1638,7 @@
     document.getElementById('date-action-receipt-label').textContent = t('dateActionReceiptLabel');
     document.getElementById('contact-picker-title').textContent = t('contactPickerTitle');
     document.getElementById('contact-picker-empty').textContent = t('contactPickerEmptyMsg');
+    document.getElementById('location-my-current-label').textContent = t('locationMyCurrentLabel');
     if (pendingNoteAnchor) updatePendingAnchorChip();
     updateNotifBtn();
     updateAuthBtn();
@@ -1853,14 +1886,21 @@
   // show in your list/calendar, doesn't ring — until you've accepted it (or
   // it's a personal note, which is always active). Notes you dismissed stay
   // out of the pending queue too, without ever becoming active.
+  // A member can opt into skipping the accept step entirely for a household
+  // (see the "auto-accept" toggle) — meant for a caregiving setup where the
+  // person receiving reminders (e.g. an elderly parent) shouldn't have to
+  // find and tap a pending-notes inbox for a medication alarm to work.
+  var householdAutoAcceptForMe = false;
   function isNoteActiveForMe(n){
     if (!n.authorUid) return true;
     if (!currentUser) return true;
     if (n.authorUid === currentUser.uid) return true;
+    if (householdAutoAcceptForMe) return true;
     return !!(n.acceptedBy && n.acceptedBy[currentUser.uid]);
   }
   function isNotePendingForMe(n){
     if (!n.authorUid || !currentUser || n.authorUid === currentUser.uid) return false;
+    if (householdAutoAcceptForMe) return false;
     if (n.acceptedBy && n.acceptedBy[currentUser.uid]) return false;
     if (n.dismissedBy && n.dismissedBy[currentUser.uid]) return false;
     return true;
@@ -2164,13 +2204,18 @@
     if (unsubHouseholdMembersSnapshot) unsubHouseholdMembersSnapshot();
     if (!currentHouseholdId) return;
     unsubHouseholdMembersSnapshot = householdMembersRef(currentHouseholdId).onSnapshot(function(snapshot){
-      householdMembers = snapshot.docs.map(function(d){ return { uid: d.id, displayName: (d.data() || {}).displayName || '?' }; });
+      householdMembers = snapshot.docs.map(function(d){ return { uid: d.id, displayName: (d.data() || {}).displayName || '?', autoAccept: !!(d.data() || {}).autoAccept }; });
+      var mine = currentUser && householdMembers.filter(function(m){ return m.uid === currentUser.uid; })[0];
+      var wasAutoAccept = householdAutoAcceptForMe;
+      householdAutoAcceptForMe = !!(mine && mine.autoAccept);
       updateHouseholdUI();
+      if (wasAutoAccept !== householdAutoAcceptForMe) renderAll();
     }, function(){});
   }
   function detachHouseholdMembersListener(){
     if (unsubHouseholdMembersSnapshot) unsubHouseholdMembersSnapshot();
     unsubHouseholdMembersSnapshot = null;
+    householdAutoAcceptForMe = false;
   }
   function createHousehold(){
     if (!currentUser) return Promise.reject(new Error('signed-out'));
@@ -2242,6 +2287,9 @@
   var householdShareHintEl = document.getElementById('household-share-hint');
   var householdCodeDisplay = document.getElementById('household-code-display');
   var householdMembersList = document.getElementById('household-members-list');
+  var householdAutoAcceptToggle = document.getElementById('household-autoaccept-toggle');
+  var householdAutoAcceptLabelEl = document.getElementById('household-autoaccept-label');
+  var householdAutoAcceptHintEl = document.getElementById('household-autoaccept-hint');
   var householdLeaveBtn = document.getElementById('household-leave-btn');
 
   function householdApplyLanguage(){
@@ -2254,6 +2302,8 @@
     householdJoinInput.placeholder = t('householdJoinPlaceholder');
     householdJoinBtn.textContent = t('householdJoinBtn');
     householdShareHintEl.textContent = t('householdShareHint');
+    householdAutoAcceptLabelEl.textContent = t('householdAutoAcceptLabel');
+    householdAutoAcceptHintEl.textContent = t('householdAutoAcceptHint');
     householdLeaveBtn.textContent = t('householdLeaveBtn');
   }
 
@@ -2280,6 +2330,7 @@
         row.appendChild(nameSpan);
         householdMembersList.appendChild(row);
       });
+      householdAutoAcceptToggle.checked = householdAutoAcceptForMe;
     }
   }
   if (householdBtn){
@@ -2312,6 +2363,17 @@
       householdJoinBtn.disabled = false;
       householdJoinInput.value = '';
       renderHouseholdModal();
+    });
+  });
+  if (householdAutoAcceptToggle) householdAutoAcceptToggle.addEventListener('change', function(){
+    if (!currentUser || !currentHouseholdId) return;
+    var val = householdAutoAcceptToggle.checked;
+    householdAutoAcceptForMe = val;
+    renderAll();
+    householdMembersRef(currentHouseholdId).doc(currentUser.uid).set({ autoAccept: val }, { merge: true }).catch(function(){
+      householdAutoAcceptForMe = !val;
+      householdAutoAcceptToggle.checked = !val;
+      renderAll();
     });
   });
   if (householdLeaveBtn) householdLeaveBtn.addEventListener('click', function(){
@@ -3360,7 +3422,7 @@
   // would otherwise blur the textarea first and auto-save the draft as a new
   // note before the button's own click even runs. preventDefault on mousedown
   // keeps focus (and the draft) untouched; the button's click still fires.
-  document.querySelectorAll('.top-row button, .cal-action-btn, .date-action-item, #contact-picker-close-btn').forEach(function(btn){
+  document.querySelectorAll('.top-row button, .cal-action-btn, .date-action-item, .location-provider-btn, #contact-picker-close-btn').forEach(function(btn){
     btn.addEventListener('mousedown', function(e){ e.preventDefault(); });
   });
   imageLightbox.addEventListener('click', function(){ imageLightbox.style.display = 'none'; imageLightboxImg.src = ''; });
@@ -4208,6 +4270,12 @@
         var dot = document.createElement('div'); dot.className = 'cal-activity-dot';
         cell.appendChild(dot);
       }
+      if (dayNotes.some(function(n){ return !!n.image; })){
+        var photoBadge = document.createElement('i');
+        photoBadge.className = 'ti ti-bell cal-photo-badge';
+        photoBadge.setAttribute('aria-hidden', 'true');
+        cell.appendChild(photoBadge);
+      }
       cell.addEventListener('click', function(k){
         return function(){
           if (paintMode || noteSelectMode) return;
@@ -4390,9 +4458,33 @@
     vibrate(15);
   }
 
+  var locationProviderRow = document.getElementById('location-provider-row');
+  var locationMyCurrentBtn = document.getElementById('location-my-current');
+  var locationGoogleBtn = document.getElementById('location-google');
+  var locationAppleBtn = document.getElementById('location-apple');
+
   dateActionLocationBtn.addEventListener('click', function(){
+    var opening = locationProviderRow.style.display === 'none';
+    animateCalHeight(function(){
+      locationProviderRow.style.display = opening ? 'flex' : 'none';
+    });
+  });
+  locationMyCurrentBtn.addEventListener('click', function(){
     startLocationCapture(dateActionTargetDate());
   });
+  // Opens the maps app/site right away, synchronously, in direct response to
+  // the tap — waiting on an async geolocation lookup first would lose the
+  // "real user gesture" that Safari/iOS requires to allow a new tab at all,
+  // so no attempt is made here to center the map on the user's position.
+  function openExternalMapsSearch(url){
+    var d = dateActionTargetDate();
+    window.open(url, '_blank', 'noopener');
+    pendingNoteAnchor = { start: d, end: d };
+    updatePendingAnchorChip();
+    noteInput.focus();
+  }
+  locationGoogleBtn.addEventListener('click', function(){ openExternalMapsSearch('https://www.google.com/maps'); });
+  locationAppleBtn.addEventListener('click', function(){ openExternalMapsSearch('https://maps.apple.com/'); });
   dateActionContactBtn.addEventListener('click', function(){
     openContactPicker(dateActionTargetDate());
   });
@@ -4460,6 +4552,7 @@
   }
 
   function renderSelectedPanel(){
+    document.getElementById('location-provider-row').style.display = 'none';
     if (!selectedDateKey){ calSelectedPanel.style.display = 'none'; return; }
     var parts = selectedDateKey.split('-');
     var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
