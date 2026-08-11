@@ -5548,9 +5548,12 @@
       var tr = new Date(); tr.setMinutes(tr.getMinutes() + REMIND_AGAIN_MINUTES);
       if (note.recurring){ note.snoozeUntil = tr; }
       else { note.target = tr; note.hour = tr.getHours(); note.minute = tr.getMinutes(); note.firedKey = null; }
-    } else {
+    } else if (action === 'dismiss'){
       note.enabled = false;
     }
+    // A tap on the notification body itself (not one of the three action
+    // buttons) reports an empty `action` — that's just "open the app", not a
+    // request to change the note, so it falls through and does nothing here.
     if (currentRinging === note) stopRinging();
     renderAll();
   }
