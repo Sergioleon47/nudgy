@@ -2178,11 +2178,7 @@
   function setupPushMessaging(){
     if (!firebase.messaging || (firebase.messaging.isSupported && !firebase.messaging.isSupported())){
       console.warn('[Nudgy] push: firebase.messaging unavailable/unsupported in this browser');
-      return;
     }
-    try {
-      firebase.messaging().onTokenRefresh(function(){ registerPushToken(); });
-    } catch (e) { console.error('[Nudgy] push: onTokenRefresh setup failed:', e); }
   }
   function registerPushToken(){
     if (!currentUser) { console.warn('[Nudgy] push: not registering, signed out'); return; }
@@ -2195,7 +2191,17 @@
       console.warn('[Nudgy] push: not registering, firebase.messaging unavailable/unsupported');
       return;
     }
-    firebase.messaging().getToken({ vapidKey: VAPID_KEY }).then(function(token){
+    if (!('serviceWorker' in navigator)){
+      console.warn('[Nudgy] push: not registering, no service worker support');
+      return;
+    }
+    // getToken() defaults to auto-registering its own "firebase-messaging-sw.js"
+    // at the site root, which we don't have (push is handled inside our own
+    // sw.js instead) — pointing it at our already-registered SW avoids that
+    // 404 (messaging/failed-service-worker-registration).
+    navigator.serviceWorker.ready.then(function(registration){
+      return firebase.messaging().getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
+    }).then(function(token){
       if (!token) { console.warn('[Nudgy] push: getToken resolved with an empty token'); return; }
       console.log('[Nudgy] push: got FCM token, saving to Firestore');
       var uid = currentUser.uid;

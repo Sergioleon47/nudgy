@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nudgy-v8';
+const CACHE_NAME = 'nudgy-v9';
 const FILES_TO_CACHE = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -23,6 +23,10 @@ self.addEventListener('activate', (event) => {
 // version ever cached forever, since a byte-identical sw.js never re-triggers
 // install/cache refresh even after new deploys.
 self.addEventListener('fetch', (event) => {
+  // The Cache API only accepts GET requests — Firebase's own network calls
+  // (Firestore, FCM) pass through here too and are mostly POST, which used
+  // to throw an unhandled rejection on every single one of them.
+  if (event.request.method !== 'GET') return;
   event.respondWith(
     fetch(event.request).then((response) => {
       var copy = response.clone();
