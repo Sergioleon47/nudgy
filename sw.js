@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mi-alarma-v5';
+const CACHE_NAME = 'nudgy-v7';
 const FILES_TO_CACHE = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -32,6 +32,29 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+// Fired by check-alarms.js (Netlify Function) via FCM while the browser is
+// fully closed — the page isn't around to call showNotification itself, so
+// the service worker builds the exact same notification shape it would.
+// Data-only payload (never `notification`), so this is the only place that
+// ever renders it — no double notification from FCM's own default handler.
+// Action labels are hardcoded in Spanish (matching the app's ES defaults):
+// the service worker has no access to the page's language preference.
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try { payload = event.data ? event.data.json() : {}; } catch (e) {}
+  event.waitUntil(
+    self.registration.showNotification(payload.title || 'Nudgy', {
+      body: payload.body || '',
+      tag: payload.tag || 'alarm-push',
+      actions: [
+        { action: 'snooze5', title: '+5 min' },
+        { action: 'remind15', title: '+15 min' },
+        { action: 'dismiss', title: 'Apagar del todo' }
+      ]
+    })
+  );
+});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const action = event.action || '';
@@ -42,7 +65,11 @@ self.addEventListener('notificationclick', (event) => {
         client.postMessage({ type: 'notif-action', action: action, tag: tag });
       }
       if (clientList.length) return clientList[0].focus();
-      return self.clients.openWindow('./index.html');
+      // No open window to postMessage (app was fully closed) — open one with
+      // the action baked into the URL so index.html can apply it once loaded
+      // (see applyNotifActionFromUrl in index.html).
+      const url = './index.html?action=' + encodeURIComponent(action) + '&tag=' + encodeURIComponent(tag);
+      return self.clients.openWindow(url);
     })
   );
 });

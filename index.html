@@ -26,7 +26,6 @@
     padding: 20px;
   }
   .wrap { position: relative; max-width: 760px; margin: 0 auto; }
-  .decor1 { position:absolute; top:-40px; right:-30px; width:160px; height:160px; pointer-events:none; }
   .header { position:relative; text-align:center; margin-bottom:20px; display:flex; align-items:center; justify-content:center; gap:8px; }
   .header i { font-size:22px; color:var(--accent-line); }
   .header-bell { width:26px; height:26px; flex-shrink:0; }
@@ -40,6 +39,53 @@
     padding:5px 10px; border-radius:7px; cursor:pointer;
   }
   #lang-toggle button.active { background:#FFFFFF; color:var(--accent); box-shadow:0 1px 2px rgba(0,0,0,0.12); }
+
+  /* Horizontal pager: page-main and page-shared sit side by side in a track
+     twice the viewport width; sliding between them is a translateX on the
+     whole track, eased slowly so both pages stay visible mid-drag. */
+  .app-pager-viewport { overflow:hidden; position:relative; }
+  .app-pager { display:flex; width:200%; transition: transform .5s cubic-bezier(0.22, 0.61, 0.36, 1); touch-action: pan-y; }
+  .app-pager.dragging { transition:none; }
+  .app-page { width:50%; flex-shrink:0; box-sizing:border-box; min-width:0; }
+  #page-shared { padding: 0 2px; }
+  .shared-panel-head { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .shared-panel-head span { font-size:16px; font-weight:700; color:#1C1C1E; }
+  #shared-notes-list { display:flex; flex-direction:column; gap:10px; }
+  .shared-note-card { background:#F7F7F9; border-radius:14px; padding:12px 14px; }
+  .shared-note-author { display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--accent-darker); margin-bottom:4px; }
+  .shared-note-author i { font-size:12px; }
+  .shared-note-text { font-size:14px; color:#1C1C1E; white-space:pre-wrap; line-height:1.4; margin-bottom:10px; }
+  .shared-note-actions { display:flex; gap:8px; }
+  .shared-note-actions button { flex:1; }
+
+  #date-action-menu { display:flex; gap:6px; margin-top:10px; justify-content:space-between; }
+  .date-action-item {
+    display:flex; flex-direction:column; align-items:center; gap:4px; flex:1;
+    background:none; border:none; cursor:pointer; padding:6px 2px; border-radius:10px;
+  }
+  .date-action-item:hover { background:#F2F2F7; }
+  .date-action-item i {
+    width:34px; height:34px; border-radius:50%; background:var(--accent-soft); color:var(--accent-darker);
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+  }
+  .date-action-item span { font-size:10px; font-weight:600; color:#5F5F63; }
+
+  #contact-picker-list { display:flex; flex-direction:column; gap:6px; }
+  .contact-picker-row {
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+    background:#F2F2F7; cursor:pointer; font-size:14px; color:#1C1C1E;
+  }
+  .contact-picker-row:hover { background:#E5E5EA; }
+  .contact-picker-row i { font-size:15px; color:var(--accent); }
+
+  #location-provider-row { display:none; flex-direction:column; gap:6px; margin-top:10px; }
+  .location-provider-btn {
+    display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; border-radius:10px;
+    background:#F2F2F7; border:none; cursor:pointer; font-size:14px; color:#1C1C1E; text-align:left;
+  }
+  .location-provider-btn:hover { background:#E5E5EA; }
+  .location-provider-btn i { font-size:15px; color:var(--accent); flex-shrink:0; }
+
   .cols { position:relative; display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
   .sky-panel {
     background: #FFFFFF;
@@ -51,19 +97,6 @@
   }
   .col-left { flex:1; min-width:300px; max-width:400px; min-height:480px; display:flex; flex-direction:column; }
   .col-right { flex:1; min-width:280px; max-width:360px; }
-  .panel-swap { display:none; justify-content:center; margin-bottom:12px; }
-  .panel-swap-track {
-    position:relative; width:96px; height:36px; background:#E5E5EA; border-radius:18px;
-    display:flex; align-items:center; justify-content:space-between; padding:0 10px;
-  }
-  .panel-swap-track i { font-size:16px; color:#5F5F63; z-index:1; }
-  .panel-swap-thumb {
-    position:absolute; top:3px; left:3px; width:30px; height:30px; border-radius:50%;
-    background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.25); cursor:grab; touch-action:none;
-    transition:left 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .panel-swap-thumb.dragging { transition:none; }
-  .panel-swap-thumb.on-right { left:calc(100% - 33px); }
 
   #note-input, #note-input:focus {
     width:100%; box-sizing:border-box; resize:none; font-family:inherit; font-size:15px; color:#1C1C1E;
@@ -83,7 +116,7 @@
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
   }
   #contacts-btn.open { background:var(--accent); color:white; }
-  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn, #upcoming-btn, #auth-btn {
+  #export-btn, #import-btn, #photo-btn, #scan-btn, #datecalc-btn, #receipt-btn, #upcoming-btn, #timeformat-btn, #household-btn, #shared-notes-btn, #auth-btn {
     background: #F2F2F7; border: none; color: #274257;
     width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px;
@@ -96,6 +129,28 @@
   }
   .upcoming-badge.visible { display:flex; }
   #auth-btn.synced { color: #2FA360; background:#E7F7EE; }
+  #timeformat-btn.active { color: var(--accent); background:var(--accent-soft); }
+  #household-btn.active { color: #2FA360; background:#E7F7EE; }
+  .household-code { font-size:28px; font-weight:800; letter-spacing:4px; text-align:center; color:var(--accent-darker); background:var(--accent-soft); border-radius:12px; padding:14px 8px; margin-bottom:6px; }
+  .household-hint { font-size:12px; color:#5F5F63; text-align:center; margin-bottom:16px; }
+  .household-members { display:flex; flex-direction:column; gap:6px; margin-bottom:18px; }
+  .household-member-row { display:flex; align-items:center; gap:8px; font-size:13px; color:#1C1C1E; background:#F2F2F7; padding:7px 10px; border-radius:9px; }
+  .household-member-row i { font-size:13px; color:var(--accent); }
+  .household-join-row { display:flex; gap:6px; margin-top:10px; }
+  .household-autoaccept-row { display:flex; align-items:center; gap:8px; font-size:13px; color:#1C1C1E; margin-bottom:6px; cursor:pointer; }
+  .household-autoaccept-row input { width:17px; height:17px; flex-shrink:0; accent-color:var(--accent); }
+  #household-join-input { flex:1; font-size:15px; letter-spacing:2px; text-transform:uppercase; text-align:center; padding:8px 9px; border-radius:9px; border:none; background:#F2F2F7; color:#1C1C1E; font-family:inherit; }
+  #auth-btn.loading { opacity:0.5; pointer-events:none; }
+    #darkmode-btn {
+    background: #F2F2F7; border: none; color: #274257;
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
+    position: absolute; right: 78px; top: -2px;
+  }
+  #darkmode-btn:hover { background: #E5E5EA; }
+  #darkmode-btn.active { color: #D98A1F; background: #FFF6E5; }
+#auth-btn.loading i { animation: auth-btn-spin 0.9s linear infinite; }
+  @keyframes auth-btn-spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
   #image-preview { display:none; align-items:center; gap:8px; margin-top:8px; }
   #image-preview img { max-height:64px; max-width:96px; object-fit:cover; border-radius:8px; border:1px solid rgba(0,0,0,0.15); }
   #image-preview-remove {
@@ -189,7 +244,7 @@
   .upcoming-item-text { flex:1; color:#1C1C1E; white-space:pre-wrap; word-break:break-word; }
   .upcoming-item-icon { font-size:14px; color:#2FA360; flex-shrink:0; padding-top:1px; }
 
-  #print-modal, #upcoming-modal {
+  #print-modal, #upcoming-modal, #household-modal, #contact-picker-modal {
     display:none; position:fixed; inset:0; background:rgba(20,40,55,0.55); z-index:1000;
     align-items:center; justify-content:center; padding:16px;
   }
@@ -245,6 +300,15 @@
   #parse-preview i { font-size:13px; }
   .action-row { display:flex; align-items:center; gap:12px; margin-top:8px; min-height:22px; }
   #saved-flash { font-size:12px; color:#2FA360; opacity:0; transition:opacity .3s ease; }
+  #undo-toast {
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(0);
+    display:flex; align-items:center; gap:14px;
+    background:#1C1C1E; color:#fff; font-size:14px; font-weight:500;
+    padding:12px 14px 12px 18px; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.25);
+    z-index:500; opacity:0; pointer-events:none; transition:opacity .35s ease, transform .35s ease;
+  }
+  #undo-toast.visible { opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(-4px); }
+  #undo-toast-btn { background:none; border:none; color:var(--accent); font-weight:700; font-size:14px; cursor:pointer; padding:4px 4px; }
   #cancel-edit-btn { display:none; background:none; border:none; color:#5F5F63; font-size:12px; cursor:pointer; }
   #add-btn { display:none; }
 
@@ -265,6 +329,9 @@
   .note-block:last-child { border-bottom:none; }
   .note-block.disabled { opacity:.4; }
   .note-number { font-size:12px; font-weight:700; color:var(--accent); margin-right:6px; }
+  .note-meta { display:none; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--accent-darker); margin-bottom:4px; }
+  .note-author-badge { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:700; color:var(--accent-darker); background:var(--accent-soft); border-radius:8px; padding:2px 7px; margin-right:6px; vertical-align:middle; }
+  .note-author-badge i { font-size:10px; }
   .note-body-checklist { display:block; margin-top:6px; }
   .checklist-row { display:flex; align-items:flex-start; gap:8px; padding:3px 0; }
   .checklist-box {
@@ -297,9 +364,20 @@
   .cal-cell.today { background:var(--accent-soft); }
   .cal-cell.today .cal-daynum { color:var(--accent-darker); }
   .cal-daynum { font-weight:600; color:#1C1C1E; font-size:11px; }
-  .cal-activity-icon { font-size:17px; color:#2FA360; }
-  .cal-count { font-size:8px; font-weight:700; color:#2FA360; margin-top:1px; }
-  .cal-action-btn { border:none; background:#F2F2F7; font-size:16px; color:var(--accent); padding:0; }
+  .cal-activity-dot { width:4px; height:4px; border-radius:50%; margin-top:2px; background:#2FA360; }
+  .cal-cell.today .cal-activity-dot { background:var(--accent-darker); }
+  .cal-photo-badge { width:22px; height:22px; }
+  #cal-title { cursor:pointer; }
+  #cal-year-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .cal-year-month { cursor:pointer; padding:6px 4px; border-radius:10px; }
+  .cal-year-month:hover { background:#F2F2F7; }
+  .cal-year-month-name { font-size:11px; font-weight:700; text-align:center; margin-bottom:5px; color:#1C1C1E; }
+  .cal-year-month-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; }
+  .cal-year-day { font-size:7px; text-align:center; color:#5F5F63; line-height:1.7; position:relative; }
+  .cal-year-day.today { color:var(--accent-darker); font-weight:800; }
+  .cal-year-day.has-activity::after { content:''; position:absolute; bottom:1px; left:50%; transform:translateX(-50%); width:2px; height:2px; border-radius:50%; background:var(--accent); }
+  .cal-toolbar { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-bottom:8px; }
+  .cal-action-btn { border:none; background:#F2F2F7; font-size:16px; color:var(--accent); cursor:pointer; width:30px; height:30px; border-radius:50%; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .cal-action-btn:hover { background:#E5E5EA; }
   .cal-action-btn.active { background:var(--accent); color:#fff; }
   #cal-grid.paint-mode, #cal-grid.note-select-mode { touch-action:none; }
@@ -309,9 +387,9 @@
   .highlight-btn-dots span:nth-child(2){ left:5px; z-index:2; top:4px; }
   .highlight-btn-dots span:nth-child(3){ left:10px; z-index:1; }
   .cal-cell.note-select-range { box-shadow: inset 0 0 0 2px var(--accent); }
-  .cal-mini-note { font-size:11px; padding:6px 8px; border-radius:9px; background:#F2F2F7; color:#1C1C1E; white-space:pre-wrap; }
-  .legend { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; font-size:9px; color:#5F5F63; align-items:center; }
-  .legend-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:3px; background:#2FA360; }
+  .cal-mini-note { font-size:11px; padding:6px 8px; border-radius:9px; background:#F2F2F7; color:#1C1C1E; white-space:pre-wrap; display:flex; align-items:center; gap:8px; }
+  .cal-mini-note-text { flex:1; min-width:0; }
+  .cal-mini-note-thumb { width:34px; height:34px; object-fit:cover; border-radius:7px; flex-shrink:0; cursor:pointer; }
   #cal-selected-panel { margin-top:10px; display:none; }
   #cal-selected-title { font-size:11px; font-weight:600; color:var(--accent); margin-bottom:5px; }
   .next-alarm-box { margin-top:16px; padding-top:14px; border-top:1px solid rgba(60,60,67,0.1); }
@@ -325,28 +403,81 @@
     padding:0 0 10px; font-size:12px; color:#5F5F63; font-weight:600;
   }
   .sheet-handle i { font-size:13px; }
+  .fab-add-note {
+    display:none; position:fixed; bottom:22px; right:22px; z-index:600;
+    width:56px; height:56px; border-radius:50%; border:none;
+    background:linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%);
+    color:#fff; font-size:26px; box-shadow:0 6px 16px rgba(27,59,16,0.35);
+    align-items:center; justify-content:center; cursor:pointer;
+  }
+  .fab-add-note:active { transform:scale(0.94); }
   @media (max-width: 680px) {
     body { padding: 10px; }
     .header { margin-bottom: 10px; }
     .cols { gap: 10px; }
     .sky-panel { padding: 12px; }
-    .col-left, .col-right { min-height: auto; max-width: none; order:0; }
-    .panel-swap { display:flex; }
-    .panel-primary { order: -1; }
-    .col-right { margin-top: 16px; }
-    .col-right.panel-primary { margin-top: 0; }
-    .col-left:not(.panel-primary) { margin-top: 16px; }
+    .col-left, .col-right { min-height: auto; max-width: none; }
+    .fab-add-note { display:flex; }
+    /* Fixed order on mobile: calendar first, notes below. */
+    .col-right { order:-1; margin-top: 0; }
+    .col-left { order:0; margin-top: 16px; }
     .top-row { margin-bottom: 6px; }
     #note-input { height: 60px; overflow-y: auto; }
-    #notes-list { max-height: 260px; margin-top: 8px; }
-    .note-block { padding: 8px 84px 8px 4px; }
+    #notes-list { max-height: 260px; margin-top: 8px; gap:10px; }
+    .note-block {
+      padding: 12px 84px 12px 18px; border-bottom:none; border-radius:14px;
+      background:#fff; box-shadow:0 1px 2px rgba(35,77,22,0.06), 0 4px 14px rgba(35,77,22,0.08);
+      overflow:hidden;
+    }
+    .note-block::before {
+      content:''; position:absolute; top:0; left:0; bottom:0; width:5px;
+      background:linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 100%);
+    }
+    .note-block.disabled::before { background:#C7C7CC; }
+    .note-meta { display:flex; }
+    .note-number { display:none; }
     #cal-grid { grid-auto-rows: 30px; }
     .cal-cell { font-size: 9px; }
-    .legend { font-size: 8px; gap: 6px; margin-top: 6px; }
     .next-alarm-box { margin-top: 10px; padding-top: 10px; }
     .footer-note { margin-top: 10px; }
 
-    .col-left:not(.panel-primary) .sheet-handle { display:flex; }
+    .sheet-handle { display:flex; }
+
+    .col-right {
+      background: linear-gradient(160deg, var(--accent-dark) 0%, var(--accent) 55%, var(--accent-light) 100%);
+      box-shadow: 0 10px 28px rgba(27,59,16,0.28);
+    }
+    .col-right .cal-head button { background: rgba(255,255,255,0.2); color:#fff; }
+    .col-right #cal-title { color:#fff; }
+    .col-right .cal-wd { color: rgba(255,255,255,0.75); }
+    .col-right .cal-cell { background: transparent; box-shadow:none; }
+    .col-right .cal-cell:hover { background: rgba(255,255,255,0.12); }
+    .col-right .cal-cell.has-activity { background: transparent; }
+    .col-right .cal-daynum { color: rgba(255,255,255,0.92); }
+    .col-right .cal-activity-dot { background: #fff; }
+    .col-right .cal-cell.today { background:#fff; border-radius:50%; }
+    .col-right .cal-cell.today .cal-daynum { color: var(--accent-darker); }
+    .col-right .cal-cell.today .cal-activity-dot { background: var(--accent-darker); }
+    .col-right .cal-cell.selected { box-shadow: inset 0 0 0 2px #fff; }
+    .col-right .cal-action-btn { background: rgba(255,255,255,0.2); color:#fff; }
+    .col-right .cal-action-btn:hover { background: rgba(255,255,255,0.32); }
+    .col-right .cal-action-btn.active { background:#fff; color:var(--accent); }
+    .col-right .date-action-item:hover { background: rgba(255,255,255,0.12); }
+    .col-right .date-action-item i { background: rgba(255,255,255,0.2); color:#fff; }
+    .col-right .date-action-item span { color: rgba(255,255,255,0.85); }
+    .col-right .location-provider-btn { background: rgba(255,255,255,0.15); color:#fff; }
+    .col-right .location-provider-btn:hover { background: rgba(255,255,255,0.25); }
+    .col-right .location-provider-btn i { color:#fff; }
+    .col-right .cal-year-month:hover { background: rgba(255,255,255,0.12); }
+    .col-right .cal-year-month-name { color:#fff; }
+    .col-right .cal-year-day { color: rgba(255,255,255,0.7); }
+    .col-right .cal-year-day.today { color:#fff; }
+    .col-right .cal-year-day.has-activity::after { background:#fff; }
+    .col-right .highlight-btn-dots span { border-color: rgba(255,255,255,0.6); }
+    .col-right .next-alarm-box { border-top-color: rgba(255,255,255,0.25); }
+    .col-right .next-alarm-label { color: rgba(255,255,255,0.75); }
+    .col-right #next-alarm { color:#fff; }
+    .col-right #cal-selected-title { color:#fff; }
   }
 
   #print-area { display:none; }
@@ -356,81 +487,177 @@
     #print-area, #print-area * { visibility: visible; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     #print-area { display:block; position:absolute; top:0; left:0; width:100%; margin:0; padding:0; }
 
-    .print-page-title { font-size:20px; font-weight:700; color:#1C1C1E; margin-bottom:10px; text-align:center; }
+    .print-page-title { font-size:20px; font-weight:700; color:#1C1C1E; margin-bottom:10px; text-align:center; flex-shrink:0; }
 
-    .print-month-wd-row { display:grid; grid-template-columns:repeat(7,1fr); }
+    .print-page-wrap { display:flex; flex-direction:column; min-height:15cm; }
+    @media print and (orientation: portrait) { .print-page-wrap { min-height:24cm; } }
+    @media print and (orientation: landscape) { .print-page-wrap { min-height:15cm; } }
+
+    .print-month-wd-row { display:grid; grid-template-columns:repeat(7,1fr); flex-shrink:0; }
     .print-month-wd { font-size:11px; font-weight:700; text-align:center; color:#5F5F63; padding:0 0 4px; }
-    .print-month-grid { display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:minmax(2.6cm, auto); border-left:1px solid #ccc; border-top:1px solid #ccc; }
-    .print-month-cell { border-right:1px solid #ccc; border-bottom:1px solid #ccc; padding:3px 4px; box-sizing:border-box; }
-    .print-month-cell.empty { border-color:#eee; }
-    .print-month-daynum { font-size:11px; font-weight:700; color:#1C1C1E; margin-bottom:2px; }
+    .print-month-grid { display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:1fr; gap:3px; flex:1; }
+    .print-month-cell { border:1.3px solid #888; border-radius:10px; padding:3px 5px; box-sizing:border-box; }
+    .print-month-cell.empty { border-color:#ddd; }
+    .print-month-daynum { font-size:12px; font-weight:700; color:#1C1C1E; margin-bottom:2px; }
+    .print-month-cell.is-today { border-color:var(--accent-darker); border-width:2px; }
     .print-month-cell.is-today .print-month-daynum { color:var(--accent-darker); }
-    .print-month-note { font-size:8.5px; line-height:1.35; color:#1C1C1E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .print-month-note { font-size:9.5px; line-height:1.4; color:#1C1C1E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-    .print-week-day { padding:8px 0; border-bottom:1px solid #ddd; page-break-inside: avoid; }
+    .print-week-day { padding:8px 0; border-bottom:1px solid #999; page-break-inside: avoid; flex:1; }
     .print-week-day-head { font-size:13px; font-weight:700; color:#1C1C1E; margin-bottom:4px; }
     .print-week-day-head.is-today { color:var(--accent-darker); }
-    .print-week-note { font-size:11px; color:#1C1C1E; padding:2px 0 2px 6px; white-space:pre-wrap; }
+    .print-week-note { font-size:12px; color:#1C1C1E; padding:2px 0 2px 6px; white-space:pre-wrap; }
     .print-week-empty { font-size:11px; color:#999; font-style:italic; padding:2px 0 2px 6px; }
+
+    .print-bw .print-month-cell.has-print-highlight,
+    .print-bw .print-week-day.has-print-highlight { background:#e8e8e8; }
+    .print-bw .print-month-cell.is-today { border-color:#000; }
+    .print-bw .print-month-cell.is-today .print-month-daynum,
+    .print-bw .print-week-day-head.is-today { color:#000; }
+    .print-bw .print-week-day-head.is-today { text-decoration:underline; }
+  }  /* ---------- Dark mode ---------- */
+  :root {
+    --dm-bg: #1a1c1e;
+    --dm-panel: #2c2c2e;
+    --dm-panel-2: #3a3a3c;
+    --dm-text: #f5f5f7;
+    --dm-text-2: #a1a1a6;
+    --dm-input-bg: #1c1c1e;
+    --dm-border: rgba(255,255,255,0.08);
   }
+  body.dark-mode {
+    background: linear-gradient(180deg, #1a1c1e 0%, #242426 45%, #2c2c2e 100%);
+  }
+  body.dark-mode .header span { color: var(--dm-text); }
+  body.dark-mode .sky-panel {
+    background: var(--dm-panel);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 10px 28px rgba(0,0,0,0.25);
+  }
+  body.dark-mode #note-input { color: var(--dm-text); caret-color: var(--accent-light); }
+  body.dark-mode .note-block { color: var(--dm-text); border-bottom-color: var(--dm-border); }
+  body.dark-mode .note-block::before { opacity: 0.85; }
+  body.dark-mode .note-number { color: var(--accent-light); }
+  body.dark-mode .note-meta { color: var(--accent-light); }
+  body.dark-mode #search-input { color: var(--dm-text); background: var(--dm-input-bg); }
+  body.dark-mode #search-input::placeholder { color: var(--dm-text-2); }
+  body.dark-mode #empty-msg { color: var(--dm-text-2); }
+  body.dark-mode #onboarding-hint .hint-line { color: var(--dm-text-2); }
+  body.dark-mode #notif-btn,
+  body.dark-mode #contacts-btn,
+  body.dark-mode #export-btn, body.dark-mode #import-btn,
+  body.dark-mode #photo-btn, body.dark-mode #scan-btn,
+  body.dark-mode #datecalc-btn, body.dark-mode #receipt-btn,
+  body.dark-mode #upcoming-btn, body.dark-mode #timeformat-btn,
+  body.dark-mode #auth-btn { background: var(--dm-panel-2); color: #c7c7cc; }
+  body.dark-mode #notif-btn.granted { color: #48d868; background: rgba(72,216,104,0.15); }
+  body.dark-mode #auth-btn.synced { color: #48d868; background: rgba(72,216,104,0.15); }
+  body.dark-mode .sky-btn { background: var(--dm-panel-2); color: #c7c7cc; }
+  body.dark-mode .sky-btn:hover { background: #48484a; }
+  body.dark-mode .sky-btn.primary { background: var(--accent); color: #fff; }
+  body.dark-mode .sky-btn.danger { background: rgba(181,73,61,0.2); color: #e07065; }
+  body.dark-mode .cal-head button { background: var(--dm-panel-2); color: var(--accent-light); }
+  body.dark-mode #cal-title { color: var(--dm-text); }
+  body.dark-mode .cal-wd { color: var(--dm-text-2); }
+  body.dark-mode .cal-cell { background: var(--dm-input-bg); box-shadow: none; }
+  body.dark-mode .cal-cell:hover { background: #3a3a3c; }
+  body.dark-mode .cal-cell.has-activity { background: rgba(91,155,58,0.2); }
+  body.dark-mode .cal-cell.today { background: rgba(91,155,58,0.3); }
+  body.dark-mode .cal-cell.today .cal-daynum { color: var(--accent-light); }
+  body.dark-mode .cal-daynum { color: var(--dm-text); }
+  body.dark-mode .cal-activity-dot { background: var(--accent-light); }
+  body.dark-mode .cal-action-btn { background: var(--dm-panel-2); color: var(--accent-light); }
+  body.dark-mode .cal-action-btn:hover { background: #48484a; }
+  body.dark-mode .next-alarm-box { border-top-color: var(--dm-border); }
+  body.dark-mode .next-alarm-label { color: var(--dm-text-2); }
+  body.dark-mode #next-alarm { color: var(--dm-text); }
+  body.dark-mode #cal-selected-title { color: var(--accent-light); }
+  body.dark-mode .cal-mini-note { background: var(--dm-input-bg); color: var(--dm-text); }
+  body.dark-mode .footer-note { color: var(--dm-text-2); }
+  body.dark-mode #ringing-banner { background: rgba(181,73,61,0.2); color: #e07065; }
+  body.dark-mode #ringing-sub { color: #c55a4f; }
+  body.dark-mode #parse-preview { color: #48d868; }
+  body.dark-mode #pending-anchor-chip { background: rgba(91,155,58,0.15); color: var(--accent-light); }
+  body.dark-mode #pending-anchor-clear { color: var(--accent-light); }
+  body.dark-mode #saved-flash { color: #48d868; }
+  body.dark-mode #undo-toast { background: #3a3a3c; color: var(--dm-text); }
+  body.dark-mode #undo-toast-btn { color: var(--accent-light); }
+  body.dark-mode #cancel-edit-btn { color: var(--dm-text-2); }
+  body.dark-mode #contacts-panel { background: var(--dm-input-bg); }
+  body.dark-mode #contact-name-input, body.dark-mode #contact-phone-input { background: var(--dm-panel-2); color: var(--dm-text); }
+  body.dark-mode .contact-row { background: var(--dm-panel-2); color: var(--dm-text); }
+  body.dark-mode .contact-row button { color: #e07065; }
+  body.dark-mode .scan-modal-inner,
+  body.dark-mode .datecalc-modal-inner { background: var(--dm-panel); }
+  body.dark-mode .scan-modal-header { color: var(--dm-text); }
+  body.dark-mode .scan-hint { color: var(--dm-text-2); }
+  body.dark-mode .scan-setup-row select,
+  body.dark-mode .scan-day-cell { background: var(--dm-panel-2); color: var(--dm-text); }
+  body.dark-mode #scan-wizard-input { background: var(--dm-panel-2); color: var(--dm-text); }
+  body.dark-mode #scan-wizard-date { color: var(--dm-text); }
+  body.dark-mode #scan-wizard-skip { color: var(--dm-text-2); }
+  body.dark-mode #datecalc-target-date,
+  body.dark-mode .datecalc-offset-row select,
+  body.dark-mode .datecalc-offset-row input { background: var(--dm-panel-2); color: var(--dm-text); }
+  body.dark-mode .datecalc-section-label { color: var(--dm-text); }
+  body.dark-mode #receipt-desc-input, body.dark-mode #receipt-date-input { background: var(--dm-panel-2); color: var(--dm-text); }
+  body.dark-mode .upcoming-summary { color: var(--dm-text-2); }
+  body.dark-mode .upcoming-empty { color: var(--dm-text-2); }
+  body.dark-mode .upcoming-day-header { color: var(--accent-light); }
+  body.dark-mode .upcoming-day-count { color: var(--dm-text-2); }
+  body.dark-mode .upcoming-item-text { color: var(--dm-text); }
+  body.dark-mode .upcoming-item { border-bottom-color: var(--dm-border); }
+  body.dark-mode .paint-palette-bar { background: var(--dm-input-bg); }
+  body.dark-mode .paint-palette-hint { color: var(--dm-text-2); }
+  body.dark-mode #lang-toggle { background: var(--dm-panel-2); }
+  body.dark-mode #lang-toggle button { color: var(--dm-text-2); }
+  body.dark-mode #lang-toggle button.active { background: var(--dm-panel); color: var(--accent-light); }
+  body.dark-mode .icon-btn { color: #636366; }
+  body.dark-mode .icon-btn:hover { color: var(--accent-light); }
+  body.dark-mode .icon-btn.bell-on { color: var(--accent-light); }
+  body.dark-mode .icon-btn.danger:hover { color: #e07065; }
+  body.dark-mode .checklist-text.checked { color: #636366; }
+  body.dark-mode .note-thumb { border-color: var(--dm-border); }
+  body.dark-mode .highlight-swatch-custom { background: var(--dm-panel-2); color: var(--dm-text-2); }
+  body.dark-mode #darkmode-btn { background: var(--dm-panel-2); color: #c7c7cc; }
+  body.dark-mode #darkmode-btn.active { color: #ffc968; background: rgba(255,201,104,0.15); }
+  body.dark-mode #sheet-handle { color: var(--dm-text-2); }
+  body.dark-mode .fab-add-note { box-shadow: 0 6px 16px rgba(0,0,0,0.45); }
+  /* Mobile dark overrides */
+   (max-width: 680px) {
+    body.dark-mode .note-block { background: var(--dm-panel); box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 4px 14px rgba(0,0,0,0.2); }
+    body.dark-mode .col-right {
+      background: linear-gradient(160deg, #1a2e12 0%, #244317 55%, #2f5423 100%);
+    }
+  }
+
 </style>
 </head>
 <body>
 
 <div class="wrap">
-  <svg class="decor1" viewBox="0 0 200 200" aria-hidden="true">
-    <defs>
-      <radialGradient id="decorGlow" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#FFE0A3" stop-opacity="0.65"/>
-        <stop offset="70%" stop-color="#FFE0A3" stop-opacity="0"/>
-      </radialGradient>
-      <linearGradient id="decorBell" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#FFC968"/>
-        <stop offset="100%" stop-color="#D98A1F"/>
-      </linearGradient>
-    </defs>
-    <circle cx="100" cy="100" r="95" fill="url(#decorGlow)"/>
-    <circle cx="100" cy="100" r="65" fill="url(#decorGlow)"/>
-    <g stroke="#F2C572" stroke-width="4" stroke-linecap="round" opacity="0.65">
-      <line x1="100" y1="6" x2="100" y2="32"/>
-      <line x1="100" y1="6" x2="100" y2="32" transform="rotate(30 100 100)"/>
-      <line x1="100" y1="6" x2="100" y2="32" transform="rotate(60 100 100)"/>
-      <line x1="100" y1="6" x2="100" y2="32" transform="rotate(90 100 100)"/>
-      <line x1="100" y1="6" x2="100" y2="32" transform="rotate(120 100 100)"/>
-      <line x1="100" y1="6" x2="100" y2="32" transform="rotate(150 100 100)"/>
-      <line x1="100" y1="6" x2="100" y2="32" transform="rotate(180 100 100)"/>
-      <line x1="100" y1="6" x2="100" y2="32" transform="rotate(210 100 100)"/>
-      <line x1="100" y1="6" x2="100" y2="32" transform="rotate(240 100 100)"/>
-      <line x1="100" y1="6" x2="100" y2="32" transform="rotate(270 100 100)"/>
-      <line x1="100" y1="6" x2="100" y2="32" transform="rotate(300 100 100)"/>
-      <line x1="100" y1="6" x2="100" y2="32" transform="rotate(330 100 100)"/>
-    </g>
-    <g transform="translate(100 84) scale(0.32) translate(-256 -150)">
-      <path d="M256 96 c-64 0 -104 48 -104 128 v54 c0 22 -10 40 -30 56 h268 c-20 -16 -30 -34 -30 -56 v-54 c0 -80 -40 -128 -104 -128 z"
-            fill="url(#decorBell)" stroke="#A9600F" stroke-width="6" stroke-linejoin="round"/>
-      <circle cx="256" cy="88" r="20" fill="#D98A1F" stroke="#A9600F" stroke-width="6"/>
-    </g>
-  </svg>
   <div class="header">
     <svg class="header-bell" viewBox="110 55 290 290" aria-hidden="true">
+      <defs>
+        <linearGradient id="decorBell" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FFC968"/>
+          <stop offset="100%" stop-color="#D98A1F"/>
+        </linearGradient>
+      </defs>
       <path d="M256 96 c-64 0 -104 48 -104 128 v54 c0 22 -10 40 -30 56 h268 c-20 -16 -30 -34 -30 -56 v-54 c0 -80 -40 -128 -104 -128 z"
             fill="url(#decorBell)" stroke="#A9600F" stroke-width="6" stroke-linejoin="round"/>
       <circle cx="256" cy="88" r="20" fill="#D98A1F" stroke="#A9600F" stroke-width="6"/>
     </svg>
     <span id="header-title">Nudgy</span>
+    <button id="darkmode-btn" aria-label="Modo oscuro" title="Modo oscuro"><i class="ti ti-moon" aria-hidden="true"></i></button>
     <div id="lang-toggle">
       <button id="lang-es-btn">ES</button>
       <button id="lang-en-btn">EN</button>
     </div>
   </div>
 
-  <div id="panel-swap" class="panel-swap">
-    <div class="panel-swap-track">
-      <i class="ti ti-notes" aria-hidden="true"></i>
-      <i class="ti ti-calendar" aria-hidden="true"></i>
-      <div id="panel-swap-thumb" class="panel-swap-thumb"></div>
-    </div>
-  </div>
+  <div class="app-pager-viewport">
+  <div id="app-pager" class="app-pager">
+  <div id="page-main" class="app-page">
 
   <div class="cols">
 
@@ -456,7 +683,7 @@
         <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
           <button id="export-btn" title="Exportar notas" aria-label="Exportar"><i class="ti ti-download" aria-hidden="true"></i></button>
           <button id="import-btn" title="Importar notas" aria-label="Importar"><i class="ti ti-upload" aria-hidden="true"></i></button>
-          <input type="file" id="import-file-input" accept="application/json" style="display:none">
+          <input type="file" id="import-file-input" accept="application/json,.json,.ics,text/calendar" style="display:none">
           <button id="contacts-btn" title="Contactos" aria-label="Contactos"><i class="ti ti-address-book" aria-hidden="true"></i></button>
           <button id="photo-btn" aria-label="Adjuntar foto" title="Adjuntar foto"><i class="ti ti-camera" aria-hidden="true"></i></button>
           <input type="file" id="photo-file-input" accept="image/*" style="display:none">
@@ -466,6 +693,9 @@
           <button id="receipt-btn" aria-label="Foto de recibo" title="Foto de recibo"><i class="ti ti-receipt-2" aria-hidden="true"></i></button>
           <input type="file" id="receipt-file-input" accept="image/*" style="display:none">
           <button id="upcoming-btn" aria-label="Proximas alarmas" title="Proximas alarmas"><i class="ti ti-bell-ringing" aria-hidden="true"></i><span id="upcoming-badge" class="upcoming-badge"></span></button>
+          <button id="timeformat-btn" aria-label="Cambiar a formato 24 horas" title="Cambiar a formato 24 horas"><i class="ti ti-clock" aria-hidden="true"></i></button>
+          <button id="household-btn" aria-label="Hogar compartido" title="Hogar compartido"><i class="ti ti-users" aria-hidden="true"></i></button>
+          <button id="shared-notes-btn" aria-label="Notas compartidas pendientes" title="Notas compartidas pendientes"><i class="ti ti-inbox" aria-hidden="true"></i><span id="shared-notes-badge" class="upcoming-badge"></span></button>
           <button id="auth-btn" aria-label="Iniciar sesion para sincronizar" title="Iniciar sesion para sincronizar"><i class="ti ti-cloud" aria-hidden="true"></i></button>
         </div>
       </div>
@@ -483,7 +713,7 @@
         <span id="pending-anchor-text"></span>
         <button id="pending-anchor-clear" aria-label="Cancelar" title="Cancelar"><i class="ti ti-x" aria-hidden="true"></i></button>
       </div>
-      <textarea id="note-input" rows="5" autofocus></textarea>
+      <textarea id="note-input" rows="5" maxlength="4000"></textarea>
       <div id="image-preview" style="display:none;">
         <img id="image-preview-img" alt="">
         <button id="image-preview-remove" aria-label="Quitar foto" title="Quitar foto"><i class="ti ti-x" aria-hidden="true"></i></button>
@@ -510,18 +740,20 @@
 
     <div class="sky-panel col-right">
       <div class="cal-head">
-        <button id="cal-prev"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
-        <div id="cal-title">Mes</div>
-        <button id="cal-next"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+        <button id="cal-prev" aria-label="Mes anterior"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
+        <div id="cal-title" role="button" tabindex="0" aria-label="Ver el ano completo">Mes</div>
+        <button id="cal-next" aria-label="Mes siguiente"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
       </div>
-      <div id="cal-weekdays"></div>
-      <div id="cal-grid">
-        <button id="print-btn" class="cal-cell cal-action-btn" aria-label="Imprimir calendario" title="Imprimir calendario"><i class="ti ti-printer" aria-hidden="true"></i></button>
-        <button id="highlight-btn" class="cal-cell cal-action-btn" aria-label="Pintar fechas" title="Pintar fechas">
+      <div class="cal-toolbar">
+        <button id="print-btn" class="cal-action-btn" aria-label="Imprimir calendario" title="Imprimir calendario"><i class="ti ti-printer" aria-hidden="true"></i></button>
+        <button id="highlight-btn" class="cal-action-btn" aria-label="Pintar fechas" title="Pintar fechas">
           <span class="highlight-btn-dots"><span style="background:#E67C73;"></span><span style="background:#4DB6AC;"></span><span style="background:#9575CD;"></span></span>
         </button>
-        <button id="note-select-btn" class="cal-cell cal-action-btn" aria-label="Empezar nota desde el calendario" title="Empezar nota desde el calendario"><i class="ti ti-square-plus" aria-hidden="true"></i></button>
+        <button id="note-select-btn" class="cal-action-btn" aria-label="Empezar nota desde el calendario" title="Empezar nota desde el calendario"><i class="ti ti-square-plus" aria-hidden="true"></i></button>
       </div>
+      <div id="cal-weekdays"></div>
+      <div id="cal-grid"></div>
+      <div id="cal-year-grid" style="display:none;"></div>
       <div id="paint-palette-bar" class="paint-palette-bar" style="display:none;">
         <div id="paint-palette-hint" class="paint-palette-hint">Desliza el dedo sobre los dias para pintarlos</div>
         <div id="paint-palette-swatches" class="highlight-palette"></div>
@@ -529,15 +761,20 @@
       <div id="note-select-bar" class="paint-palette-bar" style="display:none;">
         <div id="note-select-hint" class="paint-palette-hint">Desliza el dedo sobre los dias para tu nota</div>
       </div>
-      <div class="legend">
-        <span><i class="ti ti-cake" style="color:#128C4A;"></i> <span id="legend-birthday">Cumpleanos</span></span>
-        <span><i class="ti ti-users" style="color:#128C4A;"></i> <span id="legend-meeting">Reunion</span></span>
-        <span><i class="ti ti-phone" style="color:#128C4A;"></i> <span id="legend-call">Llamada</span></span>
-        <span><span class="legend-dot"></span><span id="legend-other">Otro</span></span>
-      </div>
       <div id="cal-selected-panel">
         <div id="cal-selected-title"></div>
         <div id="cal-selected-notes" style="display:flex; flex-direction:column; gap:5px;"></div>
+        <div id="date-action-menu" role="menu">
+          <button class="date-action-item" id="date-action-location" role="menuitem"><i class="ti ti-map-pin" aria-hidden="true"></i><span id="date-action-location-label">Ubicacion</span></button>
+          <button class="date-action-item" id="date-action-contact" role="menuitem"><i class="ti ti-address-book" aria-hidden="true"></i><span id="date-action-contact-label">Contacto</span></button>
+          <button class="date-action-item" id="date-action-photo" role="menuitem"><i class="ti ti-camera" aria-hidden="true"></i><span id="date-action-photo-label">Foto</span></button>
+          <button class="date-action-item" id="date-action-receipt" role="menuitem"><i class="ti ti-receipt-2" aria-hidden="true"></i><span id="date-action-receipt-label">Recibo</span></button>
+        </div>
+        <div id="location-provider-row" style="display:none;">
+          <button class="location-provider-btn" id="location-my-current"><i class="ti ti-current-location" aria-hidden="true"></i> <span id="location-my-current-label">Mi ubicacion actual</span></button>
+          <button class="location-provider-btn" id="location-google"><i class="ti ti-brand-google" aria-hidden="true"></i> <span>Google Maps</span></button>
+          <button class="location-provider-btn" id="location-apple"><i class="ti ti-brand-apple" aria-hidden="true"></i> <span>Apple Maps</span></button>
+        </div>
       </div>
       <div class="next-alarm-box">
         <div class="next-alarm-label" id="next-alarm-label">Proxima alarma</div>
@@ -545,14 +782,34 @@
       </div>
     </div>
 
+
   </div>
 
   <div class="footer-note" id="footer-note">Tus notas se guardan en este navegador y este dispositivo.</div>
+
+  </div>
+
+  <div id="page-shared" class="app-page">
+    <div class="sky-panel" id="shared-panel">
+      <div class="shared-panel-head">
+        <button id="shared-back-btn" class="icon-btn" aria-label="Volver"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
+        <span id="shared-panel-title">Notas compartidas</span>
+      </div>
+      <div id="shared-panel-hint" class="household-hint">Notas que otros miembros de tu hogar agregaron, esperando que las aceptes.</div>
+      <div id="shared-notes-list"></div>
+      <div id="shared-notes-empty" class="upcoming-empty" style="display:none;">No tenes notas compartidas pendientes.</div>
+    </div>
+  </div>
+
+  </div>
+  </div>
 </div>
 
-<div id="image-lightbox"><img id="image-lightbox-img" src="" alt=""></div>
+<button id="fab-add-note" class="fab-add-note" aria-label="Nueva nota" title="Nueva nota"><i class="ti ti-plus" aria-hidden="true"></i></button>
 
-<div id="scan-modal">
+<div id="image-lightbox" role="dialog" aria-modal="true" aria-label="Foto"><img id="image-lightbox-img" src="" alt=""></div>
+
+<div id="scan-modal" role="dialog" aria-modal="true" aria-label="Escanear calendario">
   <div class="scan-modal-inner">
 
     <div id="scan-step-setup" class="scan-step">
@@ -611,7 +868,7 @@
   </div>
 </div>
 
-<div id="datecalc-modal">
+<div id="datecalc-modal" role="dialog" aria-modal="true" aria-labelledby="datecalc-title">
   <div class="datecalc-modal-inner">
     <div class="scan-modal-header">
       <span id="datecalc-title">Calculadora de fechas</span>
@@ -639,7 +896,7 @@
   </div>
 </div>
 
-<div id="receipt-modal">
+<div id="receipt-modal" role="dialog" aria-modal="true" aria-labelledby="receipt-title">
   <div class="datecalc-modal-inner">
     <div class="scan-modal-header">
       <span id="receipt-title">Foto de recibo</span>
@@ -677,7 +934,7 @@
   </div>
 </div>
 
-<div id="print-modal">
+<div id="print-modal" role="dialog" aria-modal="true" aria-labelledby="print-title">
   <div class="datecalc-modal-inner">
     <div class="scan-modal-header">
       <span id="print-title">Imprimir calendario</span>
@@ -689,10 +946,15 @@
       <button id="print-mode-week" class="print-mode-btn">Por semana</button>
     </div>
 
+    <div class="print-mode-toggle">
+      <button id="print-color-mode-color" class="print-mode-btn active">Color</button>
+      <button id="print-color-mode-bw" class="print-mode-btn">Blanco y negro</button>
+    </div>
+
     <div class="cal-head">
-      <button id="print-nav-prev"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
+      <button id="print-nav-prev" aria-label="Mes anterior"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
       <div id="print-nav-label">Mes</div>
-      <button id="print-nav-next"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+      <button id="print-nav-next" aria-label="Mes siguiente"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
     </div>
 
     <button id="print-go-btn" class="sky-btn primary">Imprimir</button>
@@ -700,7 +962,23 @@
 </div>
 <div id="print-area"></div>
 
-<div id="upcoming-modal">
+<div id="undo-toast">
+  <span id="undo-toast-text"></span>
+  <button id="undo-toast-btn"></button>
+</div>
+
+<div id="contact-picker-modal" role="dialog" aria-modal="true" aria-labelledby="contact-picker-title">
+  <div class="datecalc-modal-inner">
+    <div class="scan-modal-header">
+      <span id="contact-picker-title">Elegir contacto</span>
+      <button id="contact-picker-close-btn" class="icon-btn" aria-label="Cerrar"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </div>
+    <div id="contact-picker-list"></div>
+    <div id="contact-picker-empty" class="upcoming-empty" style="display:none;">No tenes contactos guardados todavia.</div>
+  </div>
+</div>
+
+<div id="upcoming-modal" role="dialog" aria-modal="true" aria-labelledby="upcoming-title">
   <div class="datecalc-modal-inner">
     <div class="scan-modal-header">
       <span id="upcoming-title">Proximas alarmas</span>
@@ -710,10 +988,42 @@
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<div id="household-modal" role="dialog" aria-modal="true" aria-labelledby="household-title">
+  <div class="datecalc-modal-inner">
+    <div class="scan-modal-header">
+      <span id="household-title">Hogar compartido</span>
+      <button id="household-close-btn" class="icon-btn" aria-label="Cerrar"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </div>
+
+    <div id="household-signed-out-msg" class="household-hint" style="display:none;">Inicia sesion primero para usar un hogar compartido.</div>
+
+    <div id="household-state-none" style="display:none;">
+      <div class="household-hint" id="household-intro-text">Un hogar compartido junta las notas de todos sus miembros en un solo calendario. Cada nota muestra quien la escribio.</div>
+      <button id="household-create-btn" class="sky-btn primary" style="width:100%;">Crear hogar</button>
+      <div class="household-join-row">
+        <input type="text" id="household-join-input" maxlength="6" placeholder="CODIGO">
+        <button id="household-join-btn" class="sky-btn">Unirme</button>
+      </div>
+    </div>
+
+    <div id="household-state-active" style="display:none;">
+      <div id="household-code-display" class="household-code"></div>
+      <div class="household-hint" id="household-share-hint">Comparti este codigo para que otros se unan a tu hogar.</div>
+      <div id="household-members-list" class="household-members"></div>
+      <label class="household-autoaccept-row">
+        <input type="checkbox" id="household-autoaccept-toggle">
+        <span id="household-autoaccept-label">Aceptar notas de este hogar automaticamente</span>
+      </label>
+      <div class="household-hint" id="household-autoaccept-hint">Sin esto, cada nota que agregue otro miembro hay que aceptarla a mano antes de que suene. Activalo en el telefono de quien va a recibir los recordatorios.</div>
+      <button id="household-leave-btn" class="sky-btn danger" style="width:100%;">Salir del hogar</button>
+    </div>
+  </div>
+</div>
+
 <script>
+  // Firebase (~200KB+ across the 3 SDKs) is loaded lazily, only once the user
+  // actually taps the cloud-sync button — everything above works fully
+  // offline/signed-out without ever paying for this download.
   var firebaseConfig = {
     apiKey: "AIzaSyD_v2PMTGFYczqMQKfCV88HJ8acFX9Mpzc",
     authDomain: "nudgyapp.firebaseapp.com",
@@ -722,10 +1032,23 @@
     messagingSenderId: "803567703829",
     appId: "1:803567703829:web:0afcd26967b485062a7b1c"
   };
-  if (window.firebase) { firebase.initializeApp(firebaseConfig); }
+  // Public VAPID key for Web Push (Firebase Console > Project Settings >
+  // Cloud Messaging > Web Push certificates). Safe to expose client-side —
+  // it's the public half of the pair. Push registration silently no-ops
+  // until this is filled in, so nothing breaks before it's set.
+  var VAPID_KEY = "BNWIwVPJ7r03zwScFFaRGDuhBafpOSPOQJDC4U5D93KKcfh2VMNSCEsNCHARqEjZ1IUhj6FsCgF2SVU4Imfk72s";
 </script>
 <script>
 (function(){
+  // Surfaces otherwise-silent failures in the console for debugging — doesn't
+  // change app behavior or interrupt the user.
+  window.addEventListener('error', function(e){
+    console.error('[Nudgy] unhandled error:', e.error || e.message);
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    console.error('[Nudgy] unhandled promise rejection:', e.reason);
+  });
+
   var STORAGE_KEY = 'mi_alarma_notes_v1';
   var LANG_KEY = 'mi_alarma_lang';
   var REMIND_AGAIN_MINUTES = 15;
@@ -752,14 +1075,11 @@
       snooze5: '+5 min',
       remind15: '+15 min',
       dismissAll: 'Apagar del todo',
-      legendBirthday: 'Cumpleanos',
-      legendMeeting: 'Reunion',
-      legendCall: 'Llamada',
-      legendOther: 'Otro',
       nextAlarmLabel: 'Proxima alarma',
       nextAlarmNone: 'No tienes alarmas activas.',
       footerNote: 'Tus notas se guardan en este navegador y este dispositivo.',
       noNotesDay: 'Sin notas este dia.',
+      darkModeTitle: 'Modo oscuro',
       hint1: '"Llamar al doctor el lunes a las 3pm"',
       hint2: '"Cumpleanos de Ana el 15 de agosto"',
       hint3: '"Pagar la luz en 3 dias"',
@@ -775,9 +1095,16 @@
       unitHour: 'hora',
       unitMonths: 'meses',
       unitMonth: 'mes',
+      unitYear: 'ano',
+      unitYears: 'anos',
       exportIcsTitle: 'Agregar al calendario (.ics)',
       editLabel: 'Editar',
       deleteLabel: 'Eliminar',
+      noteDeletedToast: 'Nota eliminada',
+      undoLabel: 'Deshacer',
+      photoErrorMsg: 'No se pudo cargar la foto. Intenta con otra imagen.',
+      timeFormatTo24h: 'Cambiar a formato 24 horas',
+      timeFormatTo12h: 'Cambiar a formato 12 horas (AM/PM)',
       checklistCheck: 'Marcar como hecho',
       checklistUncheck: 'Marcar como pendiente',
       alarmOffLabel: 'Apagar alarma',
@@ -802,6 +1129,30 @@
       datecalcTitle: 'Calculadora de fechas',
       datecalcLabelUntil: 'Cuantos dias faltan para...',
       datecalcLabelOffset: 'Que dia sera...',
+      householdBtnTitle: 'Hogar compartido',
+      householdTitle: 'Hogar compartido',
+      householdSignedOutMsg: 'Inicia sesion primero para usar un hogar compartido.',
+      householdIntro: 'Un hogar compartido junta las notas de todos sus miembros en un solo calendario. Cada nota muestra quien la escribio.',
+      householdCreateBtn: 'Crear hogar',
+      householdJoinPlaceholder: 'CODIGO',
+      householdJoinBtn: 'Unirme',
+      householdShareHint: 'Comparti este codigo para que otros se unan a tu hogar.',
+      householdAutoAcceptLabel: 'Aceptar notas de este hogar automaticamente',
+      householdAutoAcceptHint: 'Sin esto, cada nota que agregue otro miembro hay que aceptarla a mano antes de que suene. Activalo en el telefono de quien va a recibir los recordatorios.',
+      householdLeaveBtn: 'Salir del hogar',
+      householdYouSuffix: ' (vos)',
+      householdSignInFirst: 'Inicia sesion primero para usar un hogar compartido.',
+      householdCreateError: 'No se pudo crear el hogar. Intenta de nuevo.',
+      householdJoinNotFound: 'No existe ningun hogar con ese codigo.',
+      householdJoinError: 'No se pudo unir al hogar. Intenta de nuevo.',
+      householdLeaveConfirm: 'Salir de este hogar? Sus notas se quedan en el hogar, no vuelven con vos.',
+      sharedNotesBtnTitle: 'Notas compartidas pendientes',
+      sharedPanelTitle: 'Notas compartidas',
+      sharedPanelHint: 'Notas que otros miembros de tu hogar agregaron, esperando que las aceptes.',
+      sharedNotesEmptyMsg: 'No tenes notas compartidas pendientes.',
+      sharedAccept: 'Aceptar',
+      sharedDismiss: 'Ignorar',
+      sharedBackLabel: 'Volver',
       datecalcToday: 'Es hoy',
       datecalcInDays: 'Faltan {n} dias',
       datecalcAgoDays: 'Fue hace {n} dias',
@@ -823,8 +1174,27 @@
       printModalTitle: 'Imprimir calendario',
       printModeMonth: 'Mes completo',
       printModeWeek: 'Por semana',
+      printColorModeColor: 'Color',
+      printColorModeBw: 'Blanco y negro',
       printGoBtn: 'Imprimir',
       highlightBtnTitle: 'Pintar fechas',
+      calYearViewLabel: 'Ver el ano completo',
+      icsImportedUntitled: 'Evento importado',
+      icsImportNone: 'No se encontro ningun evento para importar en ese archivo.',
+      icsImportSummary: 'Se importaron {n} eventos.',
+      icsImportSimplifiedNote: '{n} tenian una repeticion muy particular y se importaron como una sola vez.',
+      icsImportError: 'No se pudo leer ese archivo .ics.',
+      dateActionLocationLabel: 'Ubicacion',
+      dateActionContactLabel: 'Contacto',
+      dateActionPhotoLabel: 'Foto',
+      dateActionReceiptLabel: 'Recibo',
+      contactPickerTitle: 'Elegir contacto',
+      contactPickerEmptyMsg: 'No tenes contactos guardados todavia.',
+      dateActionContactNoteText: 'Recordatorio con {name}',
+      dateActionLocationNoteText: 'Ubicacion: {address}',
+      locationNotSupported: 'Tu navegador no permite obtener la ubicacion.',
+      locationDenied: 'No se pudo obtener tu ubicacion. Revisa los permisos.',
+      locationMyCurrentLabel: 'Mi ubicacion actual',
       highlightHint: 'Desliza para pintar los dias. Toca un dia pintado para borrarlo.',
       noteSelectBtnTitle: 'Empezar nota desde el calendario',
       noteSelectHint: 'Desliza el dedo sobre los dias para tu nota',
@@ -871,14 +1241,11 @@
       snooze5: '+5 min',
       remind15: '+15 min',
       dismissAll: 'Turn off completely',
-      legendBirthday: 'Birthday',
-      legendMeeting: 'Meeting',
-      legendCall: 'Call',
-      legendOther: 'Other',
       nextAlarmLabel: 'Next alarm',
       nextAlarmNone: 'You have no active alarms.',
       footerNote: 'Your notes are saved in this browser and device.',
       noNotesDay: 'No notes this day.',
+      darkModeTitle: "Dark mode",
       hint1: '"Call the doctor Monday at 3pm"',
       hint2: '"Ana\u2019s birthday on August 15"',
       hint3: '"Pay the electric bill in 3 days"',
@@ -894,9 +1261,16 @@
       unitHour: 'hour',
       unitMonths: 'months',
       unitMonth: 'month',
+      unitYear: 'year',
+      unitYears: 'years',
       exportIcsTitle: 'Add to calendar (.ics)',
       editLabel: 'Edit',
       deleteLabel: 'Delete',
+      noteDeletedToast: 'Note deleted',
+      undoLabel: 'Undo',
+      photoErrorMsg: "Couldn't load the photo. Try a different image.",
+      timeFormatTo24h: 'Switch to 24-hour format',
+      timeFormatTo12h: 'Switch to 12-hour format (AM/PM)',
       checklistCheck: 'Mark as done',
       checklistUncheck: 'Mark as not done',
       alarmOffLabel: 'Turn alarm off',
@@ -919,6 +1293,30 @@
       scanWizardNext: 'Save and next',
       datecalcBtnTitle: 'Date calculator',
       datecalcTitle: 'Date calculator',
+      householdBtnTitle: 'Shared household',
+      householdTitle: 'Shared household',
+      householdSignedOutMsg: 'Sign in first to use a shared household.',
+      householdIntro: 'A shared household combines every member’s notes into one calendar. Each note shows who wrote it.',
+      householdCreateBtn: 'Create household',
+      householdJoinPlaceholder: 'CODE',
+      householdJoinBtn: 'Join',
+      householdShareHint: 'Share this code so others can join your household.',
+      householdAutoAcceptLabel: 'Automatically accept notes from this household',
+      householdAutoAcceptHint: "Without this, every note another member adds has to be accepted by hand before it can ring. Turn it on on the phone of whoever should receive the reminders.",
+      householdLeaveBtn: 'Leave household',
+      householdYouSuffix: ' (you)',
+      householdSignInFirst: 'Sign in first to use a shared household.',
+      householdCreateError: 'Could not create the household. Try again.',
+      householdJoinNotFound: 'No household found with that code.',
+      householdJoinError: 'Could not join the household. Try again.',
+      householdLeaveConfirm: 'Leave this household? Its notes stay with the household, not with you.',
+      sharedNotesBtnTitle: 'Pending shared notes',
+      sharedPanelTitle: 'Shared notes',
+      sharedPanelHint: 'Notes other household members added, waiting for you to accept.',
+      sharedNotesEmptyMsg: "You don't have any pending shared notes.",
+      sharedAccept: 'Accept',
+      sharedDismiss: 'Ignore',
+      sharedBackLabel: 'Back',
       datecalcLabelUntil: 'How many days until...',
       datecalcLabelOffset: 'What day will it be...',
       datecalcToday: "It's today",
@@ -942,8 +1340,27 @@
       printModalTitle: 'Print calendar',
       printModeMonth: 'Full month',
       printModeWeek: 'By week',
+      printColorModeColor: 'Color',
+      printColorModeBw: 'Black & white',
       printGoBtn: 'Print',
       highlightBtnTitle: 'Paint dates',
+      calYearViewLabel: 'View the full year',
+      icsImportedUntitled: 'Imported event',
+      icsImportNone: "Couldn't find any events to import in that file.",
+      icsImportSummary: '{n} events imported.',
+      icsImportSimplifiedNote: '{n} had an unusual repeat rule and were imported as one-time only.',
+      icsImportError: "Couldn't read that .ics file.",
+      dateActionLocationLabel: 'Location',
+      dateActionContactLabel: 'Contact',
+      dateActionPhotoLabel: 'Photo',
+      dateActionReceiptLabel: 'Receipt',
+      contactPickerTitle: 'Choose a contact',
+      contactPickerEmptyMsg: "You don't have any saved contacts yet.",
+      dateActionContactNoteText: 'Reminder with {name}',
+      dateActionLocationNoteText: 'Location: {address}',
+      locationNotSupported: "Your browser doesn't support getting your location.",
+      locationDenied: "Couldn't get your location. Check your permissions.",
+      locationMyCurrentLabel: 'My current location',
       highlightHint: 'Drag to paint the days. Tap a painted day to erase it.',
       noteSelectBtnTitle: 'Start a note from the calendar',
       noteSelectHint: 'Drag your finger over the days for your note',
@@ -975,6 +1392,13 @@
   var currentLang = 'es';
   try { currentLang = localStorage.getItem(LANG_KEY) || 'es'; } catch(e){}
   function t(key){ return T[currentLang][key]; }
+
+  var TIME_FORMAT_KEY = 'mi_alarma_use_24h';
+  var use24h = false;
+  var DARK_MODE_KEY = "nudgy_dark_mode";
+  var darkMode = false;
+  try { darkMode = localStorage.getItem(DARK_MODE_KEY) === "1"; } catch(e){}
+  try { use24h = localStorage.getItem(TIME_FORMAT_KEY) === '1'; } catch(e){}
 
   // localStorage.setItem throws when the quota (~5MB, easy to hit with photo
   // notes) is full. Used only for the writes where silently losing the data
@@ -1031,6 +1455,7 @@
     return w.length > 1 && base.length > 1 && w[0] === base[1] && w[1] === base[0];
   }
 
+  var darkModeBtn = document.getElementById('darkmode-btn');
   var headerTitle = document.getElementById('header-title');
   var langEsBtn = document.getElementById('lang-es-btn');
   var langEnBtn = document.getElementById('lang-en-btn');
@@ -1094,6 +1519,9 @@
   var addBtn = document.getElementById('add-btn');
   var cancelEditBtn = document.getElementById('cancel-edit-btn');
   var savedFlash = document.getElementById('saved-flash');
+  var undoToast = document.getElementById('undo-toast');
+  var undoToastText = document.getElementById('undo-toast-text');
+  var undoToastBtn = document.getElementById('undo-toast-btn');
   var notifBtn = document.getElementById('notif-btn');
   var notifBtnText = document.getElementById('notif-btn-text');
   var listEl = document.getElementById('notes-list');
@@ -1112,14 +1540,11 @@
   var nextAlarmLabelEl = document.getElementById('next-alarm-label');
   var footerNoteEl = document.getElementById('footer-note');
   var searchInput = document.getElementById('search-input');
-  var legendBirthdayEl = document.getElementById('legend-birthday');
-  var legendMeetingEl = document.getElementById('legend-meeting');
-  var legendCallEl = document.getElementById('legend-call');
-  var legendOtherEl = document.getElementById('legend-other');
 
   var calTitle = document.getElementById('cal-title');
   var calWeekdays = document.getElementById('cal-weekdays');
   var calGrid = document.getElementById('cal-grid');
+  var calYearGridEl = document.getElementById('cal-year-grid');
   var calPrev = document.getElementById('cal-prev');
   var calNext = document.getElementById('cal-next');
   var calSelectedPanel = document.getElementById('cal-selected-panel');
@@ -1158,21 +1583,37 @@
   var calState = { year: today.getFullYear(), month: today.getMonth() };
   var selectedDateKey = null;
 
+  function applyDarkMode(){
+    document.body.classList.toggle('dark-mode', darkMode);
+    darkModeBtn.classList.toggle('active', darkMode);
+    darkModeBtn.innerHTML = darkMode ? '<i class="ti ti-sun" aria-hidden="true"></i>' : '<i class="ti ti-moon" aria-hidden="true"></i>';
+    darkModeBtn.setAttribute('aria-label', t('darkModeTitle'));
+    darkModeBtn.title = t('darkModeTitle');
+    var themeColor = darkMode ? '#1a1c1e' : '#C8DAB5';
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', themeColor);
+  }
+  function toggleDarkMode(){
+    darkMode = !darkMode;
+    try { localStorage.setItem(DARK_MODE_KEY, darkMode ? '1' : '0'); } catch(e){}
+    applyDarkMode();
+    vibrate(8);
+  }
+  darkModeBtn.addEventListener('click', toggleDarkMode);
+
   // ---------- Apply language to static UI ----------
   function applyLanguage(){
+    applyDarkMode();
     headerTitle.textContent = t('headerTitle');
     langEsBtn.classList.toggle('active', currentLang === 'es');
     langEnBtn.classList.toggle('active', currentLang === 'en');
     savedFlash.textContent = t('saved');
+    undoToastBtn.textContent = t('undoLabel');
     cancelEditBtn.textContent = t('cancel');
     emptyMsg.textContent = t('empty');
     snoozeBtn.textContent = t('snooze5');
     remindLaterBtn.textContent = t('remind15');
     dismissBtn.textContent = t('dismissAll');
-    legendBirthdayEl.textContent = t('legendBirthday');
-    legendMeetingEl.textContent = t('legendMeeting');
-    legendCallEl.textContent = t('legendCall');
-    legendOtherEl.textContent = t('legendOther');
     nextAlarmLabelEl.textContent = t('nextAlarmLabel');
     footerNoteEl.textContent = t('footerNote');
     searchInput.placeholder = t('searchPlaceholder');
@@ -1195,9 +1636,20 @@
     highlightBtn.title = t('highlightBtnTitle'); highlightBtn.setAttribute('aria-label', t('highlightBtnTitle'));
     noteSelectBtn.title = t('noteSelectBtnTitle'); noteSelectBtn.setAttribute('aria-label', t('noteSelectBtnTitle'));
     upcomingBtn.title = t('upcomingBtnTitle'); upcomingBtn.setAttribute('aria-label', t('upcomingBtnTitle'));
+    calTitle.setAttribute('aria-label', t('calYearViewLabel'));
+    document.getElementById('date-action-location-label').textContent = t('dateActionLocationLabel');
+    document.getElementById('date-action-contact-label').textContent = t('dateActionContactLabel');
+    document.getElementById('date-action-photo-label').textContent = t('dateActionPhotoLabel');
+    document.getElementById('date-action-receipt-label').textContent = t('dateActionReceiptLabel');
+    document.getElementById('contact-picker-title').textContent = t('contactPickerTitle');
+    document.getElementById('contact-picker-empty').textContent = t('contactPickerEmptyMsg');
+    document.getElementById('location-my-current-label').textContent = t('locationMyCurrentLabel');
     if (pendingNoteAnchor) updatePendingAnchorChip();
     updateNotifBtn();
     updateAuthBtn();
+    updateTimeformatBtn();
+    householdApplyLanguage();
+    sharedNotesApplyLanguage();
     document.documentElement.lang = currentLang;
     updateParsePreview();
   }
@@ -1326,7 +1778,7 @@
     var lines = note.raw.split('\n');
     if (!noteHasChecklist(note.raw)){ renderNoteText(container, note.raw); return; }
     if (!note.checklistDone) note.checklistDone = {};
-    lines.forEach(function(line){
+    lines.forEach(function(line, lineIndex){
       var parsed = parseChecklistLine(line);
       if (!parsed){
         if (!line.trim()) return;
@@ -1335,7 +1787,9 @@
         container.appendChild(lineEl);
         return;
       }
-      var key = parsed.text.trim();
+      // Keyed by line position, not just text — two identical lines ("- call
+      // mom" twice) must not share one checkbox.
+      var key = lineIndex + '|' + parsed.text.trim();
       if (!(key in note.checklistDone)) note.checklistDone[key] = parsed.checkedInitial;
       var checked = note.checklistDone[key];
       var row = document.createElement('div');
@@ -1368,7 +1822,10 @@
       dateOnly: n.dateOnly ? n.dateOnly.toISOString() : null,
       recurring: n.recurring, createdAt: n.createdAt.toISOString(),
       enabled: n.enabled, firedKey: n.firedKey, image: n.image || null,
-      checklistDone: n.checklistDone || {}
+      checklistDone: n.checklistDone || {},
+      snoozeUntil: n.snoozeUntil || null,
+      authorUid: n.authorUid || null, authorName: n.authorName || null,
+      acceptedBy: n.acceptedBy || null, dismissedBy: n.dismissedBy || null
     };
   }
   function deserializeOneNote(n){
@@ -1378,7 +1835,10 @@
       dateOnly: n.dateOnly ? new Date(n.dateOnly) : null,
       recurring: n.recurring, createdAt: new Date(n.createdAt),
       enabled: n.enabled, firedKey: n.firedKey, image: n.image || null,
-      checklistDone: n.checklistDone || {}
+      checklistDone: n.checklistDone || {},
+      snoozeUntil: n.snoozeUntil || null,
+      authorUid: n.authorUid || null, authorName: n.authorName || null,
+      acceptedBy: n.acceptedBy || null, dismissedBy: n.dismissedBy || null
     };
   }
   function serializeNotes(){
@@ -1399,14 +1859,79 @@
   }
 
   // ---------- Firebase sync (opt-in; everything above still works fully offline/signed-out) ----------
-  function firestoreNotesRef(uid){ return firebase.firestore().collection('users').doc(uid).collection('notes'); }
+  // Notes sync to whichever is active: the signed-in user's own personal space,
+  // or — once they've joined one — a shared household. Contacts are never
+  // shared and always stay under the user's own uid.
+  var currentHouseholdId = null;
+  function personalNotesRef(uid){ return firebase.firestore().collection('users').doc(uid).collection('notes'); }
   function firestoreContactsRef(uid){ return firebase.firestore().collection('users').doc(uid).collection('contacts'); }
+  function householdMetaRef(uid){ return firebase.firestore().collection('users').doc(uid).collection('meta').doc('household'); }
+  function householdRef(id){ return firebase.firestore().collection('households').doc(id); }
+  function householdNotesRef(id){ return householdRef(id).collection('notes'); }
+  function householdMembersRef(id){ return householdRef(id).collection('members'); }
+  function activeNotesRef(){
+    return currentHouseholdId ? householdNotesRef(currentHouseholdId) : personalNotesRef(currentUser.uid);
+  }
+  // Note ids are small integers assigned locally per-account (idCounter), never
+  // globally unique — fine as a Firestore doc id in personal space, but two
+  // household members could easily both have a note with id 0. In household
+  // mode the doc id is namespaced by author so different members' notes can
+  // never collide/overwrite each other.
+  function noteDocId(n){
+    return currentHouseholdId ? ((n.authorUid || currentUser.uid) + '_' + n.id) : String(n.id);
+  }
+  // Local-only uniqueness key (editingId, notification tags, the calendar
+  // highlight map) — unlike noteDocId this depends only on the note itself,
+  // not on whether a household is currently active, so it stays correct even
+  // right after leaving one (existing notes still carry their old authorUid).
+  function noteLocalKey(n){
+    return n.authorUid ? (n.authorUid + '_' + n.id) : String(n.id);
+  }
+  // A household note someone else wrote doesn't count as "yours" — doesn't
+  // show in your list/calendar, doesn't ring — until you've accepted it (or
+  // it's a personal note, which is always active). Notes you dismissed stay
+  // out of the pending queue too, without ever becoming active.
+  // A member can opt into skipping the accept step entirely for a household
+  // (see the "auto-accept" toggle) — meant for a caregiving setup where the
+  // person receiving reminders (e.g. an elderly parent) shouldn't have to
+  // find and tap a pending-notes inbox for a medication alarm to work.
+  var householdAutoAcceptForMe = false;
+  function isNoteActiveForMe(n){
+    if (!n.authorUid) return true;
+    if (!currentUser) return true;
+    if (n.authorUid === currentUser.uid) return true;
+    if (householdAutoAcceptForMe) return true;
+    return !!(n.acceptedBy && n.acceptedBy[currentUser.uid]);
+  }
+  function isNotePendingForMe(n){
+    if (!n.authorUid || !currentUser || n.authorUid === currentUser.uid) return false;
+    if (householdAutoAcceptForMe) return false;
+    if (n.acceptedBy && n.acceptedBy[currentUser.uid]) return false;
+    if (n.dismissedBy && n.dismissedBy[currentUser.uid]) return false;
+    return true;
+  }
+  function activeNotes(){
+    return notes.filter(isNoteActiveForMe);
+  }
+  function pendingNotesForMe(){
+    return notes.filter(isNotePendingForMe);
+  }
+
+  // Set the moment a local change is queued to sync, cleared only once the
+  // corresponding write is confirmed committed. While true, incoming remote
+  // snapshots are ignored — otherwise a remote update that lands during the
+  // debounce/commit window can replace `notes`/`contacts` and silently drop
+  // whatever was just changed locally (e.g. an import) before it ever synced.
+  var notesDirtyLocally = false;
+  var contactsDirtyLocally = false;
 
   function scheduleNotesSync(){
+    notesDirtyLocally = true;
     if (notesSyncDebounce) clearTimeout(notesSyncDebounce);
     notesSyncDebounce = setTimeout(syncAllNotesToFirestore, 400);
   }
   function scheduleContactsSync(){
+    contactsDirtyLocally = true;
     if (contactsSyncDebounce) clearTimeout(contactsSyncDebounce);
     contactsSyncDebounce = setTimeout(syncAllContactsToFirestore, 400);
   }
@@ -1418,27 +1943,27 @@
   var lastKnownRemoteContactIds = null;
 
   function syncAllNotesToFirestore(){
-    if (!currentUser) return;
-    var uid = currentUser.uid;
+    if (!currentUser) { notesDirtyLocally = false; return; }
     var batch = firebase.firestore().batch();
-    var ref = firestoreNotesRef(uid);
+    var ref = activeNotesRef();
     var currentIds = {};
     notes.forEach(function(n){
-      currentIds[String(n.id)] = true;
+      var docId = noteDocId(n);
+      currentIds[docId] = true;
       // Strip any stray `undefined` field first — Firestore rejects the whole
       // batch write if even one note has one, which would silently stop every
       // other note from syncing too.
-      batch.set(ref.doc(String(n.id)), JSON.parse(JSON.stringify(serializeOneNote(n))));
+      batch.set(ref.doc(docId), JSON.parse(JSON.stringify(serializeOneNote(n))));
     });
     if (lastKnownRemoteNoteIds){
       lastKnownRemoteNoteIds.forEach(function(id){
         if (!currentIds[id]) batch.delete(ref.doc(id));
       });
     }
-    batch.commit().catch(function(){});
+    batch.commit().then(function(){ notesDirtyLocally = false; }).catch(function(){ notesDirtyLocally = false; });
   }
   function syncAllContactsToFirestore(){
-    if (!currentUser) return;
+    if (!currentUser) { contactsDirtyLocally = false; return; }
     var uid = currentUser.uid;
     var batch = firebase.firestore().batch();
     var ref = firestoreContactsRef(uid);
@@ -1452,11 +1977,12 @@
         if (!currentIds[id]) batch.delete(ref.doc(id));
       });
     }
-    batch.commit().catch(function(){});
+    batch.commit().then(function(){ contactsDirtyLocally = false; }).catch(function(){ contactsDirtyLocally = false; });
   }
 
   function applyRemoteNotesSnapshot(snapshot){
     if (snapshot.metadata.hasPendingWrites) return; // echo of our own write, not a remote change
+    if (notesDirtyLocally) return; // a local change is queued/committing — don't clobber it
     applyingRemoteSnapshot = true;
     lastKnownRemoteNoteIds = snapshot.docs.map(function(d){ return d.id; });
     notes = snapshot.docs.map(function(d){ return deserializeOneNote(d.data()); });
@@ -1466,6 +1992,7 @@
   }
   function applyRemoteContactsSnapshot(snapshot){
     if (snapshot.metadata.hasPendingWrites) return;
+    if (contactsDirtyLocally) return;
     applyingRemoteSnapshot = true;
     lastKnownRemoteContactIds = snapshot.docs.map(function(d){ return d.id; });
     contacts = snapshot.docs.map(function(d){ return d.data(); });
@@ -1476,8 +2003,13 @@
     applyingRemoteSnapshot = false;
   }
 
+  function switchNotesListener(){
+    if (unsubNotesSnapshot) unsubNotesSnapshot();
+    lastKnownRemoteNoteIds = null;
+    unsubNotesSnapshot = activeNotesRef().onSnapshot(applyRemoteNotesSnapshot, function(){});
+  }
   function attachFirestoreListeners(uid){
-    unsubNotesSnapshot = firestoreNotesRef(uid).onSnapshot(applyRemoteNotesSnapshot, function(){});
+    switchNotesListener();
     unsubContactsSnapshot = firestoreContactsRef(uid).onSnapshot(applyRemoteContactsSnapshot, function(){});
   }
   function detachFirestoreListeners(){
@@ -1499,14 +2031,24 @@
   function runFirstSignInMigrationIfNeeded(uid, localNotes, localContacts){
     var migratedFlagKey = 'mi_alarma_migrated_' + uid;
     try { if (localStorage.getItem(migratedFlagKey)) return; } catch(e){}
-    firestoreNotesRef(uid).get().then(function(notesSnapshot){
+    var notesRef = activeNotesRef();
+    if (currentHouseholdId){
+      localNotes.forEach(function(n){ n.authorUid = uid; n.authorName = currentDisplayName(); });
+    }
+    notesRef.get().then(function(notesSnapshot){
       if (notesSnapshot.empty){
         var batch = firebase.firestore().batch();
-        localNotes.forEach(function(n){ batch.set(firestoreNotesRef(uid).doc(String(n.id)), JSON.parse(JSON.stringify(serializeOneNote(n)))); });
+        localNotes.forEach(function(n){ batch.set(notesRef.doc(noteDocId(n)), JSON.parse(JSON.stringify(serializeOneNote(n)))); });
         localContacts.forEach(function(c){ batch.set(firestoreContactsRef(uid).doc(String(c.id)), JSON.parse(JSON.stringify(c))); });
         return batch.commit();
       }
-      var remoteNoteIds = notesSnapshot.docs.map(function(d){ return parseInt(d.id, 10); }).filter(function(n){ return !isNaN(n); });
+      // In household mode doc ids are "uid_localId" — only look at this uid's
+      // own notes to find the highest local id already taken, since ids from
+      // other members share the same collection but a different namespace.
+      var remoteNoteIds = notesSnapshot.docs
+        .filter(function(d){ return !currentHouseholdId || d.id.indexOf(uid + '_') === 0; })
+        .map(function(d){ return currentHouseholdId ? parseInt(d.id.slice((uid + '_').length), 10) : parseInt(d.id, 10); })
+        .filter(function(n){ return !isNaN(n); });
       var nextNoteId = (remoteNoteIds.length ? Math.max.apply(null, remoteNoteIds) : -1) + 1;
       return firestoreContactsRef(uid).get().then(function(contactsSnapshot){
         var remotePhones = {};
@@ -1518,7 +2060,7 @@
         var batch = firebase.firestore().batch();
         localNotes.forEach(function(n){
           n.id = nextNoteId++;
-          batch.set(firestoreNotesRef(uid).doc(String(n.id)), JSON.parse(JSON.stringify(serializeOneNote(n))));
+          batch.set(notesRef.doc(noteDocId(n)), JSON.parse(JSON.stringify(serializeOneNote(n))));
         });
         contactsToMerge.forEach(function(c){
           c.id = nextContactId++;
@@ -1546,36 +2088,338 @@
     }
   }
 
-  var authBtn = document.getElementById('auth-btn');
-  if (authBtn){
-    authBtn.addEventListener('click', function(){
-      if (!window.firebase || !firebase.apps || !firebase.apps.length) return;
-      if (currentUser){
-        firebase.auth().signOut();
-      } else {
-        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function(){});
-      }
+  var timeformatBtn = document.getElementById('timeformat-btn');
+  function updateTimeformatBtn(){
+    if (!timeformatBtn) return;
+    timeformatBtn.classList.toggle('active', use24h);
+    var label = use24h ? t('timeFormatTo12h') : t('timeFormatTo24h');
+    timeformatBtn.title = label; timeformatBtn.setAttribute('aria-label', label);
+  }
+  if (timeformatBtn){
+    timeformatBtn.addEventListener('click', function(){
+      use24h = !use24h;
+      try { localStorage.setItem(TIME_FORMAT_KEY, use24h ? '1' : '0'); } catch(e){}
+      updateTimeformatBtn();
+      vibrate(8);
+      renderAll();
     });
   }
 
-  if (window.firebase && firebase.apps && firebase.apps.length){
-    firebase.auth().onAuthStateChanged(function(user){
-      currentUser = user;
-      updateAuthBtn();
-      if (user){
-        // Snapshot this device's local notes/contacts before the listener below
-        // has a chance to overwrite `notes`/`contacts` with whatever the account
-        // already has remotely — the migration merge needs the true pre-sync
-        // local state, not a copy that's already been replaced.
-        var localNotesAtSignIn = notes.slice();
-        var localContactsAtSignIn = contacts.slice();
-        attachFirestoreListeners(user.uid);
-        runFirstSignInMigrationIfNeeded(user.uid, localNotesAtSignIn, localContactsAtSignIn);
-      } else {
-        detachFirestoreListeners();
-      }
+  // ---------- Lazy Firebase load: the 3 SDK scripts only download once the ----------
+  // ---------- user actually taps the cloud-sync button. ----------
+  var firebaseLoadPromise = null;
+  function loadExternalScript(src){
+    return new Promise(function(resolve, reject){
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = function(){ resolve(); };
+      s.onerror = function(){ reject(new Error('load failed: ' + src)); };
+      document.head.appendChild(s);
     });
   }
+  function ensureFirebaseReady(){
+    if (firebaseLoadPromise) return firebaseLoadPromise;
+    firebaseLoadPromise = loadExternalScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js')
+      .then(function(){ return loadExternalScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js'); })
+      .then(function(){ return loadExternalScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js'); })
+      .then(function(){ return loadExternalScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js'); })
+      .then(function(){
+        firebase.initializeApp(firebaseConfig);
+        setupPushMessaging();
+        firebase.auth().onAuthStateChanged(function(user){
+          currentUser = user;
+          updateAuthBtn();
+          if (user){
+            // Snapshot this device's local notes/contacts before the listener below
+            // has a chance to overwrite `notes`/`contacts` with whatever the account
+            // already has remotely — the migration merge needs the true pre-sync
+            // local state, not a copy that's already been replaced.
+            var localNotesAtSignIn = notes.slice();
+            var localContactsAtSignIn = contacts.slice();
+            // Resolve which space is active (personal or a joined household)
+            // BEFORE attaching listeners/migrating, so both point at the right place.
+            householdMetaRef(user.uid).get().then(function(doc){
+              currentHouseholdId = (doc.exists && doc.data().householdId) || null;
+            }).catch(function(){ currentHouseholdId = null; }).then(function(){
+              attachFirestoreListeners(user.uid);
+              if (currentHouseholdId) attachHouseholdMembersListener();
+              updateHouseholdUI();
+              runFirstSignInMigrationIfNeeded(user.uid, localNotesAtSignIn, localContactsAtSignIn);
+              registerPushToken();
+            });
+          } else {
+            detachFirestoreListeners();
+            detachHouseholdMembersListener();
+            currentHouseholdId = null;
+            householdMembers = [];
+            updateHouseholdUI();
+          }
+        });
+      });
+    firebaseLoadPromise.catch(function(){ firebaseLoadPromise = null; });
+    return firebaseLoadPromise;
+  }
+
+  // ---------- Push notifications (alarms while the browser is closed) ----------
+  // Registers this device's FCM token so netlify/functions/check-alarms.js
+  // can push to it. No-ops quietly (never throws, never blocks anything
+  // else) whenever a precondition is missing — signed out, permission not
+  // granted, VAPID key not configured yet, or the browser doesn't support
+  // Web Push (Safari on non-HTTPS/non-installed contexts, mainly) — so the
+  // app works exactly as before for anyone not using this feature.
+  function setupPushMessaging(){
+    if (!firebase.messaging || (firebase.messaging.isSupported && !firebase.messaging.isSupported())) return;
+    try {
+      firebase.messaging().onTokenRefresh(function(){ registerPushToken(); });
+    } catch (e) {}
+  }
+  function registerPushToken(){
+    if (!currentUser || !VAPID_KEY) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if (!firebase.messaging || (firebase.messaging.isSupported && !firebase.messaging.isSupported())) return;
+    firebase.messaging().getToken({ vapidKey: VAPID_KEY }).then(function(token){
+      if (!token) return;
+      var uid = currentUser.uid;
+      firebase.firestore().collection('users').doc(uid).collection('pushTokens').doc(token).set({
+        token: token,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        updatedAt: new Date().toISOString()
+      }, { merge: true }).catch(function(){});
+    }).catch(function(){});
+  }
+
+  var authBtn = document.getElementById('auth-btn');
+  if (authBtn){
+    authBtn.addEventListener('click', function(){
+      if (currentUser){
+        firebase.auth().signOut();
+        return;
+      }
+      authBtn.classList.add('loading');
+      ensureFirebaseReady().then(function(){
+        return firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
+      }).catch(function(){}).then(function(){
+        authBtn.classList.remove('loading');
+      });
+    });
+  }
+
+  // ---------- Shared households ----------
+  var householdMembers = [];
+  var unsubHouseholdMembersSnapshot = null;
+
+  function currentDisplayName(){
+    if (!currentUser) return '?';
+    return currentUser.displayName || (currentUser.email || '').split('@')[0] || '?';
+  }
+  function generateInviteCode(){
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I — easy to misread out loud
+    var code = '';
+    for (var i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    return code;
+  }
+  // Copies every locally-known note into `toRef` (tagging who brought it in)
+  // then removes it from `fromRef` so it doesn't keep syncing to two places.
+  function migrateNotesTo(toRef, fromRef){
+    var batch = firebase.firestore().batch();
+    notes.forEach(function(n){
+      n.authorUid = currentUser.uid;
+      n.authorName = currentDisplayName();
+      if (!n.acceptedBy) n.acceptedBy = {};
+      n.acceptedBy[currentUser.uid] = true;
+      // Namespaced by author (see noteDocId) — currentHouseholdId isn't set yet
+      // at this point (that happens right after this resolves), so the same
+      // uid_localId scheme is spelled out explicitly here instead.
+      var docId = currentUser.uid + '_' + n.id;
+      batch.set(toRef.doc(docId), JSON.parse(JSON.stringify(serializeOneNote(n))));
+      if (fromRef) batch.delete(fromRef.doc(String(n.id)));
+    });
+    return batch.commit();
+  }
+  function attachHouseholdMembersListener(){
+    if (unsubHouseholdMembersSnapshot) unsubHouseholdMembersSnapshot();
+    if (!currentHouseholdId) return;
+    unsubHouseholdMembersSnapshot = householdMembersRef(currentHouseholdId).onSnapshot(function(snapshot){
+      householdMembers = snapshot.docs.map(function(d){ return { uid: d.id, displayName: (d.data() || {}).displayName || '?', autoAccept: !!(d.data() || {}).autoAccept }; });
+      var mine = currentUser && householdMembers.filter(function(m){ return m.uid === currentUser.uid; })[0];
+      var wasAutoAccept = householdAutoAcceptForMe;
+      householdAutoAcceptForMe = !!(mine && mine.autoAccept);
+      updateHouseholdUI();
+      if (wasAutoAccept !== householdAutoAcceptForMe) renderAll();
+    }, function(){});
+  }
+  function detachHouseholdMembersListener(){
+    if (unsubHouseholdMembersSnapshot) unsubHouseholdMembersSnapshot();
+    unsubHouseholdMembersSnapshot = null;
+    householdAutoAcceptForMe = false;
+  }
+  function createHousehold(){
+    if (!currentUser) return Promise.reject(new Error('signed-out'));
+    var code = generateInviteCode();
+    var fromRef = personalNotesRef(currentUser.uid);
+    return householdRef(code).set({ createdBy: currentUser.uid, createdAt: new Date().toISOString() })
+      .then(function(){
+        return householdMembersRef(code).doc(currentUser.uid).set({
+          displayName: currentDisplayName(), email: currentUser.email || null, joinedAt: new Date().toISOString()
+        });
+      })
+      .then(function(){ return householdMetaRef(currentUser.uid).set({ householdId: code }); })
+      .then(function(){ return migrateNotesTo(householdNotesRef(code), fromRef); })
+      .then(function(){
+        currentHouseholdId = code;
+        switchNotesListener();
+        attachHouseholdMembersListener();
+        updateHouseholdUI();
+        return code;
+      });
+  }
+  function joinHousehold(rawCode){
+    if (!currentUser) return Promise.reject(new Error('signed-out'));
+    var code = (rawCode || '').trim().toUpperCase();
+    if (!code) return Promise.reject(new Error('empty-code'));
+    var fromRef = personalNotesRef(currentUser.uid);
+    return householdRef(code).get().then(function(doc){
+      if (!doc.exists) { var e = new Error('not-found'); e.code = 'not-found'; throw e; }
+      return householdMembersRef(code).doc(currentUser.uid).set({
+        displayName: currentDisplayName(), email: currentUser.email || null, joinedAt: new Date().toISOString()
+      });
+    }).then(function(){
+      return householdMetaRef(currentUser.uid).set({ householdId: code });
+    }).then(function(){
+      return migrateNotesTo(householdNotesRef(code), fromRef);
+    }).then(function(){
+      currentHouseholdId = code;
+      switchNotesListener();
+      attachHouseholdMembersListener();
+      updateHouseholdUI();
+      return code;
+    });
+  }
+  function leaveHousehold(){
+    if (!currentUser || !currentHouseholdId) return Promise.resolve();
+    var code = currentHouseholdId;
+    return householdMembersRef(code).doc(currentUser.uid).delete()
+      .then(function(){ return householdMetaRef(currentUser.uid).delete(); })
+      .then(function(){
+        currentHouseholdId = null;
+        householdMembers = [];
+        detachHouseholdMembersListener();
+        switchNotesListener();
+        updateHouseholdUI();
+      });
+  }
+
+  var householdBtn = document.getElementById('household-btn');
+  var householdModal = document.getElementById('household-modal');
+  var householdTitleEl = document.getElementById('household-title');
+  var householdCloseBtn = document.getElementById('household-close-btn');
+  var householdSignedOutMsg = document.getElementById('household-signed-out-msg');
+  var householdIntroTextEl = document.getElementById('household-intro-text');
+  var householdStateNone = document.getElementById('household-state-none');
+  var householdStateActive = document.getElementById('household-state-active');
+  var householdCreateBtn = document.getElementById('household-create-btn');
+  var householdJoinInput = document.getElementById('household-join-input');
+  var householdJoinBtn = document.getElementById('household-join-btn');
+  var householdShareHintEl = document.getElementById('household-share-hint');
+  var householdCodeDisplay = document.getElementById('household-code-display');
+  var householdMembersList = document.getElementById('household-members-list');
+  var householdAutoAcceptToggle = document.getElementById('household-autoaccept-toggle');
+  var householdAutoAcceptLabelEl = document.getElementById('household-autoaccept-label');
+  var householdAutoAcceptHintEl = document.getElementById('household-autoaccept-hint');
+  var householdLeaveBtn = document.getElementById('household-leave-btn');
+
+  function householdApplyLanguage(){
+    if (!householdBtn) return;
+    householdBtn.title = t('householdBtnTitle'); householdBtn.setAttribute('aria-label', t('householdBtnTitle'));
+    householdTitleEl.textContent = t('householdTitle');
+    householdSignedOutMsg.textContent = t('householdSignedOutMsg');
+    householdIntroTextEl.textContent = t('householdIntro');
+    householdCreateBtn.textContent = t('householdCreateBtn');
+    householdJoinInput.placeholder = t('householdJoinPlaceholder');
+    householdJoinBtn.textContent = t('householdJoinBtn');
+    householdShareHintEl.textContent = t('householdShareHint');
+    householdAutoAcceptLabelEl.textContent = t('householdAutoAcceptLabel');
+    householdAutoAcceptHintEl.textContent = t('householdAutoAcceptHint');
+    householdLeaveBtn.textContent = t('householdLeaveBtn');
+  }
+
+  function updateHouseholdUI(){
+    if (!householdBtn) return;
+    householdBtn.classList.toggle('active', !!currentHouseholdId);
+    if (!householdModal || householdModal.style.display === 'none') return;
+    renderHouseholdModal();
+  }
+  function renderHouseholdModal(){
+    var signedIn = !!currentUser;
+    householdSignedOutMsg.style.display = signedIn ? 'none' : 'block';
+    householdStateNone.style.display = (signedIn && !currentHouseholdId) ? 'block' : 'none';
+    householdStateActive.style.display = (signedIn && currentHouseholdId) ? 'block' : 'none';
+    if (signedIn && currentHouseholdId){
+      householdCodeDisplay.textContent = currentHouseholdId;
+      householdMembersList.innerHTML = '';
+      householdMembers.forEach(function(m){
+        var row = document.createElement('div');
+        row.className = 'household-member-row';
+        row.innerHTML = '<i class="ti ti-user" aria-hidden="true"></i>';
+        var nameSpan = document.createElement('span');
+        nameSpan.textContent = m.displayName + (m.uid === currentUser.uid ? t('householdYouSuffix') : '');
+        row.appendChild(nameSpan);
+        householdMembersList.appendChild(row);
+      });
+      householdAutoAcceptToggle.checked = householdAutoAcceptForMe;
+    }
+  }
+  if (householdBtn){
+    householdBtn.addEventListener('click', function(){
+      if (!currentUser){
+        alert(t('householdSignInFirst'));
+        return;
+      }
+      vibrate(6);
+      householdModal.style.display = 'flex';
+      renderHouseholdModal();
+      householdCloseBtn.focus();
+    });
+  }
+  if (householdCloseBtn) householdCloseBtn.addEventListener('click', function(){ householdModal.style.display = 'none'; });
+  if (householdCreateBtn) householdCreateBtn.addEventListener('click', function(){
+    householdCreateBtn.disabled = true;
+    createHousehold().catch(function(){
+      alert(t('householdCreateError'));
+    }).then(function(){
+      householdCreateBtn.disabled = false;
+      renderHouseholdModal();
+    });
+  });
+  if (householdJoinBtn) householdJoinBtn.addEventListener('click', function(){
+    householdJoinBtn.disabled = true;
+    joinHousehold(householdJoinInput.value).catch(function(err){
+      alert(err && err.code === 'not-found' ? t('householdJoinNotFound') : t('householdJoinError'));
+    }).then(function(){
+      householdJoinBtn.disabled = false;
+      householdJoinInput.value = '';
+      renderHouseholdModal();
+    });
+  });
+  if (householdAutoAcceptToggle) householdAutoAcceptToggle.addEventListener('change', function(){
+    if (!currentUser || !currentHouseholdId) return;
+    var val = householdAutoAcceptToggle.checked;
+    householdAutoAcceptForMe = val;
+    renderAll();
+    householdMembersRef(currentHouseholdId).doc(currentUser.uid).set({ autoAccept: val }, { merge: true }).catch(function(){
+      householdAutoAcceptForMe = !val;
+      householdAutoAcceptToggle.checked = !val;
+      renderAll();
+    });
+  });
+  if (householdLeaveBtn) householdLeaveBtn.addEventListener('click', function(){
+    if (!confirm(t('householdLeaveConfirm'))) return;
+    householdLeaveBtn.disabled = true;
+    leaveHousehold().catch(function(){}).then(function(){
+      householdLeaveBtn.disabled = false;
+      renderHouseholdModal();
+    });
+  });
 
   // ---------- Notifications ----------
   function updateNotifBtn(){
@@ -1596,7 +2440,10 @@
   }
   notifBtn.addEventListener('click', function(){
     if (!('Notification' in window)) return;
-    Notification.requestPermission().then(function(){ updateNotifBtn(); });
+    Notification.requestPermission().then(function(){
+      updateNotifBtn();
+      if (Notification.permission === 'granted' && typeof firebase !== 'undefined' && currentUser) registerPushToken();
+    });
   });
 
   function sendSystemNotification(note){
@@ -1605,7 +2452,7 @@
     navigator.serviceWorker.ready.then(function(reg){
       reg.showNotification(t('alarmTag'), {
         body: note.raw,
-        tag: 'alarm-' + note.id,
+        tag: 'alarm-' + noteLocalKey(note),
         actions: [
           { action: 'snooze5', title: t('snooze5') },
           { action: 'remind15', title: t('remind15') },
@@ -1624,13 +2471,6 @@
     if (/pagar|pago|payment|factura|bill\b/.test(tt)) return 'ti-credit-card';
     if (/doctor|m[eé]dico|cita|appointment|endocrin/.test(tt)) return 'ti-stethoscope';
     if (/viaje|vuelo|flight|trip\b/.test(tt)) return 'ti-plane';
-    return null;
-  }
-  function dayActivityIcon(dayNotes){
-    for (var i = 0; i < dayNotes.length; i++){
-      var icon = pickActivityIcon(dayNotes[i].raw);
-      if (icon) return icon;
-    }
     return null;
   }
 
@@ -1848,10 +2688,14 @@
   function extractEveryNYears(text){
     var m = text.match(new RegExp('\\bcada\\s+(' + NUM_TOKEN_SRC + ')\\s*a[ñn]os\\b', 'i')) ||
             text.match(new RegExp('\\bevery\\s+(' + NUM_TOKEN_SRC + ')\\s*years\\b', 'i'));
-    if (!m) return null;
-    var n = parseNumberToken(m[1]);
-    if (n == null || n < 2) return null;
-    return { match: m[0], n: n };
+    if (m){
+      var n = parseNumberToken(m[1]);
+      if (n == null || n < 2) return null;
+      return { match: m[0], n: n };
+    }
+    var m2 = text.match(/\bcada\s+a[ñn]o\b/i) || text.match(/\bevery\s+year\b/i);
+    if (m2) return { match: m2[0], n: 1 };
+    return null;
   }
   // "cada mes" / "cada 2 meses" / "cada dos meses" / "every month" / "every 2 months" —
   // monthly recurrence, for bills and check-ins that repeat once a month (rent, credit
@@ -2091,6 +2935,7 @@
     return t('days')[target.getDay()];
   }
   function formatHM2(h, m){
+    if (use24h) return h.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0');
     var suffix = h >= 12 ? 'PM' : 'AM';
     var h12 = h % 12; if (h12 === 0) h12 = 12;
     return h12 + ':' + m.toString().padStart(2, '0') + ' ' + suffix;
@@ -2291,7 +3136,7 @@
     setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
   }
   function getUpcomingOccurrences(){
-    var upcoming = notes.map(function(n){ return { n: n, t: nextOccurrence(n) }; }).filter(function(x){ return x.t; });
+    var upcoming = activeNotes().map(function(n){ return { n: n, t: nextOccurrence(n) }; }).filter(function(x){ return x.t; });
     upcoming.sort(function(a, b){ return a.t - b.t; });
     return upcoming;
   }
@@ -2411,6 +3256,7 @@
     upcomingApplyLanguage();
     upcomingPopulate();
     upcomingModal.style.display = 'flex';
+    upcomingCloseBtn.focus();
   }
   function upcomingCloseModal(){ upcomingModal.style.display = 'none'; }
   upcomingBtn.addEventListener('click', function(){ vibrate(8); upcomingOpenModal(); });
@@ -2544,7 +3390,7 @@
         var names = r.weekdays.map(function(w){ return t('days')[w]; }).join(', ');
         base = t('previewWeekly') + ' ' + names;
       } else if (r.type === 'everyNDays') base = t('previewEveryNDays') + ' ' + r.n + ' ' + t('datecalcUnitDays');
-      else if (r.type === 'everyNYears') base = t('previewEveryNYears') + ' ' + r.n + ' ' + t('datecalcUnitYears');
+      else if (r.type === 'everyNYears') base = t('previewEveryNYears') + ' ' + r.n + ' ' + (r.n === 1 ? t('unitYear') : t('unitYears'));
       else if (r.type === 'everyNMonths') base = t('previewEveryNMonths') + ' ' + r.n + ' ' + (r.n === 1 ? t('unitMonth') : t('unitMonths'));
       else if (r.type === 'everyNHours') base = t('previewEveryNHours') + ' ' + r.n + ' ' + (r.n === 1 ? t('unitHour') : t('unitHours'));
       if (base == null) return null;
@@ -2561,17 +3407,18 @@
   function updateParsePreview(){
     var text = buildParsePreviewText(noteInput.value);
     if (text){ parsePreviewText.textContent = text; parsePreview.style.display = 'flex'; }
-    else parsePreview.style.display = 'none';
+    else { parsePreviewText.textContent = ''; parsePreview.style.display = 'none'; }
   }
 
   // ---------- Photo attachment ----------
-  function processImageFile(file, cb){
-    if (!file || !/^image\//.test(file.type)) return;
+  var PHOTO_MAX_DIM = 900; // longest side, px — kept small since photos are stored as base64 in localStorage
+  function processImageFile(file, cb, onError){
+    if (!file || !/^image\//.test(file.type)) { if (onError) onError(); return; }
     var reader = new FileReader();
     reader.onload = function(e){
       var img = new Image();
       img.onload = function(){
-        var maxDim = 900;
+        var maxDim = PHOTO_MAX_DIM;
         var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
         var canvas = document.createElement('canvas');
         canvas.width = Math.round(img.width * scale);
@@ -2579,10 +3426,13 @@
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
         cb(canvas.toDataURL('image/jpeg', 0.72));
       };
+      img.onerror = function(){ if (onError) onError(); };
       img.src = e.target.result;
     };
+    reader.onerror = function(){ if (onError) onError(); };
     reader.readAsDataURL(file);
   }
+  function photoLoadFailed(){ alert(t('photoErrorMsg')); }
   function setPendingImage(dataUrl){
     pendingImage = dataUrl;
     imagePreviewImg.src = dataUrl;
@@ -2603,10 +3453,17 @@
     var file = e.target.files[0];
     photoFileInput.value = '';
     if (!file) return;
-    processImageFile(file, function(dataUrl){ setPendingImage(dataUrl); vibrate(10); });
+    processImageFile(file, function(dataUrl){ setPendingImage(dataUrl); vibrate(10); }, photoLoadFailed);
   });
   imagePreviewRemoveBtn.addEventListener('mousedown', function(e){ e.preventDefault(); });
   imagePreviewRemoveBtn.addEventListener('click', function(){ clearPendingImage(); vibrate(6); });
+  // Tapping any header/calendar action button while a note draft is unsaved
+  // would otherwise blur the textarea first and auto-save the draft as a new
+  // note before the button's own click even runs. preventDefault on mousedown
+  // keeps focus (and the draft) untouched; the button's click still fires.
+  document.querySelectorAll('.top-row button, .cal-action-btn, .date-action-item, .location-provider-btn, #contact-picker-close-btn').forEach(function(btn){
+    btn.addEventListener('mousedown', function(e){ e.preventDefault(); });
+  });
   imageLightbox.addEventListener('click', function(){ imageLightbox.style.display = 'none'; imageLightboxImg.src = ''; });
   noteInput.addEventListener('paste', function(e){
     var cd = e.clipboardData || window.clipboardData;
@@ -2614,7 +3471,7 @@
     for (var i = 0; i < cd.items.length; i++){
       if (cd.items[i].type.indexOf('image') !== -1){
         var file = cd.items[i].getAsFile();
-        processImageFile(file, function(dataUrl){ setPendingImage(dataUrl); vibrate(10); });
+        processImageFile(file, function(dataUrl){ setPendingImage(dataUrl); vibrate(10); }, photoLoadFailed);
         e.preventDefault();
         break;
       }
@@ -2622,6 +3479,9 @@
   });
 
   // ---------- Scan physical calendar ----------
+  var SCAN_DETECTION_MAX_DIM = 1200; // working resolution for ink-contrast detection, px
+  var SCAN_RECTIFY_MAX_DIM = 1600; // working resolution for the perspective-corrected grid, px
+  var SCAN_CELL_W = 140, SCAN_CELL_H = 100; // size of each rectified day cell, px
   function scanBilinear(corners, u, v){
     var top = { x: corners.tl.x + (corners.tr.x - corners.tl.x) * u, y: corners.tl.y + (corners.tr.y - corners.tl.y) * u };
     var bottom = { x: corners.bl.x + (corners.br.x - corners.bl.x) * u, y: corners.bl.y + (corners.br.y - corners.bl.y) * u };
@@ -2737,6 +3597,7 @@
     scanPopulateMonthYear();
     scanShowStep(1);
     scanModal.style.display = 'flex';
+    scanCloseBtn1.focus();
     requestAnimationFrame(scanRedrawOverlay);
   }
   scanBtn.addEventListener('mousedown', function(e){ e.preventDefault(); });
@@ -2754,8 +3615,10 @@
         scanPhotoImg.src = ev.target.result;
         scanOpenModal();
       };
+      img.onerror = photoLoadFailed;
       img.src = ev.target.result;
     };
+    reader.onerror = photoLoadFailed;
     reader.readAsDataURL(file);
   });
   scanMonthSelect.addEventListener('change', scanRedrawOverlay);
@@ -2794,7 +3657,7 @@
   function scanRectifyGrid(){
     var info = scanDetectedInfo;
     var srcCanvas = document.createElement('canvas');
-    var maxDim = 1600;
+    var maxDim = SCAN_RECTIFY_MAX_DIM;
     var scale = Math.min(1, maxDim / Math.max(scanImageNaturalW, scanImageNaturalH));
     srcCanvas.width = Math.round(scanImageNaturalW * scale);
     srcCanvas.height = Math.round(scanImageNaturalH * scale);
@@ -2802,7 +3665,7 @@
     sctx.drawImage(scanPhotoImg, 0, 0, srcCanvas.width, srcCanvas.height);
     var srcData = sctx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
 
-    var cellW = 140, cellH = 100;
+    var cellW = SCAN_CELL_W, cellH = SCAN_CELL_H;
     var outCanvas = document.createElement('canvas');
     outCanvas.width = cellW * 7;
     outCanvas.height = cellH * info.rows;
@@ -2873,7 +3736,7 @@
     var info = scanGridInfo();
     scanDetectedInfo = info;
     var canvas = document.createElement('canvas');
-    var maxDim = 1200;
+    var maxDim = SCAN_DETECTION_MAX_DIM;
     var scale = Math.min(1, maxDim / Math.max(scanImageNaturalW, scanImageNaturalH));
     canvas.width = Math.round(scanImageNaturalW * scale);
     canvas.height = Math.round(scanImageNaturalH * scale);
@@ -3080,6 +3943,7 @@
     datecalcComputeUntil();
     datecalcComputeOffset();
     datecalcModal.style.display = 'flex';
+    datecalcCloseBtn.focus();
   }
   function datecalcCloseModal(){ datecalcModal.style.display = 'none'; }
   datecalcBtn.addEventListener('click', datecalcOpenModal);
@@ -3177,6 +4041,7 @@
     receiptApplyLanguage();
     receiptShowStep('processing');
     receiptModal.style.display = 'flex';
+    receiptCloseBtn.focus();
   }
   receiptBtn.addEventListener('mousedown', function(e){ e.preventDefault(); });
   receiptBtn.addEventListener('click', function(){ receiptFileInput.click(); });
@@ -3215,6 +4080,9 @@
         receiptUpdateRemindResult();
         receiptShowStep('confirm');
       });
+    }, function(){
+      receiptCloseModal();
+      photoLoadFailed();
     });
   });
   receiptCreateBtn.addEventListener('click', function(){
@@ -3237,8 +4105,39 @@
     savedFlash.style.opacity = '1';
     setTimeout(function(){ savedFlash.style.opacity = '0'; }, 1200);
   }
+
+  var lastDeletedNote = null;
+  var undoToastTimer = null;
+  function hideUndoToast(){
+    undoToast.classList.remove('visible');
+    lastDeletedNote = null;
+  }
+  function showUndoToast(note, index){
+    lastDeletedNote = { note: note, index: index };
+    undoToastText.textContent = t('noteDeletedToast');
+    undoToast.classList.add('visible');
+    if (undoToastTimer) clearTimeout(undoToastTimer);
+    undoToastTimer = setTimeout(hideUndoToast, 5000);
+  }
+  function undoLastDelete(){
+    if (!lastDeletedNote) return;
+    var note = lastDeletedNote.note;
+    var idx = lastDeletedNote.index;
+    if (idx < 0 || idx > notes.length) idx = notes.length;
+    notes.splice(idx, 0, note);
+    var dateRange = extractDateRange(note.raw);
+    if (dateRange){
+      var resolvedRange = resolveDateRange(dateRange, note.createdAt);
+      applyNoteRangeHighlight(noteLocalKey(note), resolvedRange.start, resolvedRange.end);
+    }
+    if (undoToastTimer) clearTimeout(undoToastTimer);
+    hideUndoToast();
+    renderAll();
+    vibrate(10);
+  }
+  undoToastBtn.addEventListener('click', undoLastDelete);
   function loadForEdit(note){
-    editingId = note.id;
+    editingId = noteLocalKey(note);
     noteInput.value = note.raw;
     noteInput.focus();
     addBtn.style.display = 'inline-block';
@@ -3262,21 +4161,50 @@
 
   function renderNotes(){
     listEl.innerHTML = '';
-    var ordered = notes.slice().reverse();
+    var allActive = activeNotes();
+    var ordered = allActive.slice().reverse();
     if (searchTerm){
       ordered = ordered.filter(function(n){ return n.raw.toLowerCase().indexOf(searchTerm) !== -1; });
     }
     emptyMsg.style.display = ordered.length ? 'none' : 'block';
     emptyMsg.textContent = searchTerm ? t('noMatches') : t('empty');
-    onboardingHint.style.display = (!notes.length && !searchTerm) ? 'block' : 'none';
+    onboardingHint.style.display = (!allActive.length && !searchTerm) ? 'block' : 'none';
     ordered.forEach(function(note, idx){
       var block = document.createElement('div');
       block.className = 'note-block' + (note.hour != null && !note.enabled ? ' disabled' : '');
+
+      var noteIcon = pickActivityIcon(note.raw);
+      if (note.hour != null || noteIcon){
+        var meta = document.createElement('div');
+        meta.className = 'note-meta';
+        if (noteIcon){
+          var metaIcon = document.createElement('i');
+          metaIcon.className = 'ti ' + noteIcon;
+          metaIcon.setAttribute('aria-hidden', 'true');
+          meta.appendChild(metaIcon);
+        }
+        if (note.hour != null){
+          var metaTime = document.createElement('span');
+          metaTime.textContent = formatHM2(note.hour, note.minute);
+          meta.appendChild(metaTime);
+        }
+        block.appendChild(meta);
+      }
 
       var numSpan = document.createElement('span');
       numSpan.className = 'note-number';
       numSpan.textContent = (idx + 1) + '.';
       block.appendChild(numSpan);
+
+      if (note.authorName){
+        var authorBadge = document.createElement('span');
+        authorBadge.className = 'note-author-badge';
+        authorBadge.innerHTML = '<i class="ti ti-user" aria-hidden="true"></i>';
+        var authorNameSpan = document.createElement('span');
+        authorNameSpan.textContent = note.authorName;
+        authorBadge.appendChild(authorNameSpan);
+        block.appendChild(authorBadge);
+      }
 
       var isChecklist = noteHasChecklist(note.raw);
       var textEl = document.createElement(isChecklist ? 'div' : 'span');
@@ -3335,10 +4263,12 @@
       delBtn.setAttribute('aria-label', t('deleteLabel'));
       delBtn.addEventListener('click', function(){
         vibrate([8,30,8]);
-        notes = notes.filter(function(n){ return n.id !== note.id; });
-        removeNoteRangeHighlight(note.id);
-        if (editingId === note.id) exitEditMode();
+        var noteIndex = notes.indexOf(note);
+        notes = notes.filter(function(n){ return n !== note; });
+        removeNoteRangeHighlight(noteLocalKey(note));
+        if (editingId === noteLocalKey(note)) exitEditMode();
         renderAll();
+        showUndoToast(note, noteIndex);
       });
       actions.appendChild(delBtn);
 
@@ -3370,40 +4300,168 @@
       if (key === dateKey(today)) cell.classList.add('today');
       if (key === selectedDateKey) cell.classList.add('selected');
       var dayNotes = notesForDate(cellDate);
-      var icon = dayNotes.length ? dayActivityIcon(dayNotes) : null;
       if (dayNotes.length) cell.classList.add('has-activity');
       var hColor = highlightColorForDate(cellDate);
       if (hColor) cell.style.background = hColor;
-      if (icon){
-        var iconEl = document.createElement('i');
-        iconEl.className = 'ti ' + icon + ' cal-activity-icon';
-        iconEl.setAttribute('aria-hidden', 'true');
-        cell.appendChild(iconEl);
+      var hasPhoto = dayNotes.some(function(n){ return !!n.image; });
+      if (hasPhoto){
+        cell.insertAdjacentHTML('beforeend',
+          '<svg class="cal-photo-badge" viewBox="110 55 290 290" aria-hidden="true">' +
+          '<path d="M256 96 c-64 0 -104 48 -104 128 v54 c0 22 -10 40 -30 56 h268 c-20 -16 -30 -34 -30 -56 v-54 c0 -80 -40 -128 -104 -128 z" fill="url(#decorBell)" stroke="#A9600F" stroke-width="6" stroke-linejoin="round"/>' +
+          '<circle cx="256" cy="88" r="20" fill="#D98A1F" stroke="#A9600F" stroke-width="6"/>' +
+          '</svg>');
       } else {
         var num = document.createElement('div'); num.className = 'cal-daynum'; num.textContent = day;
         cell.appendChild(num);
-      }
-      if (dayNotes.length > 1){
-        var countEl = document.createElement('div'); countEl.className = 'cal-count'; countEl.textContent = dayNotes.length;
-        cell.appendChild(countEl);
+        if (dayNotes.length){
+          var dot = document.createElement('div'); dot.className = 'cal-activity-dot';
+          cell.appendChild(dot);
+        }
       }
       cell.addEventListener('click', function(k){
         return function(){
           if (paintMode || noteSelectMode) return;
-          vibrate(6);
-          selectedDateKey = (selectedDateKey === k) ? null : k;
-          renderCalendar(); renderSelectedPanel();
+          toggleDateSelection(k);
         };
       }(key));
       calGrid.appendChild(cell);
     }
-    calGrid.appendChild(printBtn);
-    calGrid.appendChild(highlightBtn);
-    calGrid.appendChild(noteSelectBtn);
   }
 
+  // ---------- Year view: tap the month/year title to zoom out ----------
+  var calYearMode = false;
+  var calYearGridYear = null;
+  var calToolbarEl = document.querySelector('.cal-toolbar');
+  var colRightCardEl = document.querySelector('.col-right');
+
+  function renderCalYearGrid(year){
+    calYearGridEl.innerHTML = '';
+    var todayKey = dateKey(today);
+    for (var m = 0; m < 12; m++){
+      var monthBlock = document.createElement('div');
+      monthBlock.className = 'cal-year-month';
+      var nameEl = document.createElement('div');
+      nameEl.className = 'cal-year-month-name';
+      nameEl.textContent = t('months')[m];
+      monthBlock.appendChild(nameEl);
+      var grid = document.createElement('div');
+      grid.className = 'cal-year-month-grid';
+      var firstDay = new Date(year, m, 1);
+      var startOffset = firstDay.getDay();
+      var daysInMonth = new Date(year, m + 1, 0).getDate();
+      for (var i = 0; i < startOffset; i++){
+        grid.appendChild(document.createElement('div')).className = 'cal-year-day';
+      }
+      for (var day = 1; day <= daysInMonth; day++){
+        var cellDate = new Date(year, m, day);
+        var key = dateKey(cellDate);
+        var dEl = document.createElement('div');
+        dEl.className = 'cal-year-day' + (key === todayKey ? ' today' : '');
+        if (notesForDate(cellDate).length) dEl.classList.add('has-activity');
+        dEl.textContent = day;
+        grid.appendChild(dEl);
+      }
+      monthBlock.appendChild(grid);
+      monthBlock.addEventListener('click', function(mm){
+        return function(){ exitYearView(mm); };
+      }(m));
+      calYearGridEl.appendChild(monthBlock);
+    }
+  }
+  // Animates .col-right's own height between its before/after natural size —
+  // grows or shrinks smoothly instead of jumping, and since the notes card
+  // sits right below it in normal flow, it visually gets pushed along too.
+  function animateCalHeight(changeFn){
+    var card = colRightCardEl;
+    var startH = card.offsetHeight;
+    changeFn();
+    var endH = card.offsetHeight;
+    card.style.height = startH + 'px';
+    card.style.overflow = 'hidden';
+    void card.offsetHeight;
+    card.style.transition = 'height .5s cubic-bezier(0.22, 0.61, 0.36, 1)';
+    requestAnimationFrame(function(){ card.style.height = endH + 'px'; });
+    var finished = false;
+    function finish(){
+      if (finished) return;
+      finished = true;
+      card.style.height = ''; card.style.transition = ''; card.style.overflow = '';
+      card.removeEventListener('transitionend', finish);
+    }
+    card.addEventListener('transitionend', finish);
+    setTimeout(finish, 650);
+  }
+  function enterYearView(){
+    if (calYearMode) return;
+    vibrate(8);
+    animateCalHeight(function(){
+      calYearMode = true;
+      calYearGridYear = calState.year;
+      calWeekdays.style.display = 'none';
+      calGrid.style.display = 'none';
+      calToolbarEl.style.display = 'none';
+      calSelectedPanel.style.display = 'none';
+      calYearGridEl.style.display = 'grid';
+      calTitle.textContent = String(calYearGridYear);
+      renderCalYearGrid(calYearGridYear);
+    });
+  }
+  function exitYearView(month){
+    vibrate(8);
+    animateCalHeight(function(){
+      calYearMode = false;
+      if (month != null){ calState.year = calYearGridYear; calState.month = month; }
+      calYearGridEl.style.display = 'none';
+      calWeekdays.style.display = '';
+      calGrid.style.display = '';
+      calToolbarEl.style.display = '';
+      renderCalendar();
+      renderSelectedPanel();
+    });
+  }
+  // Shared by the prev/next arrows and the swipe gesture below — slides the
+  // grid out in the direction of travel and the new year in from the
+  // opposite side, instead of just swapping the numbers instantly.
+  function goToYear(delta){
+    var dir = delta > 0 ? 1 : -1;
+    calYearGridEl.style.transition = 'transform .28s ease, opacity .28s ease';
+    calYearGridEl.style.transform = 'translateY(' + (-dir * 16) + 'px)';
+    calYearGridEl.style.opacity = '0';
+    setTimeout(function(){
+      calYearGridYear += delta;
+      renderCalYearGrid(calYearGridYear);
+      calTitle.textContent = String(calYearGridYear);
+      calYearGridEl.style.transition = 'none';
+      calYearGridEl.style.transform = 'translateY(' + (dir * 16) + 'px)';
+      void calYearGridEl.offsetHeight;
+      calYearGridEl.style.transition = 'transform .28s ease, opacity .28s ease';
+      calYearGridEl.style.transform = 'translateY(0)';
+      calYearGridEl.style.opacity = '1';
+    }, 280);
+  }
+  calTitle.addEventListener('click', function(){
+    if (calYearMode) exitYearView(null); else enterYearView();
+  });
+  calTitle.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    if (calYearMode) exitYearView(null); else enterYearView();
+  });
+  var yearSwipeDrag = null;
+  calYearGridEl.addEventListener('pointerdown', function(e){
+    yearSwipeDrag = { startY: e.clientY };
+  });
+  calYearGridEl.addEventListener('pointerup', function(e){
+    if (!yearSwipeDrag) return;
+    var dy = e.clientY - yearSwipeDrag.startY;
+    yearSwipeDrag = null;
+    if (Math.abs(dy) < 40) return;
+    vibrate(6);
+    goToYear(dy < 0 ? 1 : -1);
+  });
+
   function notesForDate(d){
-    return notes.filter(function(n){
+    return activeNotes().filter(function(n){
       if (n.dateOnly && dateKey(n.dateOnly) === dateKey(d)) return true;
       if (n.recurring) return recurringMatchesDay(n.recurring, n.createdAt, d);
       if (n.hour == null) return false;
@@ -3411,7 +4469,132 @@
     });
   }
 
+  // ---------- Tap a date: grows the calendar card in place (same animation ----------
+  // ---------- as the year view) to reveal that day's notes + quick actions. ----------
+  function toggleDateSelection(k){
+    var opening = selectedDateKey !== k;
+    vibrate(6);
+    animateCalHeight(function(){
+      selectedDateKey = opening ? k : null;
+      renderCalendar();
+      renderSelectedPanel();
+    });
+  }
+
+  var dateActionLocationBtn = document.getElementById('date-action-location');
+  var dateActionContactBtn = document.getElementById('date-action-contact');
+  var dateActionPhotoBtn = document.getElementById('date-action-photo');
+  var dateActionReceiptBtn = document.getElementById('date-action-receipt');
+
+  function dateActionTargetDate(){
+    if (!selectedDateKey) return null;
+    var parts = selectedDateKey.split('-');
+    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  }
+
+  function createDateNote(d, text){
+    pendingNoteAnchor = { start: d, end: d };
+    addNewNoteFromRaw(capitalizeFirst(text));
+    renderAll();
+    flashSaved();
+    vibrate(15);
+  }
+
+  var locationProviderRow = document.getElementById('location-provider-row');
+  var locationMyCurrentBtn = document.getElementById('location-my-current');
+  var locationGoogleBtn = document.getElementById('location-google');
+  var locationAppleBtn = document.getElementById('location-apple');
+
+  dateActionLocationBtn.addEventListener('click', function(){
+    var opening = locationProviderRow.style.display === 'none';
+    animateCalHeight(function(){
+      locationProviderRow.style.display = opening ? 'flex' : 'none';
+    });
+  });
+  locationMyCurrentBtn.addEventListener('click', function(){
+    startLocationCapture(dateActionTargetDate());
+  });
+  // Opens the maps app/site right away, synchronously, in direct response to
+  // the tap — waiting on an async geolocation lookup first would lose the
+  // "real user gesture" that Safari/iOS requires to allow a new tab at all,
+  // so no attempt is made here to center the map on the user's position.
+  function openExternalMapsSearch(url){
+    var d = dateActionTargetDate();
+    window.open(url, '_blank', 'noopener');
+    pendingNoteAnchor = { start: d, end: d };
+    updatePendingAnchorChip();
+    noteInput.focus();
+  }
+  locationGoogleBtn.addEventListener('click', function(){ openExternalMapsSearch('https://www.google.com/maps'); });
+  locationAppleBtn.addEventListener('click', function(){ openExternalMapsSearch('https://maps.apple.com/'); });
+  dateActionContactBtn.addEventListener('click', function(){
+    openContactPicker(dateActionTargetDate());
+  });
+  dateActionPhotoBtn.addEventListener('click', function(){
+    var d = dateActionTargetDate();
+    pendingNoteAnchor = { start: d, end: d };
+    updatePendingAnchorChip();
+    noteInput.focus();
+    photoFileInput.click();
+  });
+  dateActionReceiptBtn.addEventListener('click', function(){
+    receiptBtn.click();
+  });
+
+  // ---------- Contact picker (date menu -> Contacto) ----------
+  var contactPickerModal = document.getElementById('contact-picker-modal');
+  var contactPickerCloseBtn = document.getElementById('contact-picker-close-btn');
+  var contactPickerList = document.getElementById('contact-picker-list');
+  var contactPickerEmpty = document.getElementById('contact-picker-empty');
+
+  function openContactPicker(d){
+    contactPickerList.innerHTML = '';
+    contactPickerEmpty.style.display = contacts.length ? 'none' : 'block';
+    contacts.forEach(function(c){
+      var row = document.createElement('div');
+      row.className = 'contact-picker-row';
+      row.innerHTML = '<i class="ti ti-user" aria-hidden="true"></i>';
+      var span = document.createElement('span');
+      span.textContent = c.name;
+      row.appendChild(span);
+      row.addEventListener('click', function(){
+        createDateNote(d, t('dateActionContactNoteText').replace('{name}', c.name));
+        contactPickerModal.style.display = 'none';
+      });
+      contactPickerList.appendChild(row);
+    });
+    contactPickerModal.style.display = 'flex';
+    contactPickerCloseBtn.focus();
+  }
+  contactPickerCloseBtn.addEventListener('click', function(){ contactPickerModal.style.display = 'none'; });
+
+  // ---------- Location capture (long-press menu -> Ubicacion) ----------
+  // Uses the device's own GPS plus OpenStreetMap's free Nominatim service to
+  // turn coordinates into a readable address — no API key, no billing.
+  // Nearby-business search (hospital/dentist/etc.) needs a paid provider
+  // (Google Places) or a slower free one (OSM Overpass) and is intentionally
+  // left out until that's decided.
+  function startLocationCapture(d){
+    if (!navigator.geolocation){ alert(t('locationNotSupported')); return; }
+    vibrate(8);
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var lat = pos.coords.latitude, lon = pos.coords.longitude;
+      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lon + '&zoom=18&addressdetails=1')
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          var address = (data && data.display_name) ? data.display_name : (lat.toFixed(5) + ', ' + lon.toFixed(5));
+          createDateNote(d, t('dateActionLocationNoteText').replace('{address}', address));
+        })
+        .catch(function(){
+          createDateNote(d, t('dateActionLocationNoteText').replace('{address}', lat.toFixed(5) + ', ' + lon.toFixed(5)));
+        });
+    }, function(){
+      alert(t('locationDenied'));
+    }, { enableHighAccuracy:true, timeout:10000 });
+  }
+
   function renderSelectedPanel(){
+    document.getElementById('location-provider-row').style.display = 'none';
     if (!selectedDateKey){ calSelectedPanel.style.display = 'none'; return; }
     var parts = selectedDateKey.split('-');
     var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
@@ -3425,7 +4608,19 @@
     }
     dayNotes.forEach(function(n){
       var el = document.createElement('div'); el.className = 'cal-mini-note';
-      renderNoteText(el, n.raw);
+      var textEl = document.createElement('div'); textEl.className = 'cal-mini-note-text';
+      renderNoteText(textEl, n.raw);
+      el.appendChild(textEl);
+      if (n.image){
+        var thumb = document.createElement('img');
+        thumb.className = 'cal-mini-note-thumb';
+        thumb.src = n.image;
+        thumb.alt = '';
+        thumb.addEventListener('click', function(src){
+          return function(e){ e.stopPropagation(); openImageLightbox(src); };
+        }(n.image));
+        el.appendChild(thumb);
+      }
       calSelectedNotes.appendChild(el);
     });
   }
@@ -3434,10 +4629,18 @@
     renderNotes(); renderCalendar(); renderSelectedPanel(); renderNextAlarm(); saveToStorage();
     updateSheetHandleLabel();
     upcomingUpdateBadge();
+    updateSharedNotesBadge();
+    if (onSharedPage) renderSharedPanel();
   }
 
-  calPrev.addEventListener('click', function(){ vibrate(6); calState.month--; if (calState.month < 0){ calState.month = 11; calState.year--; } renderCalendar(); });
-  calNext.addEventListener('click', function(){ vibrate(6); calState.month++; if (calState.month > 11){ calState.month = 0; calState.year++; } renderCalendar(); });
+  calPrev.addEventListener('click', function(){
+    if (calYearMode){ vibrate(6); goToYear(-1); return; }
+    vibrate(6); calState.month--; if (calState.month < 0){ calState.month = 11; calState.year--; } renderCalendar();
+  });
+  calNext.addEventListener('click', function(){
+    if (calYearMode){ vibrate(6); goToYear(1); return; }
+    vibrate(6); calState.month++; if (calState.month > 11){ calState.month = 0; calState.year++; } renderCalendar();
+  });
 
   // ---------- Print calendar ----------
   var printBtn = document.getElementById('print-btn');
@@ -3446,12 +4649,14 @@
   var printTitleEl = document.getElementById('print-title');
   var printModeMonthBtn = document.getElementById('print-mode-month');
   var printModeWeekBtn = document.getElementById('print-mode-week');
+  var printColorModeColorBtn = document.getElementById('print-color-mode-color');
+  var printColorModeBwBtn = document.getElementById('print-color-mode-bw');
   var printNavPrev = document.getElementById('print-nav-prev');
   var printNavNext = document.getElementById('print-nav-next');
   var printNavLabel = document.getElementById('print-nav-label');
   var printGoBtn = document.getElementById('print-go-btn');
   var printArea = document.getElementById('print-area');
-  var printState = { mode: 'month', year: today.getFullYear(), month: today.getMonth(), weekStart: null };
+  var printState = { mode: 'month', colorMode: 'color', year: today.getFullYear(), month: today.getMonth(), weekStart: null };
 
   function printStartOfWeek(d){
     var s = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -3477,6 +4682,7 @@
   }
   function buildPrintMonthGrid(year, month){
     var wrap = document.createElement('div');
+    wrap.className = 'print-page-wrap';
     var titleEl = document.createElement('div');
     titleEl.className = 'print-page-title';
     titleEl.textContent = t('months')[month] + ' ' + year;
@@ -3505,7 +4711,10 @@
       var cell = document.createElement('div');
       cell.className = 'print-month-cell' + (dateKey(cellDate) === todayKey ? ' is-today' : '');
       var cellHColor = highlightColorForDate(cellDate);
-      if (cellHColor) cell.style.background = cellHColor;
+      if (cellHColor){
+        cell.classList.add('has-print-highlight');
+        if (printState.colorMode === 'color') cell.style.background = cellHColor;
+      }
       var num = document.createElement('div'); num.className = 'print-month-daynum'; num.textContent = day;
       cell.appendChild(num);
       var dayNotes = printSortDayNotes(notesForDate(cellDate));
@@ -3531,6 +4740,7 @@
   }
   function buildPrintWeekAgenda(weekStart){
     var wrap = document.createElement('div');
+    wrap.className = 'print-page-wrap';
     var titleEl = document.createElement('div');
     titleEl.className = 'print-page-title';
     titleEl.textContent = printWeekLabel(weekStart);
@@ -3542,7 +4752,10 @@
       var dayWrap = document.createElement('div');
       dayWrap.className = 'print-week-day';
       var dayHColor = highlightColorForDate(d);
-      if (dayHColor) dayWrap.style.background = dayHColor;
+      if (dayHColor){
+        dayWrap.classList.add('has-print-highlight');
+        if (printState.colorMode === 'color') dayWrap.style.background = dayHColor;
+      }
       var head = document.createElement('div');
       head.className = 'print-week-day-head' + (dateKey(d) === todayKey ? ' is-today' : '');
       head.textContent = t('days')[d.getDay()] + ' ' + d.getDate() + ' ' + t('months')[d.getMonth()];
@@ -3567,6 +4780,8 @@
     printTitleEl.textContent = t('printModalTitle');
     printModeMonthBtn.textContent = t('printModeMonth');
     printModeWeekBtn.textContent = t('printModeWeek');
+    printColorModeColorBtn.textContent = t('printColorModeColor');
+    printColorModeBwBtn.textContent = t('printColorModeBw');
     printGoBtn.textContent = t('printGoBtn');
     printBtn.title = t('printBtnTitle'); printBtn.setAttribute('aria-label', t('printBtnTitle'));
   }
@@ -3581,13 +4796,20 @@
     printModeWeekBtn.classList.toggle('active', mode === 'week');
     printUpdateNavLabel();
   }
+  function printSetColorMode(mode){
+    printState.colorMode = mode;
+    printColorModeColorBtn.classList.toggle('active', mode === 'color');
+    printColorModeBwBtn.classList.toggle('active', mode === 'bw');
+  }
   function printOpenModal(){
     printApplyLanguage();
     printState.year = calState.year;
     printState.month = calState.month;
     printState.weekStart = printStartOfWeek(new Date(calState.year, calState.month, 1));
     printSetMode('month');
+    printSetColorMode('color');
     printModal.style.display = 'flex';
+    printCloseBtn.focus();
   }
   function printCloseModal(){ printModal.style.display = 'none'; }
   printBtn.addEventListener('click', printOpenModal);
@@ -3595,6 +4817,8 @@
   printModal.addEventListener('click', function(e){ if (e.target === printModal) printCloseModal(); });
   printModeMonthBtn.addEventListener('click', function(){ vibrate(6); printSetMode('month'); });
   printModeWeekBtn.addEventListener('click', function(){ vibrate(6); printSetMode('week'); });
+  printColorModeColorBtn.addEventListener('click', function(){ vibrate(6); printSetColorMode('color'); });
+  printColorModeBwBtn.addEventListener('click', function(){ vibrate(6); printSetColorMode('bw'); });
   printNavPrev.addEventListener('click', function(){
     vibrate(6);
     if (printState.mode === 'month'){
@@ -3615,6 +4839,7 @@
   });
   printGoBtn.addEventListener('click', function(){
     printArea.innerHTML = '';
+    printArea.classList.toggle('print-bw', printState.colorMode === 'bw');
     var content = (printState.mode === 'month')
       ? buildPrintMonthGrid(printState.year, printState.month)
       : buildPrintWeekAgenda(printState.weekStart);
@@ -3854,62 +5079,158 @@
     markNoteSelectRange(noteSelectStartDate, noteSelectCurrentDate);
   });
 
-  // ---------- Notes/calendar order (mobile: whichever is primary shows first, ----------
-  // ---------- the other sits right below it in normal flow -- just scroll to see it) ----------
-  var colLeftEl = document.querySelector('.col-left');
-  var colRightEl = document.querySelector('.col-right');
+  // ---------- Notes/calendar order (fixed: calendar first, notes below) ----------
   var sheetHandleLabel = document.getElementById('sheet-handle-label');
 
   function updateSheetHandleLabel(){
     sheetHandleLabel.textContent = t('sheetHandleLabel') + (notes.length ? ' (' + notes.length + ')' : '');
   }
 
-  // ---------- Left/right switch: choose which panel comes first ----------
-  var PANEL_PREF_KEY = 'mi_alarma_panel_pref';
-  var notesIsMain = false;
-  var panelSwapTrack = document.querySelector('.panel-swap-track');
-  var panelSwapThumb = document.getElementById('panel-swap-thumb');
-  var isDraggingSwap = false;
+  document.getElementById('fab-add-note').addEventListener('click', function(){
+    vibrate(8);
+    noteInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    noteInput.focus();
+  });
 
-  function applyPanelPref(){
-    panelSwapThumb.classList.toggle('on-right', notesIsMain);
-    colLeftEl.classList.toggle('panel-primary', notesIsMain);
-    colRightEl.classList.toggle('panel-primary', !notesIsMain);
-  }
-  function setNotesIsMain(on){
-    notesIsMain = on;
-    try { localStorage.setItem(PANEL_PREF_KEY, on ? 'notes' : 'calendar'); } catch(e){}
-    applyPanelPref();
-  }
-  try { notesIsMain = localStorage.getItem(PANEL_PREF_KEY) === 'notes'; } catch(e){}
-  applyPanelPref();
+  // ---------- Shared-notes pager: swipe (or tap) left to reveal pending ----------
+  // ---------- household notes; both pages stay visible during the drag. ----------
+  var appPager = document.getElementById('app-pager');
+  var sharedNotesBtn = document.getElementById('shared-notes-btn');
+  var sharedNotesBadge = document.getElementById('shared-notes-badge');
+  var sharedBackBtn = document.getElementById('shared-back-btn');
+  var sharedNotesList = document.getElementById('shared-notes-list');
+  var sharedNotesEmpty = document.getElementById('shared-notes-empty');
+  var sharedPanelTitleEl = document.getElementById('shared-panel-title');
+  var sharedPanelHintEl = document.getElementById('shared-panel-hint');
 
-  panelSwapTrack.addEventListener('click', function(e){
-    if (isDraggingSwap) return;
-    var r = panelSwapTrack.getBoundingClientRect();
-    vibrate(6);
-    setNotesIsMain((e.clientX - r.left) > r.width / 2);
+  function sharedNotesApplyLanguage(){
+    if (!sharedNotesBtn) return;
+    sharedNotesBtn.title = t('sharedNotesBtnTitle'); sharedNotesBtn.setAttribute('aria-label', t('sharedNotesBtnTitle'));
+    sharedBackBtn.setAttribute('aria-label', t('sharedBackLabel'));
+    sharedPanelTitleEl.textContent = t('sharedPanelTitle');
+    sharedPanelHintEl.textContent = t('sharedPanelHint');
+    sharedNotesEmpty.textContent = t('sharedNotesEmptyMsg');
+  }
+
+  var onSharedPage = false;
+  function pagerBasePercent(){ return onSharedPage ? -50 : 0; }
+  function goToSharedPage(){
+    if (onSharedPage) return;
+    onSharedPage = true;
+    vibrate(8);
+    appPager.classList.remove('dragging');
+    appPager.style.transform = 'translateX(-50%)';
+    renderSharedPanel();
+  }
+  function goToMainPage(){
+    if (!onSharedPage) return;
+    onSharedPage = false;
+    vibrate(8);
+    appPager.classList.remove('dragging');
+    appPager.style.transform = 'translateX(0%)';
+  }
+  if (sharedNotesBtn) sharedNotesBtn.addEventListener('click', goToSharedPage);
+  if (sharedBackBtn) sharedBackBtn.addEventListener('click', goToMainPage);
+
+  // Doesn't commit to a horizontal page-swipe until the gesture is clearly
+  // more horizontal than vertical, so it never fights normal page/list
+  // scrolling — and skips entirely inside other draggable surfaces (the
+  // calendar in paint/select mode, scan handles, form controls) so it can't
+  // steal their pointer events.
+  var pagerDrag = null;
+  appPager.addEventListener('pointerdown', function(e){
+    if (e.target.closest('.cal-action-btn, .scan-handle, .checklist-box, input, textarea, select, button, a')) return;
+    // The calendar only has its own competing drag gesture while actively
+    // painting or selecting a date range — otherwise a tap there is just a
+    // tap, so the grid (most of the visible screen) stays swipeable too.
+    if (e.target.closest('#cal-grid') && (paintMode || noteSelectMode)) return;
+    pagerDrag = { startX: e.clientX, startY: e.clientY, committed: null, pointerId: e.pointerId };
   });
-  panelSwapThumb.addEventListener('pointerdown', function(e){
-    e.stopPropagation();
-    isDraggingSwap = true;
-    panelSwapThumb.classList.add('dragging');
+  appPager.addEventListener('pointermove', function(e){
+    if (!pagerDrag || pagerDrag.pointerId !== e.pointerId) return;
+    var dx = e.clientX - pagerDrag.startX;
+    var dy = e.clientY - pagerDrag.startY;
+    if (!pagerDrag.committed){
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      pagerDrag.committed = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+      if (pagerDrag.committed === 'h'){
+        appPager.classList.add('dragging');
+        try { appPager.setPointerCapture(e.pointerId); } catch(err){}
+      }
+    }
+    if (pagerDrag.committed !== 'h') return;
+    e.preventDefault();
+    var pct = (dx / appPager.getBoundingClientRect().width) * 100;
+    var target = Math.max(-50, Math.min(0, pagerBasePercent() + pct));
+    appPager.style.transform = 'translateX(' + target + '%)';
   });
-  document.addEventListener('pointermove', function(e){
-    if (!isDraggingSwap) return;
-    var r = panelSwapTrack.getBoundingClientRect();
-    var x = Math.min(r.width - 33, Math.max(3, e.clientX - r.left - 15));
-    panelSwapThumb.style.left = x + 'px';
-  });
-  document.addEventListener('pointerup', function(e){
-    if (!isDraggingSwap) return;
-    isDraggingSwap = false;
-    panelSwapThumb.classList.remove('dragging');
-    panelSwapThumb.style.left = '';
-    var r = panelSwapTrack.getBoundingClientRect();
-    vibrate(6);
-    setNotesIsMain((e.clientX - r.left) > r.width / 2);
-  });
+  function pagerEnd(e){
+    if (!pagerDrag) return;
+    if (pagerDrag.committed === 'h'){
+      var dx = e.clientX - pagerDrag.startX;
+      var threshold = appPager.getBoundingClientRect().width * 0.18;
+      if (!onSharedPage && dx < -threshold) goToSharedPage();
+      else if (onSharedPage && dx > threshold) goToMainPage();
+      else { appPager.classList.remove('dragging'); appPager.style.transform = 'translateX(' + pagerBasePercent() + '%)'; }
+    }
+    pagerDrag = null;
+  }
+  appPager.addEventListener('pointerup', pagerEnd);
+  appPager.addEventListener('pointercancel', pagerEnd);
+
+  function updateSharedNotesBadge(){
+    if (!sharedNotesBtn) return;
+    var count = pendingNotesForMe().length;
+    sharedNotesBadge.textContent = count > 99 ? '99+' : String(count);
+    sharedNotesBadge.classList.toggle('visible', count > 0);
+  }
+  function renderSharedPanel(){
+    if (!sharedNotesList) return;
+    var pending = pendingNotesForMe();
+    sharedNotesList.innerHTML = '';
+    sharedNotesEmpty.style.display = pending.length ? 'none' : 'block';
+    pending.forEach(function(note){
+      var card = document.createElement('div');
+      card.className = 'shared-note-card';
+      var author = document.createElement('div');
+      author.className = 'shared-note-author';
+      author.innerHTML = '<i class="ti ti-user" aria-hidden="true"></i>';
+      var authorName = document.createElement('span');
+      authorName.textContent = note.authorName || '?';
+      author.appendChild(authorName);
+      card.appendChild(author);
+      var text = document.createElement('div');
+      text.className = 'shared-note-text';
+      text.textContent = (note.hour != null ? (formatHM2(note.hour, note.minute) + ' — ') : '') + note.raw;
+      card.appendChild(text);
+      var actions = document.createElement('div');
+      actions.className = 'shared-note-actions';
+      var acceptBtn = document.createElement('button');
+      acceptBtn.className = 'sky-btn primary';
+      acceptBtn.textContent = t('sharedAccept');
+      acceptBtn.addEventListener('click', function(){
+        if (!note.acceptedBy) note.acceptedBy = {};
+        note.acceptedBy[currentUser.uid] = true;
+        vibrate(10);
+        saveToStorage();
+        renderAll();
+      });
+      var dismissBtn = document.createElement('button');
+      dismissBtn.className = 'sky-btn';
+      dismissBtn.textContent = t('sharedDismiss');
+      dismissBtn.addEventListener('click', function(){
+        if (!note.dismissedBy) note.dismissedBy = {};
+        note.dismissedBy[currentUser.uid] = true;
+        vibrate(6);
+        saveToStorage();
+        renderAll();
+      });
+      actions.appendChild(acceptBtn);
+      actions.appendChild(dismissBtn);
+      card.appendChild(actions);
+      sharedNotesList.appendChild(card);
+    });
+  }
 
   // "cada N horas" fires several times a day, so it needs a real anchor moment to
   // count from. If the user didn't give an explicit start time, anchor it to the
@@ -3943,17 +5264,23 @@
     }
     if (!hasDateInfo) recurring = { type: 'yearly', month: createdAt.getMonth(), day: createdAt.getDate() };
     var newNoteId = idCounter++;
-    notes.push({
+    var newNote = {
       id: newNoteId, raw: raw, hour: parsed.hour, minute: parsed.minute, target: target,
       recurring: recurring, dateOnly: dateOnly, createdAt: createdAt, enabled: true, firedKey: null,
-      image: image || null
-    });
+      image: image || null,
+      authorUid: currentHouseholdId ? currentUser.uid : null,
+      authorName: currentHouseholdId ? currentDisplayName() : null,
+      // The author never has to "accept" their own note — everyone else in
+      // the household starts absent from this map, i.e. pending for them.
+      acceptedBy: currentHouseholdId ? ((function(){ var o = {}; o[currentUser.uid] = true; return o; })()) : null
+    };
+    notes.push(newNote);
     var dateRange = extractDateRange(raw);
     if (dateRange){
       var resolvedRange = resolveDateRange(dateRange, createdAt);
-      applyNoteRangeHighlight(newNoteId, resolvedRange.start, resolvedRange.end);
+      applyNoteRangeHighlight(noteLocalKey(newNote), resolvedRange.start, resolvedRange.end);
     } else if (anchorRange){
-      applyNoteRangeHighlight(newNoteId, anchorRange.start, anchorRange.end);
+      applyNoteRangeHighlight(noteLocalKey(newNote), anchorRange.start, anchorRange.end);
     }
     if (pendingNoteAnchor){ pendingNoteAnchor = null; updatePendingAnchorChip(); }
     var focusDate = target || dateOnly;
@@ -3964,7 +5291,7 @@
 
   function saveEditedNote(raw){
     raw = capitalizeFirst(raw);
-    var idx = notes.findIndex(function(n){ return n.id === editingId; });
+    var idx = notes.findIndex(function(n){ return noteLocalKey(n) === editingId; });
     if (idx !== -1){
       var parsed = parseNoteInput(raw);
       applyEveryNHoursAnchor(parsed, notes[idx].createdAt);
@@ -4074,7 +5401,14 @@
   setInterval(function(){
     var now = new Date();
     var todayKey = dateKey(now);
-    notes.forEach(function(note){
+    // `today` only drives the calendar/print "today" highlight (alarm firing
+    // above always uses a fresh `now`). Without this, leaving the tab open
+    // past midnight leaves the highlight stuck on yesterday.
+    if (todayKey !== dateKey(today)){
+      today = now;
+      renderCalendar();
+    }
+    activeNotes().forEach(function(note){
       if (note.hour == null || !note.enabled) return;
       if (note === currentRinging) return;
       if (ringQueue.indexOf(note) !== -1) return;
@@ -4134,6 +5468,9 @@
     if (datecalcModal.style.display !== 'none'){ datecalcCloseModal(); return; }
     if (receiptModal.style.display !== 'none'){ receiptCloseModal(); return; }
     if (printModal.style.display !== 'none'){ printCloseModal(); return; }
+    if (householdModal.style.display !== 'none'){ householdModal.style.display = 'none'; return; }
+    if (contactPickerModal.style.display !== 'none'){ contactPickerModal.style.display = 'none'; return; }
+    if (selectedDateKey){ toggleDateSelection(selectedDateKey); return; }
   });
 
   // ---------- Init ----------
@@ -4155,30 +5492,214 @@
     }
   } catch(e){}
 
+  // Shared by the service-worker message (app was open/backgrounded) and the
+  // ?action=&tag= query string (app was fully closed, the SW had to open a
+  // fresh window instead of postMessage-ing an existing one — see sw.js).
+  function applyNotifAction(action, tag){
+    var idMatch = /alarm-(.+)/.exec(tag || '');
+    if (!idMatch) return;
+    var key = idMatch[1];
+    var note = notes.find(function(n){ return noteLocalKey(n) === key; });
+    if (!note) return;
+    if (action === 'snooze5'){
+      var ts = new Date(); ts.setMinutes(ts.getMinutes() + 5);
+      if (note.recurring){ note.snoozeUntil = ts; }
+      else { note.target = ts; note.hour = ts.getHours(); note.minute = ts.getMinutes(); note.firedKey = null; }
+    } else if (action === 'remind15'){
+      var tr = new Date(); tr.setMinutes(tr.getMinutes() + REMIND_AGAIN_MINUTES);
+      if (note.recurring){ note.snoozeUntil = tr; }
+      else { note.target = tr; note.hour = tr.getHours(); note.minute = tr.getMinutes(); note.firedKey = null; }
+    } else {
+      note.enabled = false;
+    }
+    if (currentRinging === note) stopRinging();
+    renderAll();
+  }
+
   if ('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(function(){});
     navigator.serviceWorker.addEventListener('message', function(event){
       var data = event.data;
       if (!data || data.type !== 'notif-action') return;
-      var idMatch = /alarm-(\d+)/.exec(data.tag || '');
-      if (!idMatch) return;
-      var id = parseInt(idMatch[1], 10);
-      var note = notes.find(function(n){ return n.id === id; });
-      if (!note) return;
-      if (data.action === 'snooze5'){
-        var ts = new Date(); ts.setMinutes(ts.getMinutes() + 5);
-        if (note.recurring){ note.snoozeUntil = ts; }
-        else { note.target = ts; note.hour = ts.getHours(); note.minute = ts.getMinutes(); note.firedKey = null; }
-      } else if (data.action === 'remind15'){
-        var tr = new Date(); tr.setMinutes(tr.getMinutes() + REMIND_AGAIN_MINUTES);
-        if (note.recurring){ note.snoozeUntil = tr; }
-        else { note.target = tr; note.hour = tr.getHours(); note.minute = tr.getMinutes(); note.firedKey = null; }
-      } else {
-        note.enabled = false;
-      }
-      if (currentRinging === note) stopRinging();
-      renderAll();
+      applyNotifAction(data.action, data.tag);
     });
+  }
+
+  // A push notification tapped while the app was fully closed can't
+  // postMessage an existing window (there isn't one) — sw.js opens
+  // index.html?action=...&tag=... instead, and this applies it once the app
+  // has finished loading (notes are populated by this point in the script).
+  (function applyNotifActionFromUrl(){
+    var params = new URLSearchParams(location.search);
+    var action = params.get('action');
+    var tag = params.get('tag');
+    if (!tag) return;
+    applyNotifAction(action, tag);
+    var url = new URL(location.href);
+    url.searchParams.delete('action');
+    url.searchParams.delete('tag');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  })();
+
+  // ---------- ICS import (.ics files from Google/Outlook/Apple Calendar) ----------
+  // Hand-rolled, not a full RFC 5545 implementation: covers the recurrence
+  // shapes Nudgy itself already understands (daily/weekly/monthly/yearly at
+  // a fixed interval). Anything fancier (BYSETPOS, EXDATE, multi-rule) is
+  // imported as a plain one-time note on its first occurrence rather than
+  // risk silently building the wrong recurrence.
+  var ICS_WEEKDAY = { SU:0, MO:1, TU:2, WE:3, TH:4, FR:5, SA:6 };
+  function icsUnfoldLines(text){
+    var raw = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    var lines = [];
+    raw.forEach(function(line){
+      if (/^[ \t]/.test(line) && lines.length){
+        lines[lines.length - 1] += line.slice(1);
+      } else if (line.length){
+        lines.push(line);
+      }
+    });
+    return lines;
+  }
+  function icsParseLine(line){
+    var colonIdx = line.indexOf(':');
+    if (colonIdx === -1) return null;
+    var left = line.slice(0, colonIdx);
+    var value = line.slice(colonIdx + 1);
+    var segs = left.split(';');
+    var params = {};
+    for (var i = 1; i < segs.length; i++){
+      var eq = segs[i].indexOf('=');
+      if (eq !== -1) params[segs[i].slice(0, eq).toUpperCase()] = segs[i].slice(eq + 1);
+    }
+    return { name: segs[0].toUpperCase(), params: params, value: value };
+  }
+  function icsUnescapeText(s){
+    return s.replace(/\\n/gi, '\n').replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\');
+  }
+  // TZID offsets aren't resolved (would need a timezone database) — the
+  // wall-clock numbers are taken as local time either way, so an event from
+  // far outside the user's own timezone can land a few hours off.
+  function icsParseDate(value){
+    var m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?$/.exec(value);
+    if (!m) return null;
+    var y = +m[1], mo = +m[2] - 1, d = +m[3];
+    if (m[4] == null) return { date: new Date(y, mo, d), allDay: true };
+    var h = +m[4], mi = +m[5], s = +m[6];
+    if (m[7] === 'Z') return { date: new Date(Date.UTC(y, mo, d, h, mi, s)), allDay: false };
+    return { date: new Date(y, mo, d, h, mi, s), allDay: false };
+  }
+  function icsApproximateUntilFromCount(freq, interval, count, dtstart){
+    if (!count || count < 1) return null;
+    var d = new Date(dtstart);
+    if (freq === 'DAILY') d.setDate(d.getDate() + interval * (count - 1));
+    else if (freq === 'WEEKLY') d.setDate(d.getDate() + interval * 7 * (count - 1));
+    else if (freq === 'MONTHLY') d.setMonth(d.getMonth() + interval * (count - 1));
+    else if (freq === 'YEARLY') d.setFullYear(d.getFullYear() + interval * (count - 1));
+    else return null;
+    return d.toISOString();
+  }
+  function icsMapRRule(rruleStr, dtstart){
+    var parts = {};
+    rruleStr.split(';').forEach(function(p){
+      var eq = p.indexOf('=');
+      if (eq !== -1) parts[p.slice(0, eq).toUpperCase()] = p.slice(eq + 1);
+    });
+    var freq = parts.FREQ;
+    var interval = parseInt(parts.INTERVAL, 10);
+    if (!interval || interval < 1) interval = 1;
+    // Any of these means "which specific day(s)" beyond what a fixed
+    // interval can express — BYSETPOS ("the 2nd Tuesday"), BYMONTHDAY on a
+    // MONTHLY/YEARLY rule, BYWEEKNO, BYYEARDAY. Nudgy's own recurrence model
+    // can't represent that, so bail out to a one-time import rather than
+    // silently import the wrong days.
+    if (parts.BYSETPOS || parts.BYWEEKNO || parts.BYYEARDAY) return { unsupported: true };
+    if ((freq === 'MONTHLY' || freq === 'YEARLY') && (parts.BYDAY || parts.BYMONTHDAY)) return { unsupported: true };
+    var until = null;
+    if (parts.UNTIL){
+      var u = icsParseDate(parts.UNTIL);
+      if (u) until = u.date.toISOString();
+    } else if (parts.COUNT){
+      until = icsApproximateUntilFromCount(freq, interval, parseInt(parts.COUNT, 10), dtstart);
+    }
+    var recurring = null;
+    if (freq === 'DAILY'){
+      recurring = interval === 1 ? { type:'daily' } : { type:'everyNDays', n:interval };
+    } else if (freq === 'WEEKLY'){
+      if (interval > 1){
+        recurring = { type:'everyNDays', n: interval * 7 };
+      } else if (parts.BYDAY){
+        var days = parts.BYDAY.split(',').map(function(code){
+          return ICS_WEEKDAY[code.replace(/^[+-]?\d*/, '')];
+        }).filter(function(n){ return n != null; });
+        recurring = { type:'weekly', weekdays: days.length ? days : [dtstart.getDay()] };
+      } else {
+        recurring = { type:'weekly', weekdays:[dtstart.getDay()] };
+      }
+    } else if (freq === 'MONTHLY'){
+      recurring = { type:'everyNMonths', n:interval };
+    } else if (freq === 'YEARLY'){
+      recurring = interval === 1
+        ? { type:'yearly', month:dtstart.getMonth(), day:dtstart.getDate() }
+        : { type:'everyNYears', n:interval };
+    } else {
+      return { unsupported: true };
+    }
+    if (until) recurring.until = until;
+    return recurring;
+  }
+  function parseIcsEvents(text){
+    var lines = icsUnfoldLines(text);
+    var events = [];
+    var current = null;
+    lines.forEach(function(line){
+      if (line === 'BEGIN:VEVENT'){ current = {}; return; }
+      if (line === 'END:VEVENT'){ if (current) events.push(current); current = null; return; }
+      if (!current) return;
+      var p = icsParseLine(line);
+      if (!p) return;
+      if (p.name === 'SUMMARY') current.summary = icsUnescapeText(p.value);
+      else if (p.name === 'LOCATION') current.location = icsUnescapeText(p.value);
+      else if (p.name === 'DTSTART') current.dtstart = p.value;
+      else if (p.name === 'RRULE') current.rrule = p.value;
+    });
+    return events;
+  }
+  // Returns { added, simplified } counts.
+  function importIcsText(text){
+    var events = parseIcsEvents(text);
+    var added = 0, simplified = 0;
+    var existingKeys = {};
+    notes.forEach(function(n){ existingKeys[n.raw + '|' + (n.createdAt ? n.createdAt.getTime() : '')] = true; });
+    events.forEach(function(ev){
+      if (!ev.dtstart) return;
+      var parsed = icsParseDate(ev.dtstart);
+      if (!parsed) return;
+      var raw = capitalizeFirst((ev.summary || t('icsImportedUntitled')) + (ev.location ? ' (' + ev.location + ')' : ''));
+      var createdAt = parsed.date;
+      var recurring = null;
+      if (ev.rrule){
+        var mapped = icsMapRRule(ev.rrule, parsed.date);
+        if (mapped.unsupported) simplified++;
+        else recurring = mapped;
+      }
+      var key = raw + '|' + createdAt.getTime();
+      if (existingKeys[key]) return;
+      existingKeys[key] = true;
+      notes.push({
+        id: idCounter++, raw: raw,
+        hour: parsed.allDay ? null : parsed.date.getHours(),
+        minute: parsed.allDay ? null : parsed.date.getMinutes(),
+        target: parsed.allDay ? null : parsed.date,
+        dateOnly: parsed.allDay ? parsed.date : null,
+        recurring: recurring, createdAt: createdAt, enabled: true, firedKey: null,
+        image: null, checklistDone: {}, snoozeUntil: null,
+        authorUid: currentHouseholdId ? currentUser.uid : null,
+        authorName: currentHouseholdId ? currentDisplayName() : null,
+        acceptedBy: currentHouseholdId ? ((function(){ var o = {}; o[currentUser.uid] = true; return o; })()) : null
+      });
+      added++;
+    });
+    return { added: added, simplified: simplified };
   }
 
   // ---------- Export / Import ----------
@@ -4195,7 +5716,7 @@
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = 'mi-alarma-backup-' + dateKey(new Date()) + '.json';
+    a.download = 'nudgy-backup-' + dateKey(new Date()) + '.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -4207,8 +5728,28 @@
   importFileInput.addEventListener('change', function(e){
     var file = e.target.files[0];
     if (!file) return;
+    var isIcs = /\.ics$/i.test(file.name) || file.type === 'text/calendar';
     var reader = new FileReader();
     reader.onload = function(ev){
+      if (isIcs){
+        try {
+          var icsResult = importIcsText(ev.target.result);
+          renderAll();
+          flashSaved();
+          vibrate(20);
+          if (icsResult.added === 0){
+            alert(t('icsImportNone'));
+          } else {
+            var msg = t('icsImportSummary').replace('{n}', icsResult.added);
+            if (icsResult.simplified) msg += ' ' + t('icsImportSimplifiedNote').replace('{n}', icsResult.simplified);
+            alert(msg);
+          }
+        } catch(err){
+          alert(t('icsImportError'));
+        }
+        importFileInput.value = '';
+        return;
+      }
       try {
         var parsed = JSON.parse(ev.target.result);
         // Backups from before contacts/highlights were included are a bare
