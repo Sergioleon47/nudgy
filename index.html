@@ -2176,24 +2176,37 @@
   // Web Push (Safari on non-HTTPS/non-installed contexts, mainly) — so the
   // app works exactly as before for anyone not using this feature.
   function setupPushMessaging(){
-    if (!firebase.messaging || (firebase.messaging.isSupported && !firebase.messaging.isSupported())) return;
+    if (!firebase.messaging || (firebase.messaging.isSupported && !firebase.messaging.isSupported())){
+      console.warn('[Nudgy] push: firebase.messaging unavailable/unsupported in this browser');
+      return;
+    }
     try {
       firebase.messaging().onTokenRefresh(function(){ registerPushToken(); });
-    } catch (e) {}
+    } catch (e) { console.error('[Nudgy] push: onTokenRefresh setup failed:', e); }
   }
   function registerPushToken(){
-    if (!currentUser || !VAPID_KEY) return;
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    if (!firebase.messaging || (firebase.messaging.isSupported && !firebase.messaging.isSupported())) return;
+    if (!currentUser) { console.warn('[Nudgy] push: not registering, signed out'); return; }
+    if (!VAPID_KEY) { console.warn('[Nudgy] push: not registering, VAPID_KEY empty'); return; }
+    if (!('Notification' in window) || Notification.permission !== 'granted'){
+      console.warn('[Nudgy] push: not registering, Notification permission is "' + (window.Notification ? Notification.permission : 'unsupported') + '"');
+      return;
+    }
+    if (!firebase.messaging || (firebase.messaging.isSupported && !firebase.messaging.isSupported())){
+      console.warn('[Nudgy] push: not registering, firebase.messaging unavailable/unsupported');
+      return;
+    }
     firebase.messaging().getToken({ vapidKey: VAPID_KEY }).then(function(token){
-      if (!token) return;
+      if (!token) { console.warn('[Nudgy] push: getToken resolved with an empty token'); return; }
+      console.log('[Nudgy] push: got FCM token, saving to Firestore');
       var uid = currentUser.uid;
       firebase.firestore().collection('users').doc(uid).collection('pushTokens').doc(token).set({
         token: token,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         updatedAt: new Date().toISOString()
-      }, { merge: true }).catch(function(){});
-    }).catch(function(){});
+      }, { merge: true }).then(function(){
+        console.log('[Nudgy] push: token saved to Firestore');
+      }).catch(function(err){ console.error('[Nudgy] push: saving token to Firestore failed:', err); });
+    }).catch(function(err){ console.error('[Nudgy] push: getToken failed:', err); });
   }
 
   var authBtn = document.getElementById('auth-btn');
