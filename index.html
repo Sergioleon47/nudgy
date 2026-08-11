@@ -2155,6 +2155,14 @@
             updateHouseholdUI();
           }
         });
+        // Surfaces auth errors specific to the redirect flow (e.g. the
+        // domain not being in Firebase's authorized-domains list) that would
+        // otherwise fail completely silently after the page comes back from
+        // Google — signInWithRedirect's own promise never resolves in this
+        // tab (the page navigates away), so this is the only place to catch it.
+        firebase.auth().getRedirectResult().catch(function(err){
+          console.error('[Nudgy] sign-in redirect result failed:', err);
+        });
       });
     firebaseLoadPromise.catch(function(){ firebaseLoadPromise = null; });
     return firebaseLoadPromise;
@@ -2198,7 +2206,19 @@
       authBtn.classList.add('loading');
       ensureFirebaseReady().then(function(){
         return firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
-      }).catch(function(){}).then(function(){
+      }).catch(function(err){
+        // Popups are unreliable on mobile browsers/PWAs (often silently
+        // blocked) — Firebase's own recommendation is to fall back to a
+        // full-page redirect flow in that case. A user-cancelled popup is
+        // not an error worth falling back or logging for.
+        var popupFailed = err && (err.code === 'auth/popup-blocked' ||
+          err.code === 'auth/operation-not-supported-in-this-environment' ||
+          err.code === 'auth/cancelled-popup-request');
+        if (popupFailed) return firebase.auth().signInWithRedirect(new firebase.auth.GoogleAuthProvider());
+        if (err && err.code !== 'auth/popup-closed-by-user') console.error('[Nudgy] sign-in failed:', err);
+      }).catch(function(err){
+        console.error('[Nudgy] sign-in redirect failed:', err);
+      }).then(function(){
         authBtn.classList.remove('loading');
       });
     });
