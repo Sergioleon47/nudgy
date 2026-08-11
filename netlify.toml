@@ -1,2 +1,8 @@
 [functions."check-alarms"]
   schedule = "* * * * *"
+
+# check-alarms.js depends on firebase-admin, declared in
+# netlify/functions/package.json — Netlify doesn't auto-install a Function's
+# own package.json by default, this plugin makes it do so.
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
